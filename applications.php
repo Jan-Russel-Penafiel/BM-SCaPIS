@@ -1,0 +1,383 @@
+<?php
+require_once 'config.php';
+
+// Require login and must be admin or purok leader
+requireLogin();
+if (!in_array($_SESSION['role'], ['admin', 'purok_leader'])) {
+    header('Location: dashboard.php');
+    exit;
+}
+
+$pageTitle = 'Document Applications';
+$currentUser = getCurrentUser();
+
+// Get applications based on role
+$params = [];
+$whereClause = '';
+
+if ($_SESSION['role'] === 'purok_leader') {
+    $whereClause = 'WHERE u.purok_id = ?';
+    $params[] = $currentUser['purok_id'];
+}
+
+$stmt = $pdo->prepare("
+    SELECT a.*, dt.type_name, dt.processing_days,
+           u.first_name, u.last_name, u.contact_number,
+           p.purok_name,
+           CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name
+    FROM applications a
+    JOIN users u ON a.user_id = u.id
+    JOIN document_types dt ON a.document_type_id = dt.id
+    LEFT JOIN puroks p ON u.purok_id = p.id
+    LEFT JOIN users pb ON a.processed_by = pb.id
+    $whereClause
+    ORDER BY a.created_at DESC
+");
+$stmt->execute($params);
+$applications = $stmt->fetchAll();
+
+include 'header.php';
+include 'sidebar.php';
+?>
+
+<div class="main-content">
+    <div class="container-fluid py-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h3 mb-2">Document Applications</h1>
+                                <p class="text-muted mb-0">
+                                    <?php echo $_SESSION['role'] === 'admin' ? 
+                                        'Manage and process all document applications' : 
+                                        'View applications from residents in your purok'; ?>
+                                </p>
+                            </div>
+                            <?php if ($_SESSION['role'] === 'admin'): ?>
+                                <a href="export-applications.php" class="btn btn-success">
+                                    <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Filters -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <a href="?status=pending" class="card border-0 shadow-sm h-100 text-decoration-none">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Pending</h6>
+                                <h3 class="mb-0 text-warning">
+                                    <?php 
+                                    echo count(array_filter($applications, function($a) {
+                                        return $a['status'] === 'pending';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-warning">
+                                <i class="bi bi-clock" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <a href="?status=processing" class="card border-0 shadow-sm h-100 text-decoration-none">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Processing</h6>
+                                <h3 class="mb-0 text-info">
+                                    <?php 
+                                    echo count(array_filter($applications, function($a) {
+                                        return $a['status'] === 'processing';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-info">
+                                <i class="bi bi-gear" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <a href="?status=ready_for_pickup" class="card border-0 shadow-sm h-100 text-decoration-none">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Ready for Pickup</h6>
+                                <h3 class="mb-0 text-primary">
+                                    <?php 
+                                    echo count(array_filter($applications, function($a) {
+                                        return $a['status'] === 'ready_for_pickup';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-primary">
+                                <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <a href="?status=completed" class="card border-0 shadow-sm h-100 text-decoration-none">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Completed</h6>
+                                <h3 class="mb-0 text-success">
+                                    <?php 
+                                    echo count(array_filter($applications, function($a) {
+                                        return $a['status'] === 'completed';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-success">
+                                <i class="bi bi-trophy" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Applications Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul me-2"></i>All Applications
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="applicationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Application #</th>
+                                        <th>Applicant</th>
+                                        <th>Document</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                        <th>Date Applied</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($applications as $app): ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($app['application_number']); ?></strong>
+                                                <?php if ($app['urgency'] === 'Rush'): ?>
+                                                    <span class="badge bg-danger ms-1">Rush</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>
+                                                        <?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>
+                                                    </strong>
+                                                    <?php if ($app['contact_number']): ?>
+                                                        <small class="text-muted d-block">
+                                                            <i class="bi bi-telephone me-1"></i>
+                                                            <?php echo htmlspecialchars($app['contact_number']); ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <?php echo htmlspecialchars($app['type_name']); ?>
+                                                <small class="text-muted d-block">
+                                                    <?php 
+                                                    $purpose = htmlspecialchars($app['purpose']);
+                                                    echo strlen($purpose) > 30 ? substr($purpose, 0, 27) . '...' : $purpose;
+                                                    ?>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge status-<?php echo $app['status']; ?>">
+                                                    <?php echo ucfirst($app['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<?php 
+                                                    echo $app['payment_status'] === 'paid' ? 'success' : 
+                                                        ($app['payment_status'] === 'waived' ? 'info' : 'warning');
+                                                ?>">
+                                                    <?php echo ucfirst($app['payment_status']); ?>
+                                                </span>
+                                                <?php if ($app['payment_amount']): ?>
+                                                    <small class="d-block">₱<?php echo number_format($app['payment_amount'], 2); ?></small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php echo date('M j, Y g:i A', strtotime($app['created_at'])); ?>
+                                                <?php if ($app['processed_by_name']): ?>
+                                                    <small class="text-muted d-block">
+                                                        By: <?php echo htmlspecialchars($app['processed_by_name']); ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="view-application.php?id=<?php echo $app['id']; ?>" 
+                                                       class="btn btn-sm btn-outline-primary"
+                                                       title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <?php if ($_SESSION['role'] === 'admin'): ?>
+                                                        <?php if ($app['status'] === 'pending'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    onclick="processApplication(<?php echo $app['id']; ?>)"
+                                                                    title="Process">
+                                                                <i class="bi bi-check"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($app['status'] === 'processing'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-info"
+                                                                    onclick="markReadyForPickup(<?php echo $app['id']; ?>)"
+                                                                    title="Mark as Ready">
+                                                                <i class="bi bi-box-seam"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($app['status'] === 'ready_for_pickup'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    onclick="completeApplication(<?php echo $app['id']; ?>)"
+                                                                    title="Complete">
+                                                                <i class="bi bi-check-all"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-warning"
+                                                                    onclick="waivePayment(<?php echo $app['id']; ?>)"
+                                                                    title="Waive Payment">
+                                                                <i class="bi bi-cash-stack"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Process Application Modal -->
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Process Application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="process-application.php" method="POST">
+                <input type="hidden" name="application_id" id="processApplicationId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="3" 
+                                placeholder="Enter processing remarks or instructions"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Start Processing</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Ready for Pickup Modal -->
+<div class="modal fade" id="readyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark as Ready for Pickup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="mark-ready.php" method="POST">
+                <input type="hidden" name="application_id" id="readyApplicationId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Pickup Instructions</label>
+                        <textarea name="remarks" class="form-control" rows="3" 
+                                placeholder="Enter pickup instructions or notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">Mark as Ready</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTables
+    $('#applicationsTable').DataTable({
+        order: [[5, 'desc']], // Sort by date applied
+        pageLength: 25,
+        responsive: true,
+        language: {
+            search: '<i class="bi bi-search"></i>',
+            searchPlaceholder: 'Search applications...'
+        }
+    });
+});
+
+function processApplication(id) {
+    document.getElementById('processApplicationId').value = id;
+    new bootstrap.Modal(document.getElementById('processModal')).show();
+}
+
+function markReadyForPickup(id) {
+    document.getElementById('readyApplicationId').value = id;
+    new bootstrap.Modal(document.getElementById('readyModal')).show();
+}
+
+function completeApplication(id) {
+    if (confirm('Are you sure you want to mark this application as completed?')) {
+        window.location.href = `complete-application.php?id=${id}`;
+    }
+}
+
+function waivePayment(id) {
+    if (confirm('Are you sure you want to waive the payment for this application?')) {
+        window.location.href = `waive-payment.php?id=${id}`;
+    }
+}
+</script>
+
+<?php include 'scripts.php'; ?> 

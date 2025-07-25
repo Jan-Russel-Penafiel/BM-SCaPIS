@@ -1,0 +1,131 @@
+/* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    background: linear-gradient(180deg, var(--primary-color), #1a4480);
+    color: white;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.25rem;
+    margin: 0.125rem 0.75rem;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.sidebar .nav-link:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+    font-weight: 500;
+}
+
+.sidebar .nav-link i {
+    width: 1.5rem;
+    text-align: center;
+    margin-right: 0.75rem;
+}
+
+.sidebar .nav-section {
+    margin-bottom: 1rem;
+}
+
+.sidebar .nav-section-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Collapse arrow animation */
+.nav-link[data-bs-toggle="collapse"] {
+    position: relative;
+}
+
+.nav-link[data-bs-toggle="collapse"]::after {
+    content: "\F282";
+    font-family: "bootstrap-icons";
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+}
+
+.nav-link[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Submenu styles */
+.sidebar .collapse .nav-link {
+    padding-left: 3.5rem;
+    font-size: 0.85rem;
+}
+
+/* Main content padding for sidebar */
+.main-content {
+    margin-left: 250px;
+    padding: 1.5rem;
+    transition: margin-left 0.3s ease;
+}
+
+/* Mobile responsive sidebar */
+@media (max-width: 991.98px) {
+    .sidebar {
+        left: -260px;
+    }
+    
+    .sidebar.show {
+        left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-backdrop.show {
+        display: block;
+    }
+}
+
+/* Version text at bottom */
+.sidebar-version {
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    text-align: center;
+    margin-top: auto;
+} 
