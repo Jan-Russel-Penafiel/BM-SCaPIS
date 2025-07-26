@@ -213,7 +213,11 @@ include 'sidebar.php';
                                                 </small>
                                             </td>
                                             <td>
-                                                <span class="badge status-<?php echo $app['status']; ?>">
+                                                <span class="badge status-<?php echo $app['status']; ?>
+                                                    <?php if ($app['status'] === 'ready_for_pickup') echo ' bg-primary text-white fw-bold ready-pickup-badge'; ?>">
+                                                    <?php if ($app['status'] === 'ready_for_pickup'): ?>
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                    <?php endif; ?>
                                                     <?php echo ucfirst($app['status']); ?>
                                                 </span>
                                             </td>
@@ -255,8 +259,8 @@ include 'sidebar.php';
                                                         <?php if ($app['status'] === 'processing'): ?>
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-info"
-                                                                    onclick="markReadyForPickup(<?php echo $app['id']; ?>)"
-                                                                    title="Mark as Ready">
+                                                                    onclick="openReadyAppointmentModal(<?php echo $app['id']; ?>)"
+                                                                    title="Mark as Ready & Schedule Appointment">
                                                                 <i class="bi bi-box-seam"></i>
                                                             </button>
                                                         <?php endif; ?>
@@ -274,6 +278,14 @@ include 'sidebar.php';
                                                                     onclick="waivePayment(<?php echo $app['id']; ?>)"
                                                                     title="Waive Payment">
                                                                 <i class="bi bi-cash-stack"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'paid'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    onclick="autoProcessApplication(<?php echo $app['id']; ?>)"
+                                                                    title="Start Processing (Payment Received)">
+                                                                <i class="bi bi-play-circle"></i>
                                                             </button>
                                                         <?php endif; ?>
                                                     <?php endif; ?>
@@ -317,26 +329,30 @@ include 'sidebar.php';
     </div>
 </div>
 
-<!-- Ready for Pickup Modal -->
-<div class="modal fade" id="readyModal" tabindex="-1">
+<!-- Ready for Pickup & Appointment Modal -->
+<div class="modal fade" id="readyAppointmentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Mark as Ready for Pickup</h5>
+                <h5 class="modal-title">Mark as Ready & Schedule Pickup Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="mark-ready.php" method="POST">
-                <input type="hidden" name="application_id" id="readyApplicationId">
+                <input type="hidden" name="application_id" id="readyAppointmentApplicationId">
+                <input type="hidden" name="appointment_type" value="pickup">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Pickup Instructions</label>
-                        <textarea name="remarks" class="form-control" rows="3" 
-                                placeholder="Enter pickup instructions or notes"></textarea>
+                        <label class="form-label">Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" name="appointment_date" class="form-control" required min="<?php echo date('Y-m-d\TH:i'); ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Pickup Instructions</label>
+                        <textarea name="remarks" class="form-control" rows="3" placeholder="Enter notes or pickup instructions"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-info">Mark as Ready</button>
+                    <button type="submit" class="btn btn-info">Mark as Ready & Schedule</button>
                 </div>
             </form>
         </div>
@@ -362,11 +378,6 @@ function processApplication(id) {
     new bootstrap.Modal(document.getElementById('processModal')).show();
 }
 
-function markReadyForPickup(id) {
-    document.getElementById('readyApplicationId').value = id;
-    new bootstrap.Modal(document.getElementById('readyModal')).show();
-}
-
 function completeApplication(id) {
     if (confirm('Are you sure you want to mark this application as completed?')) {
         window.location.href = `complete-application.php?id=${id}`;
@@ -377,6 +388,20 @@ function waivePayment(id) {
     if (confirm('Are you sure you want to waive the payment for this application?')) {
         window.location.href = `waive-payment.php?id=${id}`;
     }
+}
+
+// Auto-process applications when payment is made
+function autoProcessApplication(id) {
+    if (confirm('Payment received. Start processing this application?')) {
+        // Submit the process form automatically
+        document.getElementById('processApplicationId').value = id;
+        document.querySelector('#processModal form').submit();
+    }
+}
+
+function openReadyAppointmentModal(appId) {
+    document.getElementById('readyAppointmentApplicationId').value = appId;
+    new bootstrap.Modal(document.getElementById('readyAppointmentModal')).show();
 }
 </script>
 

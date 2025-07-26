@@ -420,8 +420,14 @@
     
     <!-- Notification Sound -->
     <audio id="notificationSound" preload="auto">
-        <source src="assets/sounds/notification.mp3" type="audio/mpeg">
+        <!-- Fallback audio element for older browsers -->
     </audio>
+    
+    <!-- Notification JavaScript Files -->
+    <script src="/muhai_malangit/assets/js/notification-fallback.js"></script>
+    <script src="/muhai_malangit/assets/js/notification-sound.js"></script>
+    <script src="/muhai_malangit/assets/js/notification-manager.js"></script>
+    <script src="/muhai_malangit/assets/js/notifications.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -455,6 +461,47 @@
                 return 'just now';
             }
 
+            // Function to play notification sound
+            function playNotificationSound() {
+                // Try the main notification sound system
+                if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.shouldPlayForNewNotifications(lastNotificationCount)) {
+                    window.NotificationSound.play();
+                    window.NotificationSound.markSoundPlayed();
+                } 
+                // Try the fallback system
+                else if (typeof window.NotificationFallback !== 'undefined' && window.NotificationFallback.play) {
+                    window.NotificationFallback.play();
+                } 
+                // Try the legacy system
+                else if (typeof window.playNotificationSound !== 'undefined') {
+                    window.playNotificationSound();
+                }
+                // Try the manager system
+                else if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.playSound) {
+                    window.NotificationManager.playSound();
+                }
+                // Final fallback - create a simple beep
+                else {
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.3);
+                    } catch (error) {
+                        console.log('Could not play notification sound:', error);
+                    }
+                }
+            }
+
             // Function to update notifications
             function updateNotifications() {
                 fetch('ajax/get-notification-count.php')
@@ -465,74 +512,115 @@
                             notificationBadge.textContent = data.count;
                             notificationBadge.classList.remove('d-none');
                             
-                            // Play sound if count increased
-                            if (data.count > lastNotificationCount) {
-                                notificationSound.play().catch(e => console.log('Error playing sound:', e));
+                            // Play sound automatically if there are NEW notifications
+                            if (data.count > lastNotificationCount && data.count > 0) {
+                                // Reset sound flag when new notifications arrive
+                                if (typeof window.NotificationSound !== 'undefined') {
+                                    window.NotificationSound.resetSoundFlag();
+                                }
+                                // Play notification sound
+                                playNotificationSound();
+                            }
+                            
+                            // Reset sound flag when notification count drops to 0
+                            if (data.count === 0 && typeof window.NotificationSound !== 'undefined') {
+                                window.NotificationSound.resetSoundFlag();
                             }
                         } else {
                             notificationBadge.classList.add('d-none');
+                            // Reset sound flag when no notifications
+                            if (typeof window.NotificationSound !== 'undefined') {
+                                window.NotificationSound.resetSoundFlag();
+                            }
                         }
                         lastNotificationCount = data.count;
 
                         // Update notifications list
                         if (data.notifications) {
-                            notificationsList.innerHTML = data.notifications.length > 0 ? 
-                                data.notifications.map(notification => `
-                                    <a class="dropdown-item py-2 ${!notification.is_read ? 'bg-light' : ''}" 
-                                       href="#" 
-                                       onclick="markNotificationRead(${notification.id}, '${notification.link || '#'}'); return false;">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1 ${!notification.is_read ? 'fw-bold' : ''}">${notification.title}</h6>
-                                            <small class="text-muted">${timeAgo(notification.created_at)}</small>
+                            notificationsList.innerHTML = data.notifications.map(notification => `
+                                <a href="#" class="dropdown-item py-2 ${!notification.is_read ? 'fw-bold bg-light' : ''}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="small text-muted">${timeAgo(notification.created_at)}</div>
+                                            ${notification.message}
                                         </div>
-                                        <p class="mb-1 small text-muted">${notification.message}</p>
-                                    </a>
-                                `).join('') :
-                                '<div class="text-center p-3 text-muted">No new notifications</div>';
+                                    </div>
+                                </a>
+                            `).join('') || '<div class="dropdown-item text-center py-3">No notifications</div>';
                         }
                     })
-                    .catch(error => console.error('Error fetching notifications:', error));
+                    .catch(error => console.error('Error updating notifications:', error));
             }
 
-            // Mark single notification as read
-            window.markNotificationRead = function(id, link) {
-                fetch('ajax/mark-notification-read.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'notification_id=' + id
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateNotifications();
-                        if (link && link !== '#') {
-                            window.location.href = link;
-                        }
-                    }
-                })
-                .catch(error => console.error('Error marking notification as read:', error));
-            };
+            // Update notifications every 30 seconds
+            setInterval(updateNotifications, 30000);
+            updateNotifications(); // Initial update
 
             // Mark all notifications as read
             document.getElementById('markAllRead').addEventListener('click', function(e) {
                 e.preventDefault();
+                
+                // Show loading spinner
+                const loadingSpinner = document.getElementById('loadingSpinner');
+                if (loadingSpinner) {
+                    loadingSpinner.classList.remove('d-none');
+                }
+                
                 fetch('ajax/mark-all-notifications-read.php', {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Update UI
+                        notificationBadge.classList.add('d-none');
+                        
+                        // Update dropdown notifications
+                        const notificationItems = document.querySelectorAll('.dropdown-item.fw-bold');
+                        notificationItems.forEach(item => {
+                            item.classList.remove('fw-bold', 'bg-light');
+                        });
+                        
+                        // Update notifications page if it exists
+                        const timelineItems = document.querySelectorAll('.timeline-item.fw-bold');
+                        timelineItems.forEach(item => {
+                            item.classList.remove('fw-bold');
+                            item.classList.add('text-muted');
+                            const markReadBtn = item.querySelector('.mark-read');
+                            if (markReadBtn) {
+                                markReadBtn.remove();
+                            }
+                        });
+                        
+                        // Update notification count to 0
+                        lastNotificationCount = 0;
+                        notificationBadge.textContent = '0';
+                        
+                        // Reset sound flag when all notifications are marked as read
+                        if (typeof window.NotificationSound !== 'undefined') {
+                            window.NotificationSound.resetSoundFlag();
+                        }
+                        
+                        // Update dropdown list content
                         updateNotifications();
+                    } else {
+                        console.error('Failed to mark notifications as read:', data.message);
                     }
                 })
-                .catch(error => console.error('Error marking all notifications as read:', error));
+                .catch(error => {
+                    console.error('Error marking all notifications as read:', error);
+                })
+                .finally(() => {
+                    // Hide loading spinner
+                    if (loadingSpinner) {
+                        loadingSpinner.classList.add('d-none');
+                    }
+                });
             });
-
-            // Initial update and set interval
-            updateNotifications();
-            setInterval(updateNotifications, 30000); // Check every 30 seconds
         }
     });
     </script>

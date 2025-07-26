@@ -52,6 +52,16 @@ try {
         throw new Exception('Invalid email format');
     }
 
+    // Validate phone number format
+    if (!empty($_POST['contact_number']) && !preg_match('/^09[0-9]{9}$/', $_POST['contact_number'])) {
+        throw new Exception('Please enter a valid Philippine phone number (09XXXXXXXXX)');
+    }
+
+    // Validate emergency contact number format
+    if (!empty($_POST['emergency_contact_number']) && !preg_match('/^09[0-9]{9}$/', $_POST['emergency_contact_number'])) {
+        throw new Exception('Please enter a valid emergency contact number (09XXXXXXXXX)');
+    }
+
     // Calculate age from birthdate
     $birthdate = new DateTime($_POST['birthdate']);
     $today = new DateTime();

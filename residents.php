@@ -585,7 +585,7 @@ include 'sidebar.php';
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Contact Number</label>
-                                    <input type="tel" name="contact_number" id="editContactNumber" class="form-control">
+                                    <input type="tel" name="contact_number" id="editContactNumber" class="form-control" placeholder="09XXXXXXXXX">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Email Address</label>
@@ -634,7 +634,7 @@ include 'sidebar.php';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Contact Number</label>
-                                    <input type="tel" name="emergency_contact_number" id="editEmergencyNumber" class="form-control">
+                                    <input type="tel" name="emergency_contact_number" id="editEmergencyNumber" class="form-control" placeholder="09XXXXXXXXX">
                                 </div>
                             </div>
                         </div>
@@ -679,11 +679,36 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdownParent: $('#assignPurokModal'),
         placeholder: 'Select residents to assign...',
         allowClear: true,
-        templateResult: formatResidentOption,
-        templateSelection: formatResidentSelection,
-        escapeMarkup: function(markup) {
-            return markup;
+        templateResult: function(data) {
+            if (data.loading) return data.text;
+            if (!data.id) return data.text;
+            
+            return $(`
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <img src="${data.profile_picture ? 'uploads/profiles/' + data.profile_picture : 'assets/images/default-avatar.png'}" 
+                             class="rounded-circle" width="32" height="32" alt="Profile">
+                    </div>
+                    <div class="flex-grow-1 ms-2">
+                        <div class="fw-bold">${data.text}</div>
+                        <small class="text-muted">${data.purok_name || 'No purok assigned'}</small>
+                    </div>
+                </div>
+            `);
+        },
+        templateSelection: function(data) {
+            if (!data.id) return data.text;
+            return data.text;
         }
+    });
+    
+    // Phone number formatting
+    document.getElementById('editContactNumber').addEventListener('input', function(e) {
+        formatPhoneNumber(e.target);
+    });
+    
+    document.getElementById('editEmergencyNumber').addEventListener('input', function(e) {
+        formatPhoneNumber(e.target);
     });
 });
 
@@ -932,5 +957,15 @@ function showToast(type, title, message) {
     });
 }
 </script>
+
+<style>
+.ready-pickup-badge {
+    animation: pickupPulse 1.2s infinite alternate;
+}
+@keyframes pickupPulse {
+    0% { box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
+    100% { box-shadow: 0 0 10px 4px rgba(13,110,253,0.3); }
+}
+</style>
 
 <?php include 'scripts.php'; ?> 

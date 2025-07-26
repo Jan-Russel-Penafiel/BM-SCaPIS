@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Failed to upload receipt. Please try again.');
             }
             
-            // Update application payment status
+            // Update application payment status and automatically start processing
             $stmt = $pdo->prepare("
                 UPDATE applications 
                 SET payment_status = 'paid',
@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     payment_method = 'gcash',
                     payment_reference = ?,
                     payment_receipt = ?,
-                    status = 'processing'
+                    status = 'processing',
+                    processed_by = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$referenceNumber, $receiptFilename, $applicationId]);
@@ -100,6 +101,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id']
             ]);
             
+            // Send SMS notification to resident about payment and processing start
+            $result = sendPaymentNotificationSMS($applicationId, 'gcash', $application['fee'], $referenceNumber);
+            if (!$result['success']) {
+                error_log('Resident SMS notification failed: ' . $result['message']);
+            }
+            
             // Log activity
             logActivity(
                 $_SESSION['user_id'],
@@ -107,6 +114,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'applications',
                 $applicationId
             );
+            
+            // Send SMS notification to admin about payment received
+            $adminMessage = "GCash payment received for application #{$application['application_number']}. ";
+            $adminMessage .= "Amount: ₱" . number_format($application['fee'], 2) . ". ";
+            $adminMessage .= "Reference: {$referenceNumber}";
+            
+            $result = sendAdminNotificationSMS($adminMessage, 'payment_received');
+            if (!$result['success']) {
+                error_log('Admin SMS notification failed: ' . $result['message']);
+            }
             
             // Send notification to admin
             $stmt = $pdo->prepare("

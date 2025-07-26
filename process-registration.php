@@ -6,7 +6,6 @@ ob_start();
 header('Content-Type: application/json');
 
 require_once 'config.php';
-require_once 'classes/Settings.php';
 
 try {
     // Ensure this is accessed via POST
@@ -21,12 +20,8 @@ try {
 
     // Get and sanitize input parameters
     $userId = filter_var($_POST['user_id'], FILTER_SANITIZE_NUMBER_INT);
-    $action = filter_var($_POST['action'], FILTER_SANITIZE_STRING);
-    $remarks = trim(filter_var($_POST['remarks'], FILTER_SANITIZE_STRING));
-
-    // Enable error reporting for debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
+    $action = htmlspecialchars($_POST['action'], ENT_QUOTES, 'UTF-8');
+    $remarks = trim(htmlspecialchars($_POST['remarks'], ENT_QUOTES, 'UTF-8'));
 
     // Check if user is logged in
     session_start();
@@ -89,15 +84,6 @@ try {
                 )
             );
         }
-
-        // Store disapproval info for logging
-        $disapprovalInfo = [
-            'user_id' => $userId,
-            'disapproved_by' => $_SESSION['user_id'],
-            'disapproved_by_name' => $_SESSION['first_name'] . ' ' . $_SESSION['last_name'],
-            'remarks' => $remarks,
-            'disapproved_at' => date('Y-m-d H:i:s')
-        ];
 
         // Delete profile picture and IDs if they exist
         $filesToDelete = [
@@ -162,6 +148,14 @@ try {
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
 
+        $disapprovalInfo = [
+            'user_id' => $userId,
+            'disapproved_by' => $_SESSION['user_id'],
+            'disapproved_by_name' => $_SESSION['first_name'] . ' ' . $_SESSION['last_name'],
+            'remarks' => $remarks,
+            'disapproved_at' => date('Y-m-d H:i:s')
+        ];
+
         $stmt->execute([
             $_SESSION['user_id'],
             'disapprove_registration',
@@ -204,15 +198,6 @@ try {
 
         $stmt->execute([$notificationMessage, $metadata]);
 
-        // Send SMS notification to user if phone number exists
-        if (!empty($user['contact_number'])) {
-            $message = "Your registration at " . BARANGAY_NAME . " has been disapproved.\n" .
-                      "Reason: " . $remarks . "\n\n" .
-                      "You may register again with the correct information.";
-            
-            sendSMSNotification($user['contact_number'], $message, $userId);
-        }
-
         // Finally, delete the user
         $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$userId]);
@@ -220,14 +205,27 @@ try {
         // Commit transaction
         $pdo->commit();
 
+        // Set success message in session
+        $_SESSION['success'] = 'Registration has been disapproved and deleted successfully';
+        
         ob_clean();
         echo json_encode([
             'success' => true,
-            'message' => 'Registration has been disapproved and deleted successfully'
+            'redirect' => 'pending-registrations.php'
         ]);
         exit;
 
     } else if ($action === 'approve') {
+        // Check if already approved by the current role
+        $approvalColumn = $_SESSION['role'] === 'admin' ? 'admin_approval' : 'purok_leader_approval';
+        $stmt = $pdo->prepare("SELECT $approvalColumn FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentApproval = $stmt->fetchColumn();
+
+        if ($currentApproval === 'approved') {
+            throw new Exception('This registration has already been approved by ' . ucfirst(str_replace('_', ' ', $_SESSION['role'])));
+        }
+
         // Update user approval status based on role
         if ($_SESSION['role'] === 'admin') {
             $stmt = $pdo->prepare("
@@ -250,6 +248,32 @@ try {
         }
 
         $stmt->execute([$remarks, $_SESSION['user_id'], $userId]);
+
+        // Check if both approvals are complete
+        $stmt = $pdo->prepare("
+            SELECT purok_leader_approval, admin_approval 
+            FROM users 
+            WHERE id = ?
+        ");
+        $stmt->execute([$userId]);
+        $approvals = $stmt->fetch();
+
+        // If both purok leader and admin have approved, update status to approved
+        if ($approvals['purok_leader_approval'] === 'approved' && $approvals['admin_approval'] === 'approved') {
+            $stmt = $pdo->prepare("
+                UPDATE users 
+                SET status = 'approved',
+                    approved_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->execute([$userId]);
+            
+            // Send SMS notification to the resident that their registration is approved
+            if (!empty($user['contact_number'])) {
+                $message = "Congratulations! Your BM-SCaPIS registration has been approved.\n\nUsername: {$user['username']}\nPassword: {$user['password']}\n\nYou can now log in to your account and apply for documents.";
+                sendSMSNotification($user['contact_number'], $message, $userId);
+            }
+        }
 
         // Log the approval
         $stmt = $pdo->prepare("
@@ -282,13 +306,47 @@ try {
             $_SERVER['HTTP_USER_AGENT']
         ]);
 
+        // Create notification for approval
+        $stmt = $pdo->prepare("
+            INSERT INTO system_notifications (
+                type,
+                title,
+                message,
+                target_role,
+                metadata,
+                target_user_id
+            ) VALUES (
+                'registration_approved',
+                'Registration Approved',
+                ?,
+                'resident',
+                ?,
+                ?
+            )
+        ");
+
+        $notificationMessage = "Your registration has been " . 
+                             ($_SESSION['role'] === 'admin' ? 'fully approved' : 'approved by Purok Leader') . 
+                             " ({$_SESSION['first_name']} {$_SESSION['last_name']})";
+        
+        $metadata = json_encode([
+            'approved_by' => $_SESSION['user_id'],
+            'approved_at' => date('Y-m-d H:i:s'),
+            'remarks' => $remarks
+        ]);
+
+        $stmt->execute([$notificationMessage, $metadata, $userId]);
+
         // Commit transaction
         $pdo->commit();
 
+        // Set success message in session
+        $_SESSION['success'] = 'Registration has been approved successfully';
+        
         ob_clean();
         echo json_encode([
             'success' => true,
-            'message' => 'Registration has been approved successfully'
+            'redirect' => 'pending-registrations.php'
         ]);
         exit;
 

@@ -1,5 +1,7 @@
 <!-- JavaScript Libraries -->
 
+<!-- Notification System - Loaded in header.php to prevent conflicts -->
+
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
@@ -177,29 +179,43 @@
     function formatPhoneNumber(input) {
         let value = input.value.replace(/\D/g, '');
         
-        if (value.startsWith('0')) {
-            value = '+63' + value.substring(1);
-        } else if (value.startsWith('63')) {
-            value = '+' + value;
-        } else if (!value.startsWith('+63')) {
-            value = '+63' + value;
+        // Convert to 09XXXXXXXXX format
+        if (value.startsWith('63')) {
+            value = '0' + value.substring(2);
+        } else if (value.startsWith('+63')) {
+            value = '0' + value.substring(3);
+        } else if (!value.startsWith('0') && value.length === 10) {
+            value = '0' + value;
         }
         
-        input.value = value;
+        // Ensure it starts with 09 and has 11 digits
+        if (value.length === 11 && value.startsWith('09')) {
+            input.value = value;
+        } else {
+            input.value = value;
+        }
     }
     
     // Real-time notifications
     let notificationSound = null;
     
     function playNotificationSound() {
-        if (!notificationSound) {
-            notificationSound = new Audio('assets/sounds/notification.mp3');
-            notificationSound.volume = 0.5;
+        // Use the new notification system if available
+        if (typeof NotificationSound !== 'undefined' && NotificationSound.play) {
+            NotificationSound.play();
+        } else if (typeof NotificationFallback !== 'undefined' && NotificationFallback.play) {
+            NotificationFallback.play();
+        } else {
+            // Fallback to old system
+            if (!notificationSound) {
+                notificationSound = new Audio('/muhai_malangit/assets/sounds/notification.mp3');
+                notificationSound.volume = 0.5;
+            }
+            
+            notificationSound.play().catch(e => {
+                console.log('Could not play notification sound:', e);
+            });
         }
-        
-        notificationSound.play().catch(e => {
-            console.log('Could not play notification sound:', e);
-        });
     }
     
     // Check for new notifications

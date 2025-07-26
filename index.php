@@ -3,21 +3,21 @@ require_once 'config.php';
 
 $pageTitle = 'Welcome to ' . BARANGAY_NAME;
 include 'header.php';
-include 'sidebar.php';
+// Sidebar not included for landing page
 ?>
 
 <div class="main-content">
     <!-- Hero Section -->
-    <section class="hero-section position-relative" style="margin-top: -76px; min-height: 100vh;">
+    <section class="hero-section position-relative vh-100 d-flex align-items-center">
         <!-- Background with overlay -->
         <div class="position-absolute top-0 start-0 w-100 h-100" 
-             style="background: linear-gradient(135deg, rgba(44, 90, 160, 0.95), rgba(61, 109, 176, 0.95)), url('assets/images/barangay-bg.jpg') center/cover;">
+             style="background: linear-gradient(135deg, rgba(44, 90, 160, 0.95), rgba(61, 109, 176, 0.95)), url('assets/images/barangay-bg.jpg') center/cover no-repeat;">
         </div>
         
-        <div class="container position-relative" style="padding-top: 120px;">
-            <div class="row align-items-center min-vh-100">
+        <div class="container position-relative">
+            <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <div class="hero-content text-white">
+                    <div class="hero-content text-white py-4">
                         <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInUp">
                             Welcome to <br>
                             <span class="text-warning"><?php echo BARANGAY_NAME; ?></span>
@@ -60,11 +60,11 @@ include 'sidebar.php';
     </section>
 
     <!-- Features Section -->
-    <section class="py-5 bg-light">
+    <section class="section-narrow bg-light">
         <div class="container">
-            <div class="text-center mb-5">
+            <div class="text-center mb-4">
                 <h2 class="display-5 fw-bold text-primary mb-3">Why Choose BM-SCaPIS?</h2>
-                <p class="lead text-muted">Experience the future of barangay services with our smart, efficient, and user-friendly system.</p>
+                <p class="lead text-muted px-lg-5 mx-lg-5">Experience the future of barangay services with our smart, efficient, and user-friendly system.</p>
             </div>
             
             <div class="row g-4">
@@ -466,6 +466,81 @@ include 'sidebar.php';
 
 .hero-content {
     z-index: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .hero-section {
+        min-height: auto !important;
+        padding: 6rem 0 3rem;
+        margin-top: 0 !important;
+    }
+    
+    .hero-content {
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .hero-content .d-flex {
+        justify-content: center;
+    }
+    
+    .display-4 {
+        font-size: calc(1.525rem + 2.1vw);
+    }
+}
+
+/* Ensure main content is properly centered */
+.main-content {
+    margin-left: 0 !important;
+    margin-right: 0;
+    width: 100%;
+    padding: 0 !important;
+}
+
+/* Hero section improvements */
+.hero-section {
+    margin-top: 0;
+    padding-top: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* Container improvements for better centering */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Ensure full width for sections */
+section {
+    width: 100%;
+    margin: 0;
+    padding: 4rem 0;
+}
+
+/* Override sidebar margin for landing page */
+.main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+}
+
+/* Section spacing improvements */
+section {
+    padding: 4rem 0;
+    overflow: hidden;
+}
+
+.section-narrow {
+    padding: 3rem 0;
+}
+
+/* Card improvements */
+.card {
+    height: 100%;
+    transition: all 0.3s ease;
 }
 
 /* Add animation classes */

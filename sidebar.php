@@ -241,6 +241,12 @@ if (!isLoggedIn()) {
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my-appointments.php' ? 'active' : ''; ?>" 
+                               href="my_appointments.php">
+                                <i class="bi bi-calendar-check"></i>My Appointments
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'track-application.php' ? 'active' : ''; ?>" 
                                href="track-application.php">
                                 <i class="bi bi-search"></i>Track Application
@@ -266,25 +272,90 @@ if (!isLoggedIn()) {
                         </li>
                     </ul>
                 </div>
-                <?php endif; ?>
-                
-                <!-- User Management Section for Admin -->
-                <?php if ($_SESSION['role'] === 'admin'): ?>
+                <?php elseif ($_SESSION['role'] === 'purok_leader'): ?>
+                <!-- Purok Leader Navigation Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">PUROK LEADER</div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my_pending_registration.php' ? 'active' : ''; ?>" 
+                               href="my_pending_registration.php">
+                                <i class="bi bi-person-check"></i>My Pending Registrations
+                                <?php
+                                // Get count of pending registrations for the purok leader's purok
+                                if ($_SESSION['role'] === 'purok_leader' && isset($_SESSION['purok_id'])) {
+                                    $stmt = $pdo->prepare("
+                                        SELECT COUNT(*) FROM users 
+                                        WHERE role = 'resident' 
+                                        AND purok_id = ? 
+                                        AND (purok_leader_approval = 'pending' OR admin_approval = 'pending') 
+                                        AND (status != 'approved' OR (purok_leader_approval = 'pending' OR admin_approval = 'pending'))
+                                    ");
+                                    $stmt->execute([$_SESSION['purok_id']]);
+                                    $pendingCount = $stmt->fetchColumn();
+                                    if ($pendingCount > 0): ?>
+                                        <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
+                                    <?php endif;
+                                }
+                                ?>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my_residents.php' ? 'active' : ''; ?>" 
+                               href="my_residents.php">
+                                <i class="bi bi-people"></i>My Residents
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my_resident_application.php' ? 'active' : ''; ?>" 
+                               href="my_resident_application.php">
+                                <i class="bi bi-file-earmark-plus"></i>Resident Applications
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">MY ACCOUNT</div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'profile.php' ? 'active' : ''; ?>" 
+                               href="profile.php">
+                                <i class="bi bi-person"></i>My Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'active' : ''; ?>" 
+                               href="settings.php">
+                                <i class="bi bi-gear"></i>Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <?php elseif ($_SESSION['role'] === 'admin'): ?>
+                <!-- Admin Navigation Section -->
                 <div class="nav-section">
                     <div class="nav-section-title">USER MANAGEMENT</div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'pending-registrations.php' ? 'active' : ''; ?>" 
                                href="pending-registrations.php">
-                                <i class="bi bi-person-check"></i>
-                                Pending Registrations
+                                <i class="bi bi-person-check"></i>Pending Registrations
                                 <?php
-                                $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE role = 'resident' AND status = 'pending'");
-                                $stmt->execute();
-                                $pendingCount = $stmt->fetchColumn();
-                                if ($pendingCount > 0): ?>
-                                    <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
-                                <?php endif; ?>
+                                // Get count of pending registrations for admin
+                                if ($_SESSION['role'] === 'admin') {
+                                    $stmt = $pdo->prepare("
+                                        SELECT COUNT(*) FROM users 
+                                        WHERE role = 'resident' 
+                                        AND (admin_approval = 'pending' OR purok_leader_approval = 'pending') 
+                                        AND (status != 'approved' OR (purok_leader_approval = 'pending' OR admin_approval = 'pending'))
+                                    ");
+                                    $stmt->execute();
+                                    $pendingCount = $stmt->fetchColumn();
+                                    if ($pendingCount > 0): ?>
+                                        <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
+                                    <?php endif;
+                                }
+                                ?>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -301,132 +372,32 @@ if (!isLoggedIn()) {
                         </li>
                     </ul>
                 </div>
-                <?php endif; ?>
-                
-                <!-- Document Management Section -->
-                <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'purok_leader'): ?>
                 <div class="nav-section">
                     <div class="nav-section-title">DOCUMENT MANAGEMENT</div>
                     <ul class="nav flex-column">
-                        <?php if ($_SESSION['role'] === 'admin'): ?>
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'document-types.php' ? 'active' : ''; ?>" 
                                href="document-types.php">
                                 <i class="bi bi-file-earmark-text"></i>Document Types
                             </a>
                         </li>
-                        <?php endif; ?>
-                        
-                        <?php if ($_SESSION['role'] === 'purok_leader'): ?>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'pending-registrations.php' ? 'active' : ''; ?>" 
-                               href="pending-registrations.php">
-                                <i class="bi bi-person-check"></i>
-                                Pending Registrations
-                                <?php
-                                // Get count of residents that need purok leader approval
-                                $stmt = $pdo->prepare("
-                                    SELECT COUNT(*) 
-                                    FROM users 
-                                    WHERE role = 'resident' 
-                                    AND purok_id = ? 
-                                    AND purok_leader_approval = 'pending'
-                                    AND (admin_approval = 'pending' OR admin_approval = 'approved')
-                                ");
-                                $stmt->execute([$currentUser['purok_id']]);
-                                $pendingCount = $stmt->fetchColumn();
-                                if ($pendingCount > 0): ?>
-                                    <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'residents.php' ? 'active' : ''; ?>" 
-                               href="residents.php">
-                                <i class="bi bi-people"></i>
-                                Manage Residents
-                                <?php
-                                // Get count of approved residents in purok leader's purok
-                                $stmt = $pdo->prepare("
-                                    SELECT COUNT(*) 
-                                    FROM users 
-                                    WHERE role = 'resident' 
-                                    AND purok_id = ? 
-                                    AND status = 'approved'
-                                ");
-                                $stmt->execute([$currentUser['purok_id']]);
-                                $residentCount = $stmt->fetchColumn();
-                                if ($residentCount > 0): ?>
-                                    <span class="badge bg-primary ms-2"><?php echo $residentCount; ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-
-                        <?php if ($_SESSION['role'] === 'admin'): ?>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'pending-registrations.php' ? 'active' : ''; ?>" 
-                               href="pending-registrations.php">
-                                <i class="bi bi-person-check"></i>
-                                Pending Registrations
-                                <?php
-                                // Get count of residents that need admin approval
-                                $stmt = $pdo->prepare("
-                                    SELECT COUNT(*) 
-                                    FROM users 
-                                    WHERE role = 'resident' 
-                                    AND admin_approval = 'pending'
-                                    AND (
-                                        purok_leader_approval = 'approved' 
-                                        OR (purok_id IS NULL AND purok_leader_approval = 'pending')
-                                    )
-                                ");
-                                $stmt->execute();
-                                $pendingCount = $stmt->fetchColumn();
-                                if ($pendingCount > 0): ?>
-                                    <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'applications.php' ? 'active' : ''; ?>" 
                                href="applications.php">
-                                <i class="bi bi-file-earmark-plus"></i>
-                                Applications
-                                <?php
-                                $whereClause = '';
-                                $params = [];
-                                if ($_SESSION['role'] === 'purok_leader') {
-                                    $whereClause = ' AND u.purok_id = (SELECT purok_id FROM users WHERE id = ?)';
-                                    $params[] = $_SESSION['user_id'];
-                                }
-                                $stmt = $pdo->prepare("SELECT COUNT(*) FROM applications a JOIN users u ON a.user_id = u.id WHERE a.status = 'pending'" . $whereClause);
-                                $stmt->execute($params);
-                                $pendingApps = $stmt->fetchColumn();
-                                if ($pendingApps > 0): ?>
-                                    <span class="badge bg-warning text-dark ms-2"><?php echo $pendingApps; ?></span>
-                                <?php endif; ?>
+                                <i class="bi bi-file-earmark-plus"></i>Applications
                             </a>
                         </li>
-                        <?php if ($_SESSION['role'] === 'admin'): ?>
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'appointments.php' ? 'active' : ''; ?>" 
                                href="appointments.php">
                                 <i class="bi bi-calendar-check"></i>Appointments
                             </a>
                         </li>
-                        <?php endif; ?>
                     </ul>
                 </div>
-                <?php endif; ?>
-                
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                <!-- Reports Section -->
-                <div class="nav-section">
-                    <div class="nav-section-title">REPORTS & STATISTICS</div>
-                    <ul class="nav flex-column">
+                <div class="nav-section py-1">
+                    <div class="nav-section-title small py-1">REPORTS & STATISTICS</div>
+                    <ul class="nav flex-column nav-compact">
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'reports.php' ? 'active' : ''; ?>" 
                                href="reports.php">
@@ -441,11 +412,9 @@ if (!isLoggedIn()) {
                         </li>
                     </ul>
                 </div>
-                
-                <!-- System Section -->
-                <div class="nav-section">
-                    <div class="nav-section-title">SYSTEM</div>
-                    <ul class="nav flex-column">
+                <div class="nav-section py-1">
+                    <div class="nav-section-title small py-1">SYSTEM</div>
+                    <ul class="nav flex-column nav-compact">
                         <li class="nav-item">
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'activity-logs.php' ? 'active' : ''; ?>" 
                                href="activity-logs.php">

@@ -11,11 +11,32 @@ $pageTitle = 'Register';
 $errors = [];
 $success = false;
 
+// Check if this is a POST request with a unique registration token
+$registrationToken = $_POST['registration_token'] ?? '';
+$sessionToken = $_SESSION['registration_token'] ?? '';
+
+// If this is a GET request and we have a success session, show success page
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_SESSION['registration_success'])) {
+    $success = true;
+    $credentials = $_SESSION['registration_credentials'] ?? [];
+    // Clear the session data to prevent showing on subsequent page loads
+    unset($_SESSION['registration_success']);
+    unset($_SESSION['registration_credentials']);
+    unset($_SESSION['registration_token']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid security token. Please try again.';
-    } else {
+    } 
+    // Validate registration token to prevent duplicate submissions
+    elseif (empty($registrationToken) || $registrationToken !== $sessionToken) {
+        $errors[] = 'Invalid registration session. Please refresh the page and try again.';
+    }
+    else {
+        // Track registration attempts
+        $_SESSION['registration_attempts'] = ($_SESSION['registration_attempts'] ?? 0) + 1;
         // Validate form data
         $firstName = trim($_POST['first_name'] ?? '');
         $middleName = trim($_POST['middle_name'] ?? '');
@@ -44,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($address)) $errors[] = 'Address is required.';
         
         // Validate phone number format
-        if (!empty($contactNumber) && !preg_match('/^(\+63|63|0)[0-9]{10}$/', $contactNumber)) {
-            $errors[] = 'Please enter a valid Philippine phone number.';
+        if (!empty($contactNumber) && !preg_match('/^09[0-9]{9}$/', $contactNumber)) {
+            $errors[] = 'Please enter a valid Philippine phone number (09XXXXXXXXX).';
         }
         
         // Validate email if provided
@@ -57,6 +78,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $age = calculateAge($birthdate);
         if ($age < 18) {
             $errors[] = 'You must be at least 18 years old to register.';
+        }
+        
+        // Check for existing user with same contact number or email
+        if (!empty($contactNumber)) {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE contact_number = ?");
+            $stmt->execute([$contactNumber]);
+            if ($stmt->rowCount() > 0) {
+                $errors[] = 'A user with this contact number already exists.';
+            }
+        }
+        
+        if (!empty($email)) {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->rowCount() > 0) {
+                $errors[] = 'A user with this email address already exists.';
+            }
         }
         
         // File uploads
@@ -135,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ");
                 
                 $stmt->execute([
-                    $username, password_hash($password, PASSWORD_DEFAULT), $firstName, $middleName, $lastName, $suffix,
+                    $username, $password, $firstName, $middleName, $lastName, $suffix,
                     $birthdate, $age, $gender, $civilStatus, $contactNumber, $email, $purokId,
                     $address, $occupation, $monthlyIncome, $emergencyContactName,
                     $emergencyContactNumber, $profilePicture, $validIdFront, $validIdBack
@@ -153,13 +191,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Log activity
                 logActivity($userId, 'User registered', 'users', $userId);
                 
-                // Send SMS notification
-                if (!empty($contactNumber)) {
-                    $message = "Welcome to BM-SCaPIS! Your account has been created successfully.\nUsername: $username\nPassword: $password\n\nYour registration is pending approval from your Purok Leader and Admin.";
-                    sendSMSNotification($contactNumber, $message, $userId);
-                }
+                // Note: SMS notification will be sent when the resident is approved by admin/purok leader
+                // No SMS sent during registration as status is 'pending'
                 
-                $success = true;
+                // Store credentials in session and redirect to prevent duplicate submissions
+                $_SESSION['registration_success'] = true;
+                $_SESSION['registration_credentials'] = $credentials;
+                $_SESSION['registration_token'] = null; // Clear the token
+                
+                // Redirect to prevent form resubmission
+                header('Location: register.php');
+                exit();
                 
             } catch (PDOException $e) {
                 $errors[] = 'Registration failed. Please try again.';
@@ -173,6 +215,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stmt = $pdo->prepare("SELECT * FROM puroks ORDER BY purok_name");
 $stmt->execute();
 $puroks = $stmt->fetchAll();
+
+// Generate a unique registration token for this session if not already set
+if (!isset($_SESSION['registration_token'])) {
+    $_SESSION['registration_token'] = bin2hex(random_bytes(32));
+}
+
+// Prevent multiple registrations from the same session
+if (isset($_SESSION['registration_attempts']) && $_SESSION['registration_attempts'] > 3) {
+    $errors[] = 'Too many registration attempts. Please try again later or contact support.';
+}
 
 include 'header.php';
 ?>
@@ -217,11 +269,11 @@ include 'header.php';
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="alert alert-warning mt-3 mb-0 text-start">
+                                    <div class="alert alert-warning mt-3 mb-0 text-start" id="credentialsWarning">
                                         <i class="bi bi-exclamation-triangle me-2"></i>
-                                        <strong>Important:</strong> Please save or write down these credentials now. 
+                                        <strong>IMPORTANT:</strong> Please save or write down these credentials now. 
                                         You will need them to log in once your registration is approved. 
-                                        For security reasons, they will not be shown again.
+                                        <strong>These credentials will remain visible until you click "Go to Login" or "Back to Home".</strong>
                                     </div>
                                 </div>
                             </div>
@@ -242,13 +294,18 @@ include 'header.php';
                             <button type="button" class="btn btn-primary btn-lg" onclick="handlePrintCredentials()">
                                 <i class="bi bi-printer me-2"></i>Print Credentials
                             </button>
+                            
+                            <!-- Save to Local Storage Button -->
+                            <button type="button" class="btn btn-success btn-lg ms-2" onclick="saveCredentialsToLocal()">
+                                <i class="bi bi-save me-2"></i>Save Credentials
+                            </button>
                         </div>
 
-                        <div class="mt-4" id="navigationButtons" style="display: none;">
-                            <a href="login.php" class="btn btn-primary">
+                        <div class="mt-4" id="navigationButtons">
+                            <a href="login.php" class="btn btn-primary" onclick="return confirmNavigation()">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>Go to Login
                             </a>
-                            <a href="index.php" class="btn btn-outline-secondary ms-2">
+                            <a href="index.php" class="btn btn-outline-secondary ms-2" onclick="return confirmNavigation()">
                                 <i class="bi bi-house me-2"></i>Back to Home
                             </a>
                         </div>
@@ -277,6 +334,7 @@ include 'header.php';
                         
                         <form method="POST" enctype="multipart/form-data" id="registrationForm">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                            <input type="hidden" name="registration_token" value="<?php echo $_SESSION['registration_token']; ?>">
                             
                             <!-- Personal Information -->
                             <div class="row mb-4">
@@ -352,7 +410,7 @@ include 'header.php';
                                     <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
                                     <input type="tel" class="form-control" id="contact_number" name="contact_number" 
                                            value="<?php echo htmlspecialchars($_POST['contact_number'] ?? ''); ?>" 
-                                           placeholder="+63 or 09xxxxxxxxx" required>
+                                           placeholder="09XXXXXXXXX" required>
                                     <div class="form-text">Enter your mobile number for SMS notifications</div>
                                 </div>
                                 <div class="col-md-6">
@@ -436,7 +494,7 @@ include 'header.php';
                                     <label for="emergency_contact_number" class="form-label">Emergency Contact Number</label>
                                     <input type="tel" class="form-control" id="emergency_contact_number" name="emergency_contact_number" 
                                            value="<?php echo htmlspecialchars($_POST['emergency_contact_number'] ?? ''); ?>" 
-                                           placeholder="+63 or 09xxxxxxxxx">
+                                           placeholder="09XXXXXXXXX">
                                 </div>
                             </div>
                             
@@ -626,12 +684,27 @@ include 'header.php';
     // Auto-save form data
     autoSaveForm('registrationForm', 'registration_draft');
     
-    // Form validation
+    // Form validation and submission protection
+    let formSubmitted = false;
     document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        if (formSubmitted) {
+            e.preventDefault();
+            showToast('warning', 'Form Already Submitted', 'Please wait while we process your registration...');
+            return false;
+        }
+        
         if (!validateForm('registrationForm')) {
             e.preventDefault();
             showError('Please fill in all required fields.');
             return false;
+        }
+        
+        // Prevent multiple submissions
+        formSubmitted = true;
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating Account...';
         }
         
         showLoadingToast('Creating your account...');
@@ -718,9 +791,44 @@ include 'header.php';
         });
     }
 
+    // Save credentials to localStorage
+    function saveCredentialsToLocal() {
+        const username = document.querySelector('input[value="' + <?php echo json_encode($credentials['username'] ?? ''); ?> + '"]').value;
+        const password = document.querySelector('input[value="' + <?php echo json_encode($credentials['password'] ?? ''); ?> + '"]').value;
+        
+        // Save to localStorage
+        localStorage.setItem('bmscapis_credentials', JSON.stringify({
+            username: username,
+            password: password,
+            savedAt: new Date().toISOString()
+        }));
+        
+        // Show success message
+        showToast('success', 'Saved!', 'Credentials have been saved locally.');
+    }
+
+    // Check for saved credentials on page load
+    window.addEventListener('load', function() {
+        const savedCreds = localStorage.getItem('bmscapis_credentials');
+        if (savedCreds) {
+            const credentials = JSON.parse(savedCreds);
+            const savedDate = new Date(credentials.savedAt);
+            const now = new Date();
+            
+            // Keep credentials for 24 hours
+            if ((now - savedDate) < (24 * 60 * 60 * 1000)) {
+                document.getElementById('navigationButtons').style.display = 'block';
+            } else {
+                // Clear old credentials
+                localStorage.removeItem('bmscapis_credentials');
+            }
+        }
+    });
+
     // Prevent accidental navigation
     window.onbeforeunload = function() {
-        if (!document.getElementById('navigationButtons').style.display === 'block') {
+        const savedCreds = localStorage.getItem('bmscapis_credentials');
+        if (!savedCreds) {
             return "Are you sure you want to leave? Make sure you've saved your credentials first!";
         }
     };
@@ -729,6 +837,75 @@ include 'header.php';
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
+    
+    // Additional protection against browser back button and refresh
+    window.addEventListener('beforeunload', function(e) {
+        if (formSubmitted) {
+            e.preventDefault();
+            e.returnValue = 'Registration is in progress. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
+    
+    // Disable browser back button after successful registration
+    if (window.location.href.includes('success=true') || document.querySelector('.alert-success')) {
+        window.history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function() {
+            window.history.pushState(null, null, window.location.href);
+        });
+    }
+
+    // Function to confirm navigation and ensure credentials are saved
+    function confirmNavigation() {
+        const savedCreds = localStorage.getItem('bmscapis_credentials');
+        const username = document.querySelector('input[value="' + <?php echo json_encode($credentials['username'] ?? ''); ?> + '"]');
+        const password = document.querySelector('input[value="' + <?php echo json_encode($credentials['password'] ?? ''); ?> + '"]');
+        
+        if (!savedCreds && username && password) {
+            // Auto-save credentials before navigation
+            localStorage.setItem('bmscapis_credentials', JSON.stringify({
+                username: username.value,
+                password: password.value,
+                savedAt: new Date().toISOString()
+            }));
+            
+            showToast('success', 'Credentials Saved', 'Your credentials have been automatically saved before navigation.');
+        }
+        
+        return true; // Allow navigation to proceed
+    }
+
+    // Ensure credentials remain visible by preventing accidental hiding
+    document.addEventListener('DOMContentLoaded', function() {
+        // Make sure the credentials section is always visible
+        const credentialsSection = document.querySelector('.alert.alert-success');
+        if (credentialsSection) {
+            credentialsSection.style.display = 'block';
+            // Add a subtle highlight effect to draw attention
+            credentialsSection.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.3)';
+        }
+        
+        // Add a visual indicator that credentials are important
+        const credentialInputs = document.querySelectorAll('input[readonly]');
+        credentialInputs.forEach(input => {
+            input.style.backgroundColor = '#f8f9fa';
+            input.style.borderColor = '#28a745';
+            input.style.fontWeight = 'bold';
+        });
+        
+        // Add a persistent reminder at the top of the page
+        const reminderDiv = document.createElement('div');
+        reminderDiv.className = 'alert alert-info text-center mb-3';
+        reminderDiv.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Your login credentials are displayed below. Please save them before leaving this page.</strong>';
+        reminderDiv.style.position = 'sticky';
+        reminderDiv.style.top = '0';
+        reminderDiv.style.zIndex = '1000';
+        
+        const cardBody = document.querySelector('.card-body');
+        if (cardBody) {
+            cardBody.insertBefore(reminderDiv, cardBody.firstChild);
+        }
+    });
 </script>
 
 <?php include 'scripts.php'; ?>

@@ -52,9 +52,26 @@ try {
             }
         }
 
+        // --- Begin manual cascading delete for applications and application_history ---
+        // 1. Get all application IDs for this resident
+        $stmt = $pdo->prepare("SELECT id FROM applications WHERE user_id = ?");
+        $stmt->execute([$residentId]);
+        $applicationIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($applicationIds) {
+            // 2. Delete from application_history for these applications
+            $in = str_repeat('?,', count($applicationIds) - 1) . '?';
+            $stmt = $pdo->prepare("DELETE FROM application_history WHERE application_id IN ($in)");
+            $stmt->execute($applicationIds);
+
+            // 3. Delete from applications
+            $stmt = $pdo->prepare("DELETE FROM applications WHERE id IN ($in)");
+            $stmt->execute($applicationIds);
+        }
+        // --- End manual cascading delete ---
+
         // Delete related records based on database schema
         $relatedTables = [
-            'applications' => 'user_id',
             'appointments' => 'user_id',
             'sms_notifications' => 'user_id',
             'system_notifications' => 'target_user_id',

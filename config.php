@@ -25,6 +25,10 @@ try {
 
 // Session Configuration
 if (session_status() === PHP_SESSION_NONE) {
+    // Set secure session parameters
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_only_cookies', 1);
+    ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
     session_start();
 }
 
@@ -97,63 +101,8 @@ function logActivity($userId, $action, $tableAffected = null, $recordId = null, 
     ]);
 }
 
-function sendSMSNotification($phoneNumber, $message, $userId = null) {
-    global $pdo;
-    
-    // Get PhilSMS API key from database
-    $stmt = $pdo->prepare("SELECT config_value FROM system_config WHERE config_key = 'philsms_api_key'");
-    $stmt->execute();
-    $apiKey = $stmt->fetchColumn();
-    
-    $stmt = $pdo->prepare("SELECT config_value FROM system_config WHERE config_key = 'philsms_sender_name'");
-    $stmt->execute();
-    $senderName = $stmt->fetchColumn() ?: 'PhilSMS';
-    
-    // Insert into SMS notifications table
-    $stmt = $pdo->prepare("INSERT INTO sms_notifications (user_id, phone_number, message, status) VALUES (?, ?, ?, 'pending')");
-    $smsId = $stmt->execute([$userId, $phoneNumber, $message]);
-    $smsId = $pdo->lastInsertId();
-    
-    if (empty($apiKey) || $apiKey === 'your_philsms_api_key_here') {
-        // Update status to failed if no API key
-        $stmt = $pdo->prepare("UPDATE sms_notifications SET status = 'failed', api_response = 'No API key configured' WHERE id = ?");
-        $stmt->execute([$smsId]);
-        return false;
-    }
-    
-    // PhilSMS API call (simplified - replace with actual PhilSMS implementation)
-    $data = [
-        'recipient' => $phoneNumber,
-        'message' => $message,
-        'sender_name' => $senderName
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://api.philsms.com/v3/sms/send'); // Replace with actual PhilSMS endpoint
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $apiKey
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    // Update SMS status
-    if ($httpCode === 200) {
-        $stmt = $pdo->prepare("UPDATE sms_notifications SET status = 'sent', api_response = ?, sent_at = NOW() WHERE id = ?");
-        $stmt->execute([$response, $smsId]);
-        return true;
-    } else {
-        $stmt = $pdo->prepare("UPDATE sms_notifications SET status = 'failed', api_response = ? WHERE id = ?");
-        $stmt->execute([$response, $smsId]);
-        return false;
-    }
-}
+// Include unified SMS functions
+require_once 'sms_functions.php';
 
 function createNotification($type, $title, $message, $targetRole = 'all', $targetUserId = null, $metadata = null) {
     global $pdo;
@@ -206,20 +155,6 @@ function markNotificationAsRead($notificationId, $userId = null) {
     
     $stmt = $pdo->prepare($sql);
     return $stmt->execute($params);
-}
-
-function formatPhoneNumber($phone) {
-    // Remove all non-numeric characters
-    $phone = preg_replace('/[^0-9]/', '', $phone);
-    
-    // Convert to international format for Philippines
-    if (strlen($phone) === 11 && substr($phone, 0, 1) === '0') {
-        $phone = '63' . substr($phone, 1);
-    } elseif (strlen($phone) === 10) {
-        $phone = '63' . $phone;
-    }
-    
-    return $phone;
 }
 
 function calculateAge($birthdate) {
@@ -293,6 +228,7 @@ function validateCSRFToken($token) {
         return false;
     }
     
+    // Use hash_equals for timing attack protection
     return hash_equals($_SESSION['csrf_token'], $token);
 }
 

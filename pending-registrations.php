@@ -1,6 +1,11 @@
 <?php
 require_once 'config.php';
 
+// Create toast container for notifications
+echo '
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1500;"></div>
+';
+
 // Require login and must be admin or purok leader
 requireLogin();
 if (!in_array($_SESSION['role'], ['admin', 'purok_leader'])) {
@@ -24,7 +29,7 @@ if ($_SESSION['role'] === 'admin') {
     $params[] = $currentUser['purok_id'];
 }
 
-$whereClause .= ") AND u.status != 'approved'";
+$whereClause .= ") AND (u.status != 'approved' OR (u.purok_leader_approval = 'pending' OR u.admin_approval = 'pending'))";
 
 // Get pending registrations with their purok information
 $stmt = $pdo->prepare("
@@ -32,6 +37,7 @@ $stmt = $pdo->prepare("
            p.purok_name,
            CONCAT(pl.first_name, ' ', pl.last_name) as purok_leader_name,
            CASE 
+               WHEN u.purok_leader_approval = 'approved' AND u.admin_approval = 'approved' THEN 'fully_approved'
                WHEN u.status = 'approved' THEN 'approved'
                WHEN u.status = 'disapproved' THEN 'disapproved'
                ELSE 'pending'
@@ -341,7 +347,7 @@ include 'sidebar.php';
                 <h5 class="modal-title" id="approvalModalTitle">Approve Registration</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="process-registration.php" method="POST">
+            <form action="process-registration.php" method="POST" onsubmit="handleFormSubmit(event)">
                 <input type="hidden" name="user_id" id="registrationId">
                 <input type="hidden" name="action" id="approvalAction">
                 <div class="modal-body">
@@ -397,6 +403,31 @@ include 'sidebar.php';
 <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
 
 <script>
+// Global variables
+let currentUserId = null;
+let disapprovalModal = null;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the disapproval modal
+    disapprovalModal = new bootstrap.Modal(document.getElementById('disapprovalModal'));
+    
+    // Initialize approval modal
+    const approvalModal = new bootstrap.Modal(document.getElementById('approvalModal'));
+    
+    // Handle approval form submission
+    const approvalForm = document.querySelector('#approvalModal form');
+    if (approvalForm) {
+        approvalForm.addEventListener('submit', handleApprovalFormSubmit);
+    }
+    
+    // Handle disapproval button click
+    const confirmDisapprovalBtn = document.getElementById('confirmDisapprovalBtn');
+    if (confirmDisapprovalBtn) {
+        confirmDisapprovalBtn.addEventListener('click', handleDisapprovalSubmit);
+    }
+});
+
 function showApprovalModal(id, action, title, btnClass) {
     const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
     document.getElementById('registrationId').value = id;
@@ -406,6 +437,101 @@ function showApprovalModal(id, action, title, btnClass) {
     submitBtn.className = 'btn ' + btnClass;
     submitBtn.textContent = action === 'approve' ? 'Approve' : 'Disapprove';
     modal.show();
+}
+
+function handleApprovalFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Show loading state
+    const submitBtn = document.getElementById('approvalSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+
+    // Make the AJAX request
+    fetch('process-registration.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            showToast('error', 'Error', data.message || 'An error occurred');
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'An error occurred while processing the request');
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function handleDisapprovalSubmit() {
+    const reasonSelect = document.getElementById('reasonSelect');
+    const selectedReason = reasonSelect.value;
+    
+    if (!selectedReason) {
+        showToast('error', 'Error', 'Please select a reason for disapproval');
+        return;
+    }
+    
+    // Show loading state
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+    
+    // Make the AJAX request
+    fetch('process-registration.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            user_id: currentUserId,
+            action: 'disapprove',
+            remarks: selectedReason
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            disapprovalModal.hide();
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            }
+        } else {
+            showToast('error', 'Error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error', 'An error occurred while processing the request');
+    })
+    .finally(() => {
+        // Reset button state
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
 }
 
 function approveRegistration(id) {
@@ -424,68 +550,6 @@ function recommendDisapproval(id) {
     showApprovalModal(id, 'disapprove', 'Not Recommended', 'btn-danger');
 }
 
-let currentUserId = null;
-let disapprovalModal = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the modal
-    disapprovalModal = new bootstrap.Modal(document.getElementById('disapprovalModal'));
-    
-    // Handle confirm button click
-    document.getElementById('confirmDisapprovalBtn').addEventListener('click', function() {
-        const reasonSelect = document.getElementById('reasonSelect');
-        const selectedReason = reasonSelect.value;
-        
-        if (!selectedReason) {
-            showToast('error', 'Error', 'Please select a reason for disapproval');
-            return;
-        }
-        
-        // Show loading state
-        const btn = this;
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
-        
-        // Make the AJAX request
-        fetch('process-registration.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                user_id: currentUserId,
-                action: 'disapprove',
-                remarks: selectedReason
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                showToast('success', 'Success', data.message);
-                disapprovalModal.hide();
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                showToast('error', 'Error', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'Error', 'An error occurred while processing the request');
-        })
-        .finally(() => {
-            // Reset button state
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        });
-    });
-});
-
 function confirmDisapproval(userId) {
     if (!userId) {
         console.error('No user ID provided');
@@ -503,45 +567,82 @@ function confirmDisapproval(userId) {
 }
 
 function showToast(type, title, message) {
+    // Simple toast notification implementation
     const toastContainer = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
     
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <strong>${title}:</strong> ${message}
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     `;
     
-    toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
     
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
 }
+</script>
 
-// Initialize DataTables if there are registrations
+<script>
+// --- Notification for new pending registrations ---
 document.addEventListener('DOMContentLoaded', function() {
-    const table = document.querySelector('.table');
-    if (table) {
-        $(table).DataTable({
-            pageLength: 10,
-            responsive: true,
-            language: {
-                search: '<i class="bi bi-search"></i>',
-                searchPlaceholder: 'Search registrations...'
-            }
-        });
+    var pendingCount = <?php echo count($pendingRegistrations); ?>;
+    var storageKey = 'pendingRegistrationsCount';
+    var lastCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+
+    // If there are more pending now than before, play the sound
+    if (pendingCount > lastCount) {
+        if (window.NotificationSound && window.NotificationSound.userInteracted) {
+            window.NotificationSound.play();
+        } else if (window.NotificationFallback && window.NotificationFallback.play) {
+            window.NotificationFallback.play();
+        } else if (window.playNotificationSound) {
+            window.playNotificationSound();
+        }
     }
+    // Update the stored count
+    sessionStorage.setItem(storageKey, pendingCount);
+
+    // --- Polling for new pending registrations every 30 seconds ---
+    setInterval(function() {
+        fetch(window.location.pathname + '?ajax=1')
+            .then(response => response.text())
+            .then(html => {
+                // Extract the count from the returned HTML (look for the badge)
+                var match = html.match(/<div class="badge bg-warning text-dark fs-5">(\d+) Pending<\/div>/);
+                if (match) {
+                    var newCount = parseInt(match[1], 10);
+                    var prevCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+                    if (newCount > prevCount) {
+                        if (window.NotificationSound && window.NotificationSound.userInteracted) {
+                            window.NotificationSound.play();
+                        } else if (window.NotificationFallback && window.NotificationFallback.play) {
+                            window.NotificationFallback.play();
+                        } else if (window.playNotificationSound) {
+                            window.playNotificationSound();
+                        }
+                    }
+                    sessionStorage.setItem(storageKey, newCount);
+                }
+            });
+    }, 30000);
 });
 </script>
 
-<?php include 'scripts.php'; ?> 
+<?php include 'scripts.php'; ?>

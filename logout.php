@@ -14,6 +14,11 @@ if (isset($_COOKIE['remember_token'])) {
     setcookie('remember_token', '', time() - 3600, '/');
 }
 
+// Clear notification sound unlock flag from sessionStorage
+// This script will run before redirect
+// Output must be before header redirect
+echo '<script>try { sessionStorage.removeItem("notificationSoundUnlocked"); } catch(e) {}</script>';
+
 // Redirect to login page with success message
 header('Location: login.php?logged_out=1');
 exit();

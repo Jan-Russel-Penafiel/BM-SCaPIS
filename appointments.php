@@ -26,7 +26,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $appointments = $stmt->fetchAll();
 
-// Get applications ready for pickup (for new appointments)
+// Get applications eligible for appointment scheduling (pending, processing, ready_for_pickup, and not already scheduled)
 $stmt = $pdo->prepare("
     SELECT a.*, 
            u.first_name, u.last_name,
@@ -34,7 +34,7 @@ $stmt = $pdo->prepare("
     FROM applications a
     JOIN users u ON a.user_id = u.id
     JOIN document_types dt ON a.document_type_id = dt.id
-    WHERE a.status = 'ready_for_pickup'
+    WHERE a.status IN ('pending', 'processing', 'ready_for_pickup')
     AND NOT EXISTS (
         SELECT 1 FROM appointments apt 
         WHERE apt.application_id = a.id 

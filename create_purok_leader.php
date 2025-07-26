@@ -94,6 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Monthly income must be a numeric value.';
     }
 
+    // Validate phone number format
+    if (!empty($formData['contact_number']) && !preg_match('/^09[0-9]{9}$/', $formData['contact_number'])) {
+        $errors[] = 'Please enter a valid Philippine phone number (09XXXXXXXXX).';
+    }
+
+    // Validate emergency contact number format
+    if (!empty($formData['emergency_contact_number']) && !preg_match('/^09[0-9]{9}$/', $formData['emergency_contact_number'])) {
+        $errors[] = 'Please enter a valid emergency contact number (09XXXXXXXXX).';
+    }
+
     // Validate purok_id
     if (!empty($formData['purok_id'])) {
         $stmt = $pdo->prepare("
@@ -428,7 +438,7 @@ include 'sidebar.php';
                             
                             <div class="col-md-6">
                                 <label class="form-label">Contact Number</label>
-                                <input type="text" name="contact_number" class="form-control" value="<?php echo htmlspecialchars($formData['contact_number']); ?>">
+                                <input type="tel" name="contact_number" class="form-control" value="<?php echo htmlspecialchars($formData['contact_number']); ?>" placeholder="09XXXXXXXXX">
                             </div>
                             
                             <div class="col-md-6">
@@ -471,7 +481,7 @@ include 'sidebar.php';
                             
                             <div class="col-md-6">
                                 <label class="form-label">Emergency Contact Number</label>
-                                <input type="text" name="emergency_contact_number" class="form-control" value="<?php echo htmlspecialchars($formData['emergency_contact_number']); ?>">
+                                <input type="tel" name="emergency_contact_number" class="form-control" value="<?php echo htmlspecialchars($formData['emergency_contact_number']); ?>" placeholder="09XXXXXXXXX">
                             </div>
 
                             <!-- Approval Information -->
@@ -530,6 +540,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fix z-index issues for dropdowns
     $('.select2-dropdown').css('z-index', 9999);
+    
+    // Phone number formatting
+    document.querySelector('input[name="contact_number"]').addEventListener('input', function(e) {
+        formatPhoneNumber(e.target);
+    });
+    
+    document.querySelector('input[name="emergency_contact_number"]').addEventListener('input', function(e) {
+        formatPhoneNumber(e.target);
+    });
 });
 
 // Function to copy text to clipboard

@@ -105,7 +105,11 @@ include 'sidebar.php';
                                                     ?>
                                                 </td>
                                                 <td>
-                                                    <span class="badge status-<?php echo $app['status']; ?>">
+                                                    <span class="badge status-<?php echo $app['status']; ?>
+                                                        <?php if ($app['status'] === 'ready_for_pickup') echo ' bg-primary text-white fw-bold ready-pickup-badge'; ?>">
+                                                        <?php if ($app['status'] === 'ready_for_pickup'): ?>
+                                                            <i class="bi bi-check-circle me-1"></i>
+                                                        <?php endif; ?>
                                                         <?php echo ucfirst($app['status']); ?>
                                                     </span>
                                                 </td>

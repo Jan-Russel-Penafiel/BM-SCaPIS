@@ -84,19 +84,10 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $message = "Your application #{$application['application_number']} is now being processed. ";
-        $message .= "Estimated completion: " . date('M j, Y', strtotime($estimatedDate));
-        
-        $stmt = $pdo->prepare("
-            INSERT INTO sms_notifications (
-                user_id, phone_number, message
-            ) VALUES (?, ?, ?)
-        ");
-        $stmt->execute([
-            $application['user_id'],
-            $application['contact_number'],
-            $message
-        ]);
+        $result = sendApplicationStatusSMS($applicationId, 'processing');
+        if (!$result['success']) {
+            error_log('SMS notification failed: ' . $result['message']);
+        }
     }
     
     // Send email notification if enabled

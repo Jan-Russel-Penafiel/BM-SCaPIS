@@ -1,6 +1,13 @@
 <?php
 require_once 'config.php';
 
+// Generate CSRF token at the very beginning
+if (!isset($_SESSION['csrf_token']) || !isset($_SESSION['csrf_token_time']) || 
+    (time() - $_SESSION['csrf_token_time']) > 3600) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token_time'] = time();
+}
+
 // Redirect if already logged in
 if (isLoggedIn()) {
     header('Location: dashboard.php');
@@ -9,12 +16,6 @@ if (isLoggedIn()) {
 
 $pageTitle = 'Login';
 $error = '';
-
-// Clear any expired CSRF token
-if (isset($_SESSION['csrf_token_time']) && (time() - $_SESSION['csrf_token_time']) > 3600) {
-    unset($_SESSION['csrf_token']);
-    unset($_SESSION['csrf_token_time']);
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
@@ -135,7 +136,7 @@ include 'header.php';
                     <?php endif; ?>
                     
                     <form method="POST" id="loginForm">
-                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                         
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
@@ -290,12 +291,18 @@ include 'header.php';
         
         if (!username || !password) {
             e.preventDefault();
-            showError('Please enter both username and password.');
+            if (typeof showError === 'function') {
+                showError('Please enter both username and password.');
+            } else {
+                alert('Please enter both username and password.');
+            }
             return false;
         }
         
-        // Show loading
-        showLoadingToast('Logging in...');
+        // Show loading if function exists
+        if (typeof showLoadingToast === 'function') {
+            showLoadingToast('Logging in...');
+        }
     });
     
     // Remember username if checked

@@ -18,10 +18,15 @@ try {
     // Get form data
     $applicationId = $_POST['application_id'] ?? 0;
     $remarks = trim($_POST['remarks'] ?? '');
+    $appointmentType = $_POST['appointment_type'] ?? 'pickup';
+    $appointmentDate = $_POST['appointment_date'] ?? '';
     
     // Validate application ID
     if (empty($applicationId)) {
         throw new Exception('Invalid application ID.');
+    }
+    if (empty($appointmentType) || empty($appointmentDate)) {
+        throw new Exception('Appointment type and date/time are required.');
     }
     
     // Get application details
@@ -44,8 +49,8 @@ try {
     // Start transaction
     $pdo->beginTransaction();
     
-    // Set pickup date to next business day
-    $pickupDate = date('Y-m-d H:i:s', strtotime('next weekday'));
+    // Use the chosen appointment date
+    $pickupDate = date('Y-m-d H:i:s', strtotime($appointmentDate));
     
     // Update application status
     $stmt = $pdo->prepare("
@@ -66,11 +71,12 @@ try {
         INSERT INTO appointments (
             application_id, user_id, appointment_type,
             appointment_date, notes, created_by
-        ) VALUES (?, ?, 'pickup', ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $applicationId,
         $application['user_id'],
+        $appointmentType,
         $pickupDate,
         $remarks,
         $_SESSION['user_id']
@@ -90,20 +96,10 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $message = "Your {$application['type_name']} (#{$application['application_number']}) is ready for pickup. ";
-        $message .= "Please visit the barangay office on " . date('M j, Y', strtotime($pickupDate)) . ". ";
-        $message .= "Pickup instructions: " . $remarks;
-        
-        $stmt = $pdo->prepare("
-            INSERT INTO sms_notifications (
-                user_id, phone_number, message
-            ) VALUES (?, ?, ?)
-        ");
-        $stmt->execute([
-            $application['user_id'],
-            $application['contact_number'],
-            $message
-        ]);
+        $result = sendApplicationStatusSMS($applicationId, 'ready_for_pickup');
+        if (!$result['success']) {
+            error_log('SMS notification failed: ' . $result['message']);
+        }
     }
     
     // Send email notification if enabled
