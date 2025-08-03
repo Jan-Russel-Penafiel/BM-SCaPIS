@@ -23,6 +23,9 @@
 <!-- Moment.js for date formatting -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 
+<!-- Service Worker Manager for Auto-Updates -->
+<script src="assets/js/sw-manager.js"></script>
+
 <!-- Custom JavaScript -->
 <script>
     // Global Configuration
@@ -232,7 +235,7 @@
                             data.newNotifications.forEach(notification => {
                                 new Notification(notification.title, {
                                     body: notification.message,
-                                    icon: 'assets/icons/icon-192x192.png'
+                                    icon: 'assets/images/logo-192.png?v=1.0.6'
                                 });
                             });
                         }

@@ -23,6 +23,7 @@ $stats = [
         'total' => 0,
         'pending_count' => 0,
         'processing_count' => 0,
+        'ready_for_pickup_count' => 0,
         'completed_count' => 0,
         'rejected_count' => 0,
         'total_revenue' => 0
@@ -31,7 +32,7 @@ $stats = [
     'monthly_trend' => []
 ];
 
-// Total Residents
+// Total Residents - only approved residents
 $stmt = $pdo->prepare("
     SELECT 
         COUNT(*) as total,
@@ -39,7 +40,10 @@ $stmt = $pdo->prepare("
         SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) as female_count,
         COALESCE(AVG(NULLIF(age, 0)), 0) as avg_age
     FROM users 
-    WHERE role = 'resident' AND status = 'approved'
+    WHERE role = 'resident' 
+    AND status = 'approved'
+    AND purok_leader_approval = 'approved'
+    AND admin_approval = 'approved'
 ");
 $stmt->execute();
 $residentStats = $stmt->fetch();
@@ -53,6 +57,7 @@ $stmt = $pdo->prepare("
         COUNT(*) as total,
         COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
         COALESCE(SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END), 0) as processing_count,
+        COALESCE(SUM(CASE WHEN status = 'ready_for_pickup' THEN 1 ELSE 0 END), 0) as ready_for_pickup_count,
         COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as completed_count,
         COALESCE(SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END), 0) as rejected_count,
         COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN payment_amount ELSE 0 END), 0) as total_revenue
@@ -150,7 +155,7 @@ include 'sidebar.php';
                             <div class="progress" style="height: 6px;">
                                 <?php
                                 $total = $stats['applications']['total'] ?: 1;
-                                $completedPercent = ($stats['applications']['completed_count'] / $total) * 100;
+                                $completedPercent = (($stats['applications']['ready_for_pickup_count'] + $stats['applications']['completed_count']) / $total) * 100;
                                 $pendingPercent = ($stats['applications']['pending_count'] / $total) * 100;
                                 $processingPercent = ($stats['applications']['processing_count'] / $total) * 100;
                                 ?>
@@ -254,10 +259,15 @@ include 'sidebar.php';
                                     $total = max((int)$stats['applications']['total'], 1); // Prevent division by zero
                                     
                                     $statuses = [
+                                        'ready_for_pickup' => [
+                                            'label' => 'Ready for Pickup',
+                                            'count' => (int)$stats['applications']['ready_for_pickup_count'],
+                                            'class' => 'success'
+                                        ],
                                         'completed' => [
                                             'label' => 'Completed',
                                             'count' => (int)$stats['applications']['completed_count'],
-                                            'class' => 'success'
+                                            'class' => 'info'
                                         ],
                                         'pending' => [
                                             'label' => 'Pending',
@@ -267,7 +277,7 @@ include 'sidebar.php';
                                         'processing' => [
                                             'label' => 'Processing',
                                             'count' => (int)$stats['applications']['processing_count'],
-                                            'class' => 'info'
+                                            'class' => 'primary'
                                         ],
                                         'rejected' => [
                                             'label' => 'Rejected',
@@ -384,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Status Distribution Chart
     const statusData = [
+        <?php echo $stats['applications']['ready_for_pickup_count']; ?>,
         <?php echo $stats['applications']['completed_count']; ?>,
         <?php echo $stats['applications']['pending_count']; ?>,
         <?php echo $stats['applications']['processing_count']; ?>,
@@ -393,10 +404,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('statusDistributionChart'), {
         type: 'bar',
         data: {
-            labels: ['Completed', 'Pending', 'Processing', 'Rejected'],
+            labels: ['Ready for Pickup', 'Completed', 'Pending', 'Processing', 'Rejected'],
             datasets: [{
                 data: statusData,
-                backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545']
+                backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#007bff', '#dc3545']
             }]
         },
         options: {

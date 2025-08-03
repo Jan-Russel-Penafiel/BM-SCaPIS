@@ -98,9 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // File uploads
-        $uploadDir = 'uploads/profiles';
+        $uploadDir = 'uploads/profiles' ;
+        $idUploadDir = 'uploads/ids';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
+        }
+        if (!is_dir($idUploadDir)) {
+            mkdir($idUploadDir, 0755, true);
         }
         
         $profilePicture = '';
@@ -119,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle valid ID front upload
         if (isset($_FILES['valid_id_front']) && $_FILES['valid_id_front']['error'] === 0) {
-            $upload = uploadFile($_FILES['valid_id_front'], $uploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
+            $upload = uploadFile($_FILES['valid_id_front'], $idUploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
             if ($upload['success']) {
                 $validIdFront = $upload['filename'];
             } else {
@@ -131,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle valid ID back upload
         if (isset($_FILES['valid_id_back']) && $_FILES['valid_id_back']['error'] === 0) {
-            $upload = uploadFile($_FILES['valid_id_back'], $uploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
+            $upload = uploadFile($_FILES['valid_id_back'], $idUploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
             if ($upload['success']) {
                 $validIdBack = $upload['filename'];
             } else {

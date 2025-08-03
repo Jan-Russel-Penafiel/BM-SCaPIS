@@ -52,7 +52,7 @@ include 'header.php';
                 </div>
                 <div class="col-lg-6 d-none d-lg-block">
                     <div class="hero-image text-center animate__animated animate__fadeInRight">
-                        <img src="assets/images/hero-illustration.svg" alt="Digital Services" class="img-fluid" style="max-height: 500px;">
+                        <img src="assets/images/logo-512.png?v=1.0.4" alt="Digital Services" class="img-fluid" style="max-height: 500px;">
                     </div>
                 </div>
             </div>

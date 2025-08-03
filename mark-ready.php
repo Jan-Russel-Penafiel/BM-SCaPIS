@@ -96,7 +96,9 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $result = sendApplicationStatusSMS($applicationId, 'ready_for_pickup');
+        // Use the updated SMS function with the actual appointment date
+        require_once 'sms_functions.php';
+        $result = sendApplicationStatusSMS($applicationId, 'ready_for_pickup', null, $pickupDate);
         if (!$result['success']) {
             error_log('SMS notification failed: ' . $result['message']);
         }

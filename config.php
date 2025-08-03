@@ -34,7 +34,27 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Helper Functions
 function isLoggedIn() {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+        return false;
+    }
+    
+    // Check if user still exists in database
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        
+        if (!$stmt->fetch()) {
+            // User no longer exists, destroy session
+            session_destroy();
+            return false;
+        }
+        
+        return true;
+    } catch (PDOException $e) {
+        // On database error, assume not logged in
+        return false;
+    }
 }
 
 function requireLogin() {
@@ -88,17 +108,40 @@ function generateApplicationNumber() {
 function logActivity($userId, $action, $tableAffected = null, $recordId = null, $oldValues = null, $newValues = null) {
     global $pdo;
     
-    $stmt = $pdo->prepare("INSERT INTO activity_logs (user_id, action, table_affected, record_id, old_values, new_values, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([
-        $userId,
-        $action,
-        $tableAffected,
-        $recordId,
-        $oldValues ? json_encode($oldValues) : null,
-        $newValues ? json_encode($newValues) : null,
-        $_SERVER['REMOTE_ADDR'] ?? null,
-        $_SERVER['HTTP_USER_AGENT'] ?? null
-    ]);
+    // Skip logging if userId is null or empty
+    if (empty($userId)) {
+        return;
+    }
+    
+    // Check if user exists before logging activity
+    try {
+        $userCheck = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheck->execute([$userId]);
+        
+        if (!$userCheck->fetch()) {
+            // User doesn't exist, skip logging or destroy invalid session
+            if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $userId) {
+                // Clear invalid session
+                session_destroy();
+            }
+            return;
+        }
+        
+        $stmt = $pdo->prepare("INSERT INTO activity_logs (user_id, action, table_affected, record_id, old_values, new_values, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $userId,
+            $action,
+            $tableAffected,
+            $recordId,
+            $oldValues ? json_encode($oldValues) : null,
+            $newValues ? json_encode($newValues) : null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            $_SERVER['HTTP_USER_AGENT'] ?? null
+        ]);
+    } catch (PDOException $e) {
+        // Log error but don't break the application
+        error_log("Failed to log activity: " . $e->getMessage());
+    }
 }
 
 // Include unified SMS functions
@@ -230,6 +273,66 @@ function validateCSRFToken($token) {
     
     // Use hash_equals for timing attack protection
     return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// GCash Payment Verification
+function verifyGCashPayment($referenceNumber, $expectedAmount) {
+    // In a real implementation, this would call GCash API to verify payment
+    // For now, we'll simulate verification with a simple check
+    
+    // Simulate API call delay
+    usleep(500000); // 0.5 seconds
+    
+    // For demo purposes, we'll accept any reference number that starts with 'GC'
+    // In production, this would validate against GCash's actual API
+    if (strpos($referenceNumber, 'GC') === 0) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Payment Session Management
+function createPaymentSession($applicationId, $amount, $reference) {
+    global $pdo;
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO payment_verifications (
+            application_id, reference_number, amount, status, created_at
+        ) VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+    ");
+    $stmt->execute([$applicationId, $reference, $amount]);
+    
+    return $pdo->lastInsertId();
+}
+
+function getPaymentSession($paymentId) {
+    global $pdo;
+    
+    $stmt = $pdo->prepare("
+        SELECT * FROM payment_verifications WHERE id = ?
+    ");
+    $stmt->execute([$paymentId]);
+    
+    return $stmt->fetch();
+}
+
+function updatePaymentStatus($paymentId, $status, $verifiedAt = null) {
+    global $pdo;
+    
+    $sql = "UPDATE payment_verifications SET status = ?";
+    $params = [$status];
+    
+    if ($verifiedAt) {
+        $sql .= ", verified_at = ?";
+        $params[] = $verifiedAt;
+    }
+    
+    $sql .= " WHERE id = ?";
+    $params[] = $paymentId;
+    
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute($params);
 }
 
 // Content Security Policy

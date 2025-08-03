@@ -17,6 +17,11 @@ if (typeof window.NotificationSound === 'undefined') {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     this.context = new AudioContext();
                     
+                    // Handle audio context state changes
+                    this.context.addEventListener('statechange', () => {
+                        console.log('AudioContext state:', this.context.state);
+                    });
+                    
                     // Generate a simple beep sound instead of loading external file
                     this.generateBeepSound().then(() => {
                         this.initialized = true;
@@ -80,7 +85,7 @@ if (typeof window.NotificationSound === 'undefined') {
                     this.context.resume().then(() => {
                         this.playSoundInternal();
                     }).catch(error => {
-                        console.error('Failed to resume audio context:', error);
+                        console.warn('Failed to resume audio context:', error);
                         // Try to play anyway even if resume fails
                         this.playSoundInternal();
                     });
@@ -88,7 +93,7 @@ if (typeof window.NotificationSound === 'undefined') {
                     this.playSoundInternal();
                 }
             } catch (error) {
-                console.error('Error playing sound:', error);
+                console.warn('Error playing sound:', error);
                 // Try to play anyway even if there's an error
                 this.playSoundInternal();
             }
@@ -113,7 +118,9 @@ if (typeof window.NotificationSound === 'undefined') {
             } catch (e) {}
             // Resume audio context if suspended
             if (this.context && this.context.state === 'suspended') {
-                this.context.resume();
+                this.context.resume().catch(error => {
+                    console.warn('Failed to resume audio context:', error);
+                });
             }
         },
 

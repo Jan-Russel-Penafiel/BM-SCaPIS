@@ -214,32 +214,72 @@ include 'sidebar.php';
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div class="timeline">
-                                    <?php foreach ($history as $item): ?>
-                                        <div class="timeline-item">
-                                            <div class="d-flex">
-                                                <div class="flex-shrink-0">
-                                                    <i class="bi bi-circle-fill text-primary"></i>
-                                                </div>
-                                                <div class="flex-grow-1 ms-3">
-                                                    <div class="d-flex justify-content-between">
-                                                        <h6 class="mb-1"><?php echo ucfirst($item['status']); ?></h6>
-                                                        <small class="text-muted">
-                                                            <?php echo date('M j, Y g:i A', strtotime($item['created_at'])); ?>
-                                                        </small>
+                                <!-- Desktop Timeline View -->
+                                <div class="d-none d-lg-block">
+                                    <div class="timeline">
+                                        <?php foreach ($history as $item): ?>
+                                            <div class="timeline-item">
+                                                <div class="d-flex">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="bi bi-circle-fill text-primary"></i>
                                                     </div>
-                                                    <?php if ($item['remarks']): ?>
-                                                        <p class="mb-1 text-muted"><?php echo htmlspecialchars($item['remarks']); ?></p>
-                                                    <?php endif; ?>
-                                                    <?php if ($item['first_name']): ?>
-                                                        <small class="text-muted">
-                                                            By: <?php echo htmlspecialchars($item['first_name'] . ' ' . $item['last_name']); ?>
-                                                        </small>
-                                                    <?php endif; ?>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <div class="d-flex justify-content-between">
+                                                            <h6 class="mb-1"><?php echo ucfirst($item['status']); ?></h6>
+                                                            <small class="text-muted">
+                                                                <?php echo date('M j, Y g:i A', strtotime($item['created_at'])); ?>
+                                                            </small>
+                                                        </div>
+                                                        <?php if ($item['remarks']): ?>
+                                                            <p class="mb-1 text-muted"><?php echo htmlspecialchars($item['remarks']); ?></p>
+                                                        <?php endif; ?>
+                                                        <?php if ($item['first_name']): ?>
+                                                            <small class="text-muted">
+                                                                By: <?php echo htmlspecialchars($item['first_name'] . ' ' . $item['last_name']); ?>
+                                                            </small>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+
+                                <!-- Mobile Card View -->
+                                <div class="d-lg-none">
+                                    <div class="row g-3">
+                                        <?php foreach ($history as $item): ?>
+                                            <div class="col-12">
+                                                <div class="card border shadow-sm">
+                                                    <div class="card-body p-3">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <div>
+                                                                <h6 class="mb-1"><?php echo ucfirst($item['status']); ?></h6>
+                                                                <small class="text-muted">
+                                                                    <?php echo date('M j, Y g:i A', strtotime($item['created_at'])); ?>
+                                                                </small>
+                                                            </div>
+                                                            <i class="bi bi-circle-fill text-primary"></i>
+                                                        </div>
+                                                        
+                                                        <?php if ($item['remarks']): ?>
+                                                            <div class="mb-2">
+                                                                <small class="text-muted d-block">Remarks</small>
+                                                                <p class="mb-0 small"><?php echo htmlspecialchars($item['remarks']); ?></p>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        
+                                                        <?php if ($item['first_name']): ?>
+                                                            <div>
+                                                                <small class="text-muted d-block">Updated By</small>
+                                                                <strong class="small"><?php echo htmlspecialchars($item['first_name'] . ' ' . $item['last_name']); ?></strong>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>

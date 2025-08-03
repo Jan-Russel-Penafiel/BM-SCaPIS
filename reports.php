@@ -60,6 +60,7 @@ switch ($reportType) {
             'datasets' => [
                 'pending' => [],
                 'processing' => [],
+                'ready_for_pickup' => [],
                 'completed' => [],
                 'rejected' => []
             ]
@@ -96,7 +97,7 @@ switch ($reportType) {
             'labels' => array_unique(array_column($reportData, 'type_name')),
             'datasets' => [
                 'issued' => array_column(array_filter($reportData, function($row) {
-                    return $row['status'] === 'completed';
+                    return $row['status'] === 'ready_for_pickup' || $row['status'] === 'completed';
                 }), 'total_count'),
                 'revenue' => array_column($reportData, 'total_revenue')
             ]
@@ -141,7 +142,7 @@ switch ($reportType) {
             SELECT 
                 p.purok_name,
                 COUNT(*) as total_applications,
-                SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END) as completed_applications,
+                SUM(CASE WHEN a.status = 'ready_for_pickup' OR a.status = 'completed' THEN 1 ELSE 0 END) as completed_applications,
                 SUM(CASE WHEN a.status = 'pending' THEN 1 ELSE 0 END) as pending_applications,
                 dt.type_name as document_type
             FROM applications a
@@ -332,7 +333,7 @@ include 'sidebar.php';
                                 return $row['status'] === 'pending';
                             }), 'count'));
                             $completedCount = array_sum(array_column(array_filter($reportData, function($row) {
-                                return $row['status'] === 'completed';
+                                return $row['status'] === 'ready_for_pickup' || $row['status'] === 'completed';
                             }), 'count'));
                             ?>
                             <div class="mb-3">
@@ -599,11 +600,11 @@ include 'sidebar.php';
                                                 <td><?php echo htmlspecialchars($row['document_type']); ?></td>
                                                 <td>
                                                     <span class="badge bg-<?php 
-                                                        echo $row['status'] === 'completed' ? 'success' : 
+                                                        echo $row['status'] === 'ready_for_pickup' || $row['status'] === 'completed' ? 'success' : 
                                                             ($row['status'] === 'pending' ? 'warning' : 
                                                             ($row['status'] === 'rejected' ? 'danger' : 'info'));
                                                     ?>">
-                                                        <?php echo ucfirst($row['status']); ?>
+                                                        <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
                                                     </span>
                                                 </td>
                                                 <td><?php echo number_format($row['count']); ?></td>
@@ -612,9 +613,9 @@ include 'sidebar.php';
                                                 <td><?php echo htmlspecialchars($row['type_name']); ?></td>
                                                 <td>
                                                     <span class="badge bg-<?php 
-                                                        echo $row['status'] === 'completed' ? 'success' : 'info';
+                                                        echo $row['status'] === 'ready_for_pickup' || $row['status'] === 'completed' ? 'success' : 'info';
                                                     ?>">
-                                                        <?php echo ucfirst($row['status']); ?>
+                                                        <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
                                                     </span>
                                                 </td>
                                                 <td><?php echo number_format($row['total_count']); ?></td>
@@ -706,10 +707,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 backgroundColor: '#17a2b833'
             },
             {
-                label: 'Completed',
-                data: chartData.datasets.completed,
+                label: 'Ready for Pickup',
+                data: chartData.datasets.ready_for_pickup,
                 borderColor: '#28a745',
                 backgroundColor: '#28a74533'
+            },
+            {
+                label: 'Completed',
+                data: chartData.datasets.completed,
+                borderColor: '#20c997',
+                backgroundColor: '#20c99733'
             },
             {
                 label: 'Rejected',

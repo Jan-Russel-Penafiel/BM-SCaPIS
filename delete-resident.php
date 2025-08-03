@@ -59,8 +59,12 @@ try {
         $applicationIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         if ($applicationIds) {
-            // 2. Delete from application_history for these applications
+            // 1.1 Delete from appointments for these applications (FK: appointments.application_id)
             $in = str_repeat('?,', count($applicationIds) - 1) . '?';
+            $stmt = $pdo->prepare("DELETE FROM appointments WHERE application_id IN ($in)");
+            $stmt->execute($applicationIds);
+
+            // 2. Delete from application_history for these applications
             $stmt = $pdo->prepare("DELETE FROM application_history WHERE application_id IN ($in)");
             $stmt->execute($applicationIds);
 

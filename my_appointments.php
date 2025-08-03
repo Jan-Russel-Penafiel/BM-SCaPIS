@@ -51,59 +51,116 @@ include 'sidebar.php';
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table data-table" id="myAppointmentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Date & Time</th>
-                                        <th>Type</th>
-                                        <th>Document</th>
-                                        <th>Status</th>
-                                        <th>Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($appointments as $apt): ?>
-                                        <tr>
-                                            <td>
-                                                <?php echo date('M j, Y', strtotime($apt['appointment_date'])); ?>
-                                                <small class="text-muted d-block">
-                                                    <?php echo date('g:i A', strtotime($apt['appointment_date'])); ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info">
-                                                    <?php echo ucfirst($apt['appointment_type']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?php echo htmlspecialchars($apt['document_type']); ?>
-                                                <small class="text-muted d-block">
-                                                    #<?php echo htmlspecialchars($apt['application_number']); ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-<?php 
-                                                    echo $apt['status'] === 'completed' ? 'success' : 
-                                                        ($apt['status'] === 'cancelled' ? 'danger' : 
-                                                        ($apt['status'] === 'rescheduled' ? 'warning' : 'info'));
-                                                ?>">
-                                                    <?php echo ucfirst($apt['status']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?php echo $apt['notes'] ? htmlspecialchars($apt['notes']) : '<span class="text-muted">-</span>'; ?>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
                         <?php if (empty($appointments)): ?>
                             <div class="text-center py-4">
                                 <i class="bi bi-calendar2-check text-muted" style="font-size: 3rem;"></i>
                                 <h5 class="mt-3">No Appointments Found</h5>
                                 <p class="text-muted">You have no scheduled appointments yet.</p>
+                            </div>
+                        <?php else: ?>
+                            <!-- Desktop Table View -->
+                            <div class="d-none d-lg-block">
+                                <div class="table-responsive">
+                                    <table class="table data-table" id="myAppointmentsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Date & Time</th>
+                                                <th>Type</th>
+                                                <th>Document</th>
+                                                <th>Status</th>
+                                                <th>Notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($appointments as $apt): ?>
+                                                <tr>
+                                                    <td>
+                                                        <?php echo date('M j, Y', strtotime($apt['appointment_date'])); ?>
+                                                        <small class="text-muted d-block">
+                                                            <?php echo date('g:i A', strtotime($apt['appointment_date'])); ?>
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info">
+                                                            <?php echo ucfirst($apt['appointment_type']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <?php echo htmlspecialchars($apt['document_type']); ?>
+                                                        <small class="text-muted d-block">
+                                                            #<?php echo htmlspecialchars($apt['application_number']); ?>
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-<?php 
+                                                            echo $apt['status'] === 'completed' ? 'success' : 
+                                                                ($apt['status'] === 'cancelled' ? 'danger' : 
+                                                                ($apt['status'] === 'rescheduled' ? 'warning' : 'info'));
+                                                        ?>">
+                                                            <?php echo ucfirst($apt['status']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <?php echo $apt['notes'] ? htmlspecialchars($apt['notes']) : '<span class="text-muted">-</span>'; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Mobile Card View -->
+                            <div class="d-lg-none">
+                                <div class="row g-3">
+                                    <?php foreach ($appointments as $apt): ?>
+                                        <div class="col-12">
+                                            <div class="card border shadow-sm">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <h6 class="mb-1">
+                                                                <?php echo date('M j, Y', strtotime($apt['appointment_date'])); ?>
+                                                            </h6>
+                                                            <small class="text-muted">
+                                                                <?php echo date('g:i A', strtotime($apt['appointment_date'])); ?>
+                                                            </small>
+                                                        </div>
+                                                        <span class="badge bg-<?php 
+                                                            echo $apt['status'] === 'completed' ? 'success' : 
+                                                                ($apt['status'] === 'cancelled' ? 'danger' : 
+                                                                ($apt['status'] === 'rescheduled' ? 'warning' : 'info'));
+                                                        ?>">
+                                                            <?php echo ucfirst($apt['status']); ?>
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="mb-2">
+                                                        <small class="text-muted d-block">Type</small>
+                                                        <span class="badge bg-info">
+                                                            <?php echo ucfirst($apt['appointment_type']); ?>
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="mb-2">
+                                                        <small class="text-muted d-block">Document</small>
+                                                        <strong><?php echo htmlspecialchars($apt['document_type']); ?></strong>
+                                                        <small class="text-muted d-block">
+                                                            #<?php echo htmlspecialchars($apt['application_number']); ?>
+                                                        </small>
+                                                    </div>
+                                                    
+                                                    <?php if ($apt['notes']): ?>
+                                                        <div>
+                                                            <small class="text-muted d-block">Notes</small>
+                                                            <p class="mb-0 small"><?php echo htmlspecialchars($apt['notes']); ?></p>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -115,15 +172,18 @@ include 'sidebar.php';
 
 <script>
 $(document).ready(function() {
-    $('#myAppointmentsTable').DataTable({
-        order: [[0, 'desc']],
-        pageLength: 25,
-        responsive: true,
-        language: {
-            search: '<i class="bi bi-search"></i>',
-            searchPlaceholder: 'Search appointments...'
-        }
-    });
+    // Only initialize DataTable for desktop view
+    if (window.innerWidth >= 992) {
+        $('#myAppointmentsTable').DataTable({
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true,
+            language: {
+                search: '<i class="bi bi-search"></i>',
+                searchPlaceholder: 'Search appointments...'
+            }
+        });
+    }
 });
 </script>
 

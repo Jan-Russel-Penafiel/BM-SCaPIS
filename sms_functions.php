@@ -228,9 +228,10 @@ function sendSMSNotification($phone_number, $message, $user_id = null, $notifica
  * @param int $application_id Application ID
  * @param string $status New status
  * @param string $message Custom message (optional)
+ * @param string $appointmentDate Optional appointment date for pickup
  * @return array Response with status and message
  */
-function sendApplicationStatusSMS($application_id, $status, $message = null) {
+function sendApplicationStatusSMS($application_id, $status, $message = null, $appointmentDate = null) {
     global $pdo;
 
     try {
@@ -263,7 +264,7 @@ function sendApplicationStatusSMS($application_id, $status, $message = null) {
 
         // Generate message based on status if not provided
         if ($message === null) {
-            $message = generateApplicationStatusMessage($application, $status);
+            $message = generateApplicationStatusMessage($application, $status, $appointmentDate);
         }
 
         // Send SMS notification
@@ -286,9 +287,10 @@ function sendApplicationStatusSMS($application_id, $status, $message = null) {
  * Generate application status message
  * @param array $application Application data
  * @param string $status New status
+ * @param string $appointmentDate Optional appointment date for pickup
  * @return string Generated message
  */
-function generateApplicationStatusMessage($application, $status) {
+function generateApplicationStatusMessage($application, $status, $appointmentDate = null) {
     $appNumber = $application['application_number'];
     $docType = $application['type_name'];
     $residentName = $application['first_name'] . ' ' . $application['last_name'];
@@ -299,7 +301,11 @@ function generateApplicationStatusMessage($application, $status) {
             return "Your application #{$appNumber} is now being processed. Estimated completion: {$estimatedDate}";
 
         case 'ready_for_pickup':
-            $pickupDate = date('M j, Y', strtotime('next weekday'));
+            if ($appointmentDate) {
+                $pickupDate = date('M j, Y', strtotime($appointmentDate));
+            } else {
+                $pickupDate = date('M j, Y', strtotime('next weekday'));
+            }
             return "Your {$docType} (#{$appNumber}) is ready for pickup. Please visit the barangay office on {$pickupDate}.";
 
         case 'completed':
@@ -310,6 +316,21 @@ function generateApplicationStatusMessage($application, $status) {
 
         case 'payment_received':
             return "Payment received for application #{$appNumber}. Your {$docType} is now being processed. You will be notified when it's ready for pickup.";
+
+        case 'appointment_scheduled':
+            return "Your appointment for application #{$appNumber} has been scheduled. Please check your email for details.";
+
+        case 'appointment_rescheduled':
+            return "Your appointment for application #{$appNumber} has been rescheduled. Please check your email for new details.";
+
+        case 'appointment_cancelled':
+            return "Your appointment for application #{$appNumber} has been cancelled. Please contact the barangay office for rescheduling.";
+
+        case 'appointment_completed':
+            return "Your appointment for application #{$appNumber} has been completed. Thank you for visiting the barangay office.";
+
+        case 'document_ready':
+            return "Your {$docType} (#{$appNumber}) is ready for pickup. Please visit the barangay office on the scheduled date.";
 
         default:
             return "Your application #{$appNumber} status has been updated to {$status}.";

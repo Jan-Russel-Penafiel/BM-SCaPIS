@@ -324,13 +324,13 @@
     </style>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=1.0.6">
     <meta name="theme-color" content="#2c5aa0">
     
     <!-- PWA Icons -->
-    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" href="assets/images/logo-192.png?v=1.0.6">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/images/logo-192.png?v=1.0.6">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/images/logo-512.png?v=1.0.6">
     
     <!-- CSRF Token -->
     <meta name="csrf-token" content="<?php echo generateCSRFToken(); ?>">

@@ -28,6 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $settings->set('philsms_sender_name', trim($_POST['philsms_sender_name']));
                 $settings->set('ringtone_enabled', isset($_POST['ringtone_enabled']) ? '1' : '0');
                 
+                // GCash Payment Settings
+                $gcashNumber = trim($_POST['gcash_number']);
+                $gcashAccountName = trim($_POST['gcash_account_name']);
+                
+                // Validate GCash number format (should be 11 digits starting with 09)
+                if (!empty($gcashNumber) && !preg_match('/^09\d{9}$/', $gcashNumber)) {
+                    throw new Exception('GCash number must be 11 digits starting with 09 (e.g., 09123456789)');
+                }
+                
+                $settings->set('gcash_number', $gcashNumber);
+                $settings->set('gcash_account_name', $gcashAccountName);
+                $settings->set('gcash_enabled', isset($_POST['gcash_enabled']) ? '1' : '0');
+                
                 $success = 'System settings updated successfully!';
                 
             } elseif (isset($_POST['update_account_settings'])) {
@@ -145,6 +158,41 @@ include 'sidebar.php';
                                             Enable Notification Sound
                                         </label>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- GCash Payment Settings -->
+                            <h6 class="mb-3">
+                                <i class="bi bi-credit-card me-2"></i>GCash Payment Settings
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">GCash Number</label>
+                                    <input type="text" class="form-control" name="gcash_number" 
+                                           value="<?php echo htmlspecialchars($settings->get('gcash_number', '0912-345-6789')); ?>" 
+                                           placeholder="0912-345-6789">
+                                    <div class="form-text">The GCash number where payments will be sent</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">GCash Account Name</label>
+                                    <input type="text" class="form-control" name="gcash_account_name" 
+                                           value="<?php echo htmlspecialchars($settings->get('gcash_account_name', 'BRGY MALANGIT')); ?>" 
+                                           placeholder="BRGY MALANGIT">
+                                    <div class="form-text">The name that appears on the GCash account</div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="gcash_enabled" 
+                                               id="gcash_enabled" <?php echo $settings->getBool('gcash_enabled', true) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="gcash_enabled">
+                                            Enable GCash Payments
+                                        </label>
+                                    </div>
+                                    <div class="form-text">When enabled, residents can pay using GCash</div>
                                 </div>
                             </div>
                             

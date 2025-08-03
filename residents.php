@@ -797,19 +797,22 @@ function viewResident(residentId) {
             const frontIdContainer = document.getElementById('viewValidIdFront');
             const backIdContainer = document.getElementById('viewValidIdBack');
 
-            if (resident.valid_id_front) {
-                frontIdContainer.innerHTML = `<img src="uploads/ids/${resident.valid_id_front}" 
-                    class="img-fluid" alt="ID Front">`;
-            } else {
-                frontIdContainer.innerHTML = '<p class="text-muted mb-0">No front ID uploaded</p>';
+            function renderValidId(container, filename, label) {
+                if (!filename) {
+                    container.innerHTML = `<p class="text-muted mb-0">No ${label} ID uploaded</p>`;
+                    return;
+                }
+                const ext = filename.split('.').pop().toLowerCase();
+                if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+                    container.innerHTML = `<img src="uploads/ids/${filename}" class="img-fluid rounded border" alt="${label} ID" style="max-width: 220px;">`;
+                } else if (ext === "pdf") {
+                    container.innerHTML = `<a href="uploads/ids/${filename}" target="_blank" class="btn btn-outline-primary"><i class="bi bi-file-earmark-pdf me-2"></i>View ${label} (PDF)</a>`;
+                } else {
+                    container.innerHTML = `<a href="uploads/ids/${filename}" target="_blank" class="btn btn-outline-secondary">Download ${label} ID</a>`;
+                }
             }
-
-            if (resident.valid_id_back) {
-                backIdContainer.innerHTML = `<img src="uploads/ids/${resident.valid_id_back}" 
-                    class="img-fluid" alt="ID Back">`;
-            } else {
-                backIdContainer.innerHTML = '<p class="text-muted mb-0">No back ID uploaded</p>';
-            }
+            renderValidId(frontIdContainer, resident.valid_id_front, 'Front');
+            renderValidId(backIdContainer, resident.valid_id_back, 'Back');
 
             // Show the modal
             new bootstrap.Modal(document.getElementById('viewResidentModal')).show();

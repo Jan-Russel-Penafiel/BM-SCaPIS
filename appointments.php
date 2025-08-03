@@ -154,16 +154,27 @@ include 'sidebar.php';
                                                 <td>
                                                     <div class="btn-group">
                                                         <?php if ($apt['status'] === 'scheduled'): ?>
-                                                            <button type="button" class="btn btn-sm btn-success" 
-                                                                    onclick="completeAppointment(<?php echo $apt['id']; ?>)">
-                                                                <i class="bi bi-check-lg"></i>
-                                                            </button>
+                                                            <?php if ($apt['appointment_type'] === 'payment'): ?>
+                                                                <button type="button" class="btn btn-sm btn-success" 
+                                                                        onclick="completePaymentAppointment(<?php echo $apt['id']; ?>)"
+                                                                        title="Complete Payment">
+                                                                    <i class="bi bi-cash-coin"></i>
+                                                                </button>
+                                                            <?php else: ?>
+                                                                <button type="button" class="btn btn-sm btn-success" 
+                                                                        onclick="completeAppointment(<?php echo $apt['id']; ?>)"
+                                                                        title="Mark as Completed">
+                                                                    <i class="bi bi-check-lg"></i>
+                                                                </button>
+                                                            <?php endif; ?>
                                                             <button type="button" class="btn btn-sm btn-warning" 
-                                                                    onclick="rescheduleAppointment(<?php echo $apt['id']; ?>)">
+                                                                    onclick="rescheduleAppointment(<?php echo $apt['id']; ?>)"
+                                                                    title="Reschedule">
                                                                 <i class="bi bi-calendar"></i>
                                                             </button>
                                                             <button type="button" class="btn btn-sm btn-danger" 
-                                                                    onclick="cancelAppointment(<?php echo $apt['id']; ?>)">
+                                                                    onclick="cancelAppointment(<?php echo $apt['id']; ?>)"
+                                                                    title="Cancel">
                                                                 <i class="bi bi-x-lg"></i>
                                                             </button>
                                                         <?php endif; ?>
@@ -303,6 +314,7 @@ include 'sidebar.php';
                             <option value="pickup">Document Pickup</option>
                             <option value="verification">Document Verification</option>
                             <option value="interview">Interview</option>
+                            <option value="payment">Payment</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -380,6 +392,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function completeAppointment(id) {
     if (confirm('Mark this appointment as completed?')) {
         window.location.href = `complete-appointment.php?id=${id}`;
+    }
+}
+
+function completePaymentAppointment(id) {
+    if (confirm('Confirm that payment has been received and mark this appointment as completed?')) {
+        window.location.href = `complete-payment-appointment.php?id=${id}`;
     }
 }
 

@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'classes/Settings.php';
 
 // Require login and must be a resident
 requireLogin();
@@ -26,68 +27,61 @@ $stmt = $pdo->prepare("
 $stmt->execute([$applicationId, $_SESSION['user_id']]);
 $application = $stmt->fetch();
 
+// Get GCash settings
+$settings = Settings::getInstance($pdo);
+$gcashNumber = $settings->get('gcash_number', '0912-345-6789');
+$gcashAccountName = $settings->get('gcash_account_name', 'BRGY MALANGIT');
+$gcashEnabled = $settings->getBool('gcash_enabled', true);
+
+// Check if GCash payments are enabled
+if (!$gcashEnabled) {
+    header('Location: my-applications.php');
+    exit;
+}
+
 // If application not found, already paid, or doesn't belong to user
 if (!$application) {
     header('Location: my-applications.php');
     exit;
 }
 
-// Handle payment submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate CSRF token
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid security token. Please try again.';
-    } else {
-        try {
-            $referenceNumber = trim($_POST['reference_number'] ?? '');
+// Handle payment verification
+if (isset($_GET['verify_payment'])) {
+    $paymentId = $_GET['verify_payment'];
+    
+    // Check if payment exists and is pending
+    $stmt = $pdo->prepare("
+        SELECT * FROM payment_verifications 
+        WHERE id = ? AND application_id = ? AND status = 'pending'
+    ");
+    $stmt->execute([$paymentId, $applicationId]);
+    $payment = $stmt->fetch();
+    
+    if ($payment) {
+        // Simulate payment verification (in real implementation, this would call GCash API)
+        $isPaymentVerified = verifyGCashPayment($payment['reference_number'], $application['fee']);
+        
+        if ($isPaymentVerified) {
+            // Update payment verification status
+            $stmt = $pdo->prepare("
+                UPDATE payment_verifications 
+                SET status = 'verified', verified_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->execute([$paymentId]);
             
-            // Validate GCash reference number
-            if (!preg_match('/^[0-9]{13}$/', $referenceNumber)) {
-                throw new Exception('Please enter a valid 13-digit GCash reference number.');
-            }
-            
-            // Handle receipt upload
-            if (!isset($_FILES['receipt_image']) || $_FILES['receipt_image']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception('Please upload your GCash payment receipt.');
-            }
-            
-            // Validate file type
-            $fileInfo = getimagesize($_FILES['receipt_image']['tmp_name']);
-            if (!$fileInfo || !in_array($fileInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG])) {
-                throw new Exception('Please upload a valid image file (JPG or PNG).');
-            }
-            
-            // Generate unique filename
-            $uploadDir = 'uploads/receipts/';
-            $extension = pathinfo($_FILES['receipt_image']['name'], PATHINFO_EXTENSION);
-            $receiptFilename = uniqid('receipt_') . '.' . $extension;
-            
-            // Ensure upload directory exists
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            
-            // Start transaction
-            $pdo->beginTransaction();
-            
-            // Move uploaded file
-            if (!move_uploaded_file($_FILES['receipt_image']['tmp_name'], $uploadDir . $receiptFilename)) {
-                throw new Exception('Failed to upload receipt. Please try again.');
-            }
-            
-            // Update application payment status and automatically start processing
+            // Update application payment status
             $stmt = $pdo->prepare("
                 UPDATE applications 
                 SET payment_status = 'paid',
                     payment_date = CURRENT_TIMESTAMP,
                     payment_method = 'gcash',
                     payment_reference = ?,
-                    payment_receipt = ?,
                     status = 'processing',
                     processed_by = NULL
                 WHERE id = ?
             ");
-            $stmt->execute([$referenceNumber, $receiptFilename, $applicationId]);
+            $stmt->execute([$payment['reference_number'], $applicationId]);
             
             // Add to application history
             $stmt = $pdo->prepare("
@@ -97,66 +91,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([
                 $applicationId,
-                'GCash payment received. Reference: ' . $referenceNumber,
+                'GCash payment verified. Reference: ' . $payment['reference_number'],
                 $_SESSION['user_id']
             ]);
             
-            // Send SMS notification to resident about payment and processing start
-            $result = sendPaymentNotificationSMS($applicationId, 'gcash', $application['fee'], $referenceNumber);
-            if (!$result['success']) {
-                error_log('Resident SMS notification failed: ' . $result['message']);
-            }
+            // Send notifications
+            sendPaymentNotificationSMS($applicationId, 'gcash', $application['fee'], $payment['reference_number']);
             
             // Log activity
             logActivity(
                 $_SESSION['user_id'],
-                'GCash payment submitted for application #' . $application['application_number'],
+                'GCash payment verified for application #' . $application['application_number'],
                 'applications',
                 $applicationId
             );
             
-            // Send SMS notification to admin about payment received
-            $adminMessage = "GCash payment received for application #{$application['application_number']}. ";
-            $adminMessage .= "Amount: ₱" . number_format($application['fee'], 2) . ". ";
-            $adminMessage .= "Reference: {$referenceNumber}";
+            // Redirect to success page
+            header('Location: payment-success.php?id=' . $applicationId);
+            exit;
+        } else {
+            $error = 'Payment verification failed. Please try again or contact support.';
+        }
+    } else {
+        $error = 'Invalid payment verification request.';
+    }
+}
+
+// Handle payment initiation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initiate_payment'])) {
+    // Validate CSRF token
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid security token. Please try again.';
+    } else {
+        try {
+            // Generate unique payment reference
+            $paymentReference = 'GC' . time() . rand(1000, 9999);
             
-            $result = sendAdminNotificationSMS($adminMessage, 'payment_received');
-            if (!$result['success']) {
-                error_log('Admin SMS notification failed: ' . $result['message']);
-            }
-            
-            // Send notification to admin
+            // Create payment verification record
             $stmt = $pdo->prepare("
-                INSERT INTO system_notifications (
-                    type, title, message, target_role, metadata
-                ) VALUES (
-                    'payment_received',
-                    'GCash Payment Received',
-                    ?,
-                    'admin',
-                    ?
-                )
+                INSERT INTO payment_verifications (
+                    application_id, reference_number, amount, status, created_at
+                ) VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
             ");
-            $stmt->execute([
-                'GCash payment received for application #' . $application['application_number'],
-                json_encode([
-                    'application_id' => $applicationId,
-                    'payment_method' => 'gcash',
-                    'reference_number' => $referenceNumber,
-                    'receipt_file' => $receiptFilename,
-                    'amount' => $application['fee']
-                ])
-            ]);
+            $stmt->execute([$applicationId, $paymentReference, $application['fee']]);
+            $paymentId = $pdo->lastInsertId();
             
-            $pdo->commit();
+            // Store payment session
+            $_SESSION['payment_session'] = [
+                'payment_id' => $paymentId,
+                'application_id' => $applicationId,
+                'reference' => $paymentReference,
+                'amount' => $application['fee'],
+                'started_at' => time()
+            ];
             
-            // Set success message and redirect
-            $_SESSION['success'] = 'Payment submitted successfully! Your application is now being processed.';
-            header('Location: view-application.php?id=' . $applicationId);
+            // Redirect to GCash payment flow
+            header('Location: gcash-payment.php?payment_id=' . $paymentId);
             exit;
             
         } catch (Exception $e) {
-            $pdo->rollBack();
             $error = $e->getMessage();
         }
     }
@@ -202,125 +195,50 @@ include 'sidebar.php';
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
                         <h5 class="mb-0">
-                            <i class="bi bi-credit-card me-2"></i>Payment Details
+                            <i class="bi bi-credit-card me-2"></i>Real-time GCash Payment
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form method="POST" id="paymentForm">
-                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Document Type</label>
+                                <input type="text" class="form-control" 
+                                       value="<?php echo htmlspecialchars($application['type_name']); ?>" readonly>
+                            </div>
                             
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Document Type</label>
+                            <div class="col-md-6">
+                                <label class="form-label">Amount to Pay</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₱</span>
                                     <input type="text" class="form-control" 
-                                           value="<?php echo htmlspecialchars($application['type_name']); ?>" readonly>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label class="form-label">Amount to Pay</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="text" class="form-control" 
-                                               value="<?php echo number_format($application['fee'], 2); ?>" readonly>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <img src="assets/images/gcash-logo.png" alt="GCash" height="24" class="me-2">
-                                            <h6 class="mb-0">GCash Payment Details</h6>
-                                        </div>
-                                        <p class="mb-0">Send your payment to:</p>
-                                        <div class="row g-3 mt-2">
-                                            <div class="col-md-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-white">
-                                                        <i class="bi bi-phone"></i>
-                                                    </span>
-                                                    <input type="text" class="form-control" value="0912-345-6789" readonly>
-                                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('0912-345-6789')">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="form-text">GCash Number</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-white">
-                                                        <i class="bi bi-person"></i>
-                                                    </span>
-                                                    <input type="text" class="form-control" value="BRGY MALANGIT" readonly>
-                                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('BRGY MALANGIT')">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="form-text">Account Name</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-white">₱</span>
-                                                    <input type="text" class="form-control" 
-                                                           value="<?php echo number_format($application['fee'], 2); ?>" readonly>
-                                                    <button class="btn btn-outline-primary" type="button" 
-                                                            onclick="copyToClipboard('<?php echo number_format($application['fee'], 2); ?>')">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="form-text">Amount to Send</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-white">
-                                                        <i class="bi bi-hash"></i>
-                                                    </span>
-                                                    <input type="text" class="form-control" 
-                                                           value="<?php echo $application['application_number']; ?>" readonly>
-                                                    <button class="btn btn-outline-primary" type="button" 
-                                                            onclick="copyToClipboard('<?php echo $application['application_number']; ?>')">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="form-text">Reference/Application Number</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <label class="form-label">GCash Reference Number <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white">
-                                            <i class="bi bi-upc"></i>
-                                        </span>
-                                        <input type="text" class="form-control" name="reference_number" 
-                                               placeholder="Enter GCash reference number" required
-                                               pattern="[0-9]{13}" title="Please enter a valid 13-digit GCash reference number">
-                                    </div>
-                                    <div class="form-text">
-                                        Enter the 13-digit reference number from your GCash transaction
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <label class="form-label">Upload GCash Receipt <span class="text-danger">*</span></label>
-                                    <input type="file" class="form-control" name="receipt_image" 
-                                           accept="image/jpeg,image/png" required>
-                                    <div class="form-text">
-                                        Upload a screenshot of your GCash payment confirmation
-                                    </div>
+                                           value="<?php echo number_format($application['fee'], 2); ?>" readonly>
                                 </div>
                             </div>
                             
-                            <hr class="my-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <img src="assets/images/gcash-logo.png" alt="GCash" height="24" class="me-2">
+                                        <h6 class="mb-0">Real-time GCash Payment</h6>
+                                    </div>
+                                    <p class="mb-0">Click the button below to open GCash and complete your payment securely.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <form method="POST" id="paymentForm">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                            <input type="hidden" name="initiate_payment" value="1">
                             
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="form-text">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    Your application will be processed once payment is verified
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    Secure payment powered by GCash
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-check-circle me-2"></i>Confirm Payment
+                                    <i class="bi bi-phone me-2"></i>Pay with GCash
                                 </button>
                             </div>
                         </form>
@@ -329,60 +247,44 @@ include 'sidebar.php';
             </div>
 
             <div class="col-lg-4">
-                <!-- Payment Instructions -->
+                <!-- Payment Benefits -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
                         <h5 class="mb-0">
-                            <i class="bi bi-info-circle me-2"></i>How to Pay with GCash
+                            <i class="bi bi-check-circle me-2"></i>Why Pay with GCash?
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="steps">
-                            <div class="step">
-                                <div class="step-number">1</div>
-                                <div class="step-content">
-                                    <h6>Open GCash App</h6>
-                                    <p class="text-muted mb-0">Launch your GCash mobile application</p>
+                        <div class="benefits">
+                            <div class="benefit-item">
+                                <i class="bi bi-lightning text-primary"></i>
+                                <div>
+                                    <h6>Instant Processing</h6>
+                                    <p class="text-muted mb-0">Your application starts processing immediately after payment</p>
                                 </div>
                             </div>
                             
-                            <div class="step">
-                                <div class="step-number">2</div>
-                                <div class="step-content">
-                                    <h6>Send Money</h6>
-                                    <p class="text-muted mb-0">Click "Send" and choose "Send Money to GCash"</p>
+                            <div class="benefit-item">
+                                <i class="bi bi-shield-check text-success"></i>
+                                <div>
+                                    <h6>Secure Payment</h6>
+                                    <p class="text-muted mb-0">Bank-level security with GCash's encryption</p>
                                 </div>
                             </div>
                             
-                            <div class="step">
-                                <div class="step-number">3</div>
-                                <div class="step-content">
-                                    <h6>Enter Details</h6>
-                                    <p class="text-muted mb-0">Enter the GCash number and amount shown on the left</p>
+                            <div class="benefit-item">
+                                <i class="bi bi-clock text-info"></i>
+                                <div>
+                                    <h6>Real-time Verification</h6>
+                                    <p class="text-muted mb-0">Automatic payment verification and status updates</p>
                                 </div>
                             </div>
                             
-                            <div class="step">
-                                <div class="step-number">4</div>
-                                <div class="step-content">
-                                    <h6>Add Reference</h6>
-                                    <p class="text-muted mb-0">In the notes, paste your Application Number</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step">
-                                <div class="step-number">5</div>
-                                <div class="step-content">
-                                    <h6>Review & Send</h6>
-                                    <p class="text-muted mb-0">Double-check all details before sending</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step">
-                                <div class="step-number">6</div>
-                                <div class="step-content">
-                                    <h6>Save Receipt</h6>
-                                    <p class="text-muted mb-0">Take a screenshot of the confirmation page</p>
+                            <div class="benefit-item">
+                                <i class="bi bi-receipt text-warning"></i>
+                                <div>
+                                    <h6>Digital Receipt</h6>
+                                    <p class="text-muted mb-0">Get instant confirmation and digital receipt</p>
                                 </div>
                             </div>
                         </div>
@@ -391,12 +293,12 @@ include 'sidebar.php';
                             <div class="d-flex">
                                 <i class="bi bi-exclamation-triangle fs-4 me-2"></i>
                                 <div>
-                                    <h6 class="mb-1">Important Notes:</h6>
+                                    <h6 class="mb-1">Important:</h6>
                                     <ul class="mb-0 ps-3">
-                                        <li>Make sure to copy the exact amount</li>
-                                        <li>Include your Application Number in notes</li>
-                                        <li>Keep your payment screenshot</li>
-                                        <li>Save the 13-digit reference number</li>
+                                        <li>Ensure you have sufficient GCash balance</li>
+                                        <li>Complete the payment within 15 minutes</li>
+                                        <li>Don't close the browser during payment</li>
+                                        <li>Keep your phone nearby for GCash app</li>
                                     </ul>
                                 </div>
                             </div>
@@ -406,45 +308,24 @@ include 'sidebar.php';
             </div>
 
             <style>
-            .steps {
-                position: relative;
-                padding-left: 50px;
-            }
-            
-            .step {
-                position: relative;
-                padding-bottom: 1.5rem;
-            }
-            
-            .step:last-child {
-                padding-bottom: 0;
-            }
-            
-            .step-number {
-                position: absolute;
-                left: -50px;
-                width: 32px;
-                height: 32px;
-                background-color: var(--primary-color);
-                color: white;
-                border-radius: 50%;
+            .benefits {
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: bold;
+                flex-direction: column;
+                gap: 1rem;
             }
             
-            .step:not(:last-child)::after {
-                content: '';
-                position: absolute;
-                left: -34px;
-                top: 32px;
-                bottom: 0;
-                width: 2px;
-                background-color: #e9ecef;
+            .benefit-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
             }
             
-            .step-content h6 {
+            .benefit-item i {
+                font-size: 1.25rem;
+                margin-top: 0.125rem;
+            }
+            
+            .benefit-item h6 {
                 margin-bottom: 0.25rem;
                 color: var(--primary-color);
             }
@@ -454,69 +335,31 @@ include 'sidebar.php';
 </div>
 
 <script>
-// Copy to clipboard function
-function copyToClipboard(text) {
-    // Create temporary input
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    
-    try {
-        // Execute copy command
-        document.execCommand('copy');
-        
-        // Show success toast
-        const toast = document.createElement('div');
-        toast.className = 'position-fixed bottom-0 end-0 p-3';
-        toast.style.zIndex = '5';
-        toast.innerHTML = `
-            <div class="toast show align-items-center text-white bg-success border-0" role="alert">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-check-circle me-2"></i>Copied to clipboard!
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(toast);
-        
-        // Remove toast after 3 seconds
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
-    } catch (err) {
-        alert('Failed to copy text. Please try manually selecting and copying.');
-    }
-    
-    // Cleanup
-    document.body.removeChild(input);
-}
-
 // Form submission
 document.getElementById('paymentForm').addEventListener('submit', function(e) {
-    // Validate file input
-    const fileInput = document.querySelector('input[name="receipt_image"]');
-    if (fileInput.files.length === 0) {
-        e.preventDefault();
-        alert('Please upload your GCash payment receipt.');
-        return;
-    }
-    
-    // Validate reference number
-    const refInput = document.querySelector('input[name="reference_number"]');
-    if (!/^[0-9]{13}$/.test(refInput.value)) {
-        e.preventDefault();
-        alert('Please enter a valid 13-digit GCash reference number.');
-        return;
-    }
-    
     // Show loading state
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing Payment...';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparing Payment...';
 });
+
+// Prevent back navigation during payment
+window.addEventListener('beforeunload', function(e) {
+    if (window.location.href.includes('gcash-payment.php')) {
+        e.preventDefault();
+        e.returnValue = 'Payment in progress. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
+
+// Disable back button during payment
+if (window.location.href.includes('gcash-payment.php')) {
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, location.href);
+        alert('Please complete your payment before leaving this page.');
+    });
+}
 </script>
 
 <?php include 'scripts.php'; ?> 

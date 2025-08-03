@@ -24,12 +24,16 @@ $stmt = $pdo->prepare("
     SELECT a.*, dt.type_name, dt.processing_days,
            u.first_name, u.last_name, u.contact_number,
            p.purok_name,
-           CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name
+           CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name,
+           apt.id as payment_appointment_id,
+           apt.appointment_date as payment_appointment_date,
+           apt.status as payment_appointment_status
     FROM applications a
     JOIN users u ON a.user_id = u.id
     JOIN document_types dt ON a.document_type_id = dt.id
     LEFT JOIN puroks p ON u.purok_id = p.id
     LEFT JOIN users pb ON a.processed_by = pb.id
+    LEFT JOIN appointments apt ON a.id = apt.application_id AND apt.appointment_type = 'payment'
     $whereClause
     ORDER BY a.created_at DESC
 ");
@@ -231,6 +235,12 @@ include 'sidebar.php';
                                                 <?php if ($app['payment_amount']): ?>
                                                     <small class="d-block">₱<?php echo number_format($app['payment_amount'], 2); ?></small>
                                                 <?php endif; ?>
+                                                <?php if ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled'): ?>
+                                                    <small class="d-block text-info">
+                                                        <i class="bi bi-calendar-check me-1"></i>
+                                                        Payment appt: <?php echo date('M j, g:i A', strtotime($app['payment_appointment_date'])); ?>
+                                                    </small>
+                                                <?php endif; ?>
                                             </td>
                                             <td>
                                                 <?php echo date('M j, Y g:i A', strtotime($app['created_at'])); ?>
@@ -279,6 +289,36 @@ include 'sidebar.php';
                                                                     title="Waive Payment">
                                                                 <i class="bi bi-cash-stack"></i>
                                                             </button>
+                                                            <?php if (!$app['payment_appointment_id'] || $app['payment_appointment_status'] !== 'scheduled'): ?>
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-info"
+                                                                        onclick="schedulePaymentAppointment(<?php echo $app['id']; ?>)"
+                                                                        title="Schedule Payment Appointment">
+                                                                    <i class="bi bi-calendar-plus"></i>
+                                                                </button>
+                                                            <?php else: ?>
+                                                                <?php 
+                                                                // Check if today is the payment appointment date
+                                                                $appointmentDate = new DateTime($app['payment_appointment_date']);
+                                                                $today = new DateTime();
+                                                                $isAppointmentToday = $appointmentDate->format('Y-m-d') === $today->format('Y-m-d');
+                                                                ?>
+                                                                <?php if ($isAppointmentToday): ?>
+                                                                    <button type="button" 
+                                                                            class="btn btn-sm btn-outline-success"
+                                                                            onclick="allowPayment(<?php echo $app['id']; ?>)"
+                                                                            title="Allow Payment - Appointment is today">
+                                                                        <i class="bi bi-check-circle"></i>
+                                                                    </button>
+                                                                <?php else: ?>
+                                                                    <button type="button" 
+                                                                            class="btn btn-sm btn-outline-secondary"
+                                                                            disabled
+                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Payment can only be allowed on the appointment date.">
+                                                                        <i class="bi bi-calendar-x"></i>
+                                                                    </button>
+                                                                <?php endif; ?>
+                                                            <?php endif; ?>
                                                         <?php endif; ?>
                                                         <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'paid'): ?>
                                                             <button type="button" 
@@ -359,6 +399,36 @@ include 'sidebar.php';
     </div>
 </div>
 
+<!-- Payment Appointment Modal -->
+<div class="modal fade" id="paymentAppointmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Payment Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="schedule-payment-appointment.php" method="POST">
+                <input type="hidden" name="application_id" id="paymentAppointmentApplicationId">
+                <input type="hidden" name="appointment_type" value="payment">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" name="appointment_date" class="form-control" required min="<?php echo date('Y-m-d\TH:i'); ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Instructions</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Enter payment instructions or requirements"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">Schedule Payment Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTables
@@ -402,6 +472,17 @@ function autoProcessApplication(id) {
 function openReadyAppointmentModal(appId) {
     document.getElementById('readyAppointmentApplicationId').value = appId;
     new bootstrap.Modal(document.getElementById('readyAppointmentModal')).show();
+}
+
+function schedulePaymentAppointment(appId) {
+    document.getElementById('paymentAppointmentApplicationId').value = appId;
+    new bootstrap.Modal(document.getElementById('paymentAppointmentModal')).show();
+}
+
+function allowPayment(appId) {
+    if (confirm('Are you sure you want to allow payment for this application? The resident will be able to make payment through the system.')) {
+        window.location.href = `allow-payment.php?id=${appId}`;
+    }
 }
 </script>
 

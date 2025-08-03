@@ -148,4 +148,152 @@ include 'sidebar.php';
         </div>
     </div>
 </div>
+<!-- View Resident Modal -->
+<div class="modal fade" id="viewResidentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resident Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div id="viewProfilePicture" class="mx-auto mb-3" style="width: 120px; height: 120px;"></div>
+                    <h4 id="viewResidentName" class="mb-1"></h4>
+                    <p id="viewResidentPurok" class="text-muted"></p>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-person me-2"></i>Personal Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Age</dt>
+                                    <dd class="col-sm-8" id="viewAge"></dd>
+                                    <dt class="col-sm-4">Gender</dt>
+                                    <dd class="col-sm-8" id="viewGender"></dd>
+                                    <dt class="col-sm-4">Civil Status</dt>
+                                    <dd class="col-sm-8" id="viewCivilStatus"></dd>
+                                    <dt class="col-sm-4">Birthdate</dt>
+                                    <dd class="col-sm-8" id="viewBirthdate"></dd>
+                                    <dt class="col-sm-4">Occupation</dt>
+                                    <dd class="col-sm-8" id="viewOccupation"></dd>
+                                    <dt class="col-sm-4">Monthly Income</dt>
+                                    <dd class="col-sm-8" id="viewMonthlyIncome"></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-telephone me-2"></i>Contact Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Contact No.</dt>
+                                    <dd class="col-sm-8" id="viewContactNumber"></dd>
+                                    <dt class="col-sm-4">Email</dt>
+                                    <dd class="col-sm-8" id="viewEmail"></dd>
+                                    <dt class="col-sm-4">Address</dt>
+                                    <dd class="col-sm-8" id="viewAddress"></dd>
+                                    <dt class="col-sm-4">Emergency Contact</dt>
+                                    <dd class="col-sm-8">
+                                        <span id="viewEmergencyName"></span><br>
+                                        <small id="viewEmergencyNumber" class="text-muted"></small>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-card-image me-2"></i>Valid IDs</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Front</label>
+                                        <div id="viewValidIdFront" class="border rounded p-2 text-center"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Back</label>
+                                        <div id="viewValidIdBack" class="border rounded p-2 text-center"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+let currentResidentId = null;
+function viewResident(residentId) {
+    currentResidentId = residentId;
+    $.ajax({
+        url: 'ajax/get-resident-details.php',
+        type: 'GET',
+        data: { id: residentId },
+        success: function(response) {
+            if (!response.success) {
+                alert(response.message || 'Error loading resident details.');
+                return;
+            }
+            const resident = response.data;
+            // Profile picture
+            const profileContainer = document.getElementById('viewProfilePicture');
+            if (resident.profile_picture) {
+                profileContainer.innerHTML = `<img src="uploads/profiles/${resident.profile_picture}" class="rounded-circle img-fluid" alt="Profile Picture">`;
+            } else {
+                profileContainer.innerHTML = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;"><i class="bi bi-person text-white" style="font-size: 3rem;"></i></div>`;
+            }
+            document.getElementById('viewResidentName').textContent = `${resident.first_name} ${resident.middle_name ? resident.middle_name + ' ' : ''}${resident.last_name}${resident.suffix ? ' ' + resident.suffix : ''}`;
+            document.getElementById('viewResidentPurok').textContent = resident.purok_name || 'No Purok Assigned';
+            document.getElementById('viewAge').textContent = resident.age;
+            document.getElementById('viewGender').textContent = resident.gender;
+            document.getElementById('viewCivilStatus').textContent = resident.civil_status;
+            document.getElementById('viewBirthdate').textContent = new Date(resident.birthdate).toLocaleDateString();
+            document.getElementById('viewOccupation').textContent = resident.occupation || 'Not specified';
+            document.getElementById('viewMonthlyIncome').textContent = resident.monthly_income ? `₱${parseFloat(resident.monthly_income).toLocaleString(undefined, {minimumFractionDigits: 2})}` : 'Not specified';
+            document.getElementById('viewContactNumber').textContent = resident.contact_number || 'Not provided';
+            document.getElementById('viewEmail').textContent = resident.email || 'Not provided';
+            document.getElementById('viewAddress').textContent = resident.address || 'Not provided';
+            document.getElementById('viewEmergencyName').textContent = resident.emergency_contact_name || 'Not provided';
+            document.getElementById('viewEmergencyNumber').textContent = resident.emergency_contact_number || '';
+            // Valid IDs
+            const frontIdContainer = document.getElementById('viewValidIdFront');
+            const backIdContainer = document.getElementById('viewValidIdBack');
+            function renderValidId(container, filename, label) {
+                if (!filename) {
+                    container.innerHTML = `<p class='text-muted mb-0'>No ${label} ID uploaded</p>`;
+                    return;
+                }
+                const ext = filename.split('.').pop().toLowerCase();
+                if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+                    container.innerHTML = `<img src='uploads/ids/${filename}' class='img-fluid rounded border' alt='${label} ID' style='max-width: 220px;'>`;
+                } else if (ext === "pdf") {
+                    container.innerHTML = `<a href='uploads/ids/${filename}' target='_blank' class='btn btn-outline-primary'><i class='bi bi-file-earmark-pdf me-2'></i>View ${label} (PDF)</a>`;
+                } else {
+                    container.innerHTML = `<a href='uploads/ids/${filename}' target='_blank' class='btn btn-outline-secondary'>Download ${label} ID</a>`;
+                }
+            }
+            renderValidId(frontIdContainer, resident.valid_id_front, 'Front');
+            renderValidId(backIdContainer, resident.valid_id_back, 'Back');
+            new bootstrap.Modal(document.getElementById('viewResidentModal')).show();
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to load resident details.');
+        }
+    });
+}
+</script>
 <?php include 'scripts.php'; ?> 
