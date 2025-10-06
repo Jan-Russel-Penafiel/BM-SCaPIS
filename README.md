@@ -26,7 +26,7 @@ BM-SCaPIS is a modern, mobile-friendly Progressive Web Application (PWA) designe
 - Certificate of Indigency
 - Business Permit
 - Building Permit
-- Certificate of Good Moral
+- Community Tax (Cedula)
 
 ## Technical Specifications
 

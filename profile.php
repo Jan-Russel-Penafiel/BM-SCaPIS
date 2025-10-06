@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $emergencyContactNumber = trim($_POST['emergency_contact_number'] ?? '');
         
         // Basic validation
-        if (empty($firstName) || empty($lastName) || empty($gender) || empty($civilStatus)) {
+        if (empty($firstName) || empty($lastName) || empty($gender) || empty($civilStatus) || empty($contactNumber)) {
             $error = 'Please fill in all required fields.';
         } else {
             try {
@@ -277,10 +277,10 @@ include 'sidebar.php';
                             <h6 class="mb-3">Contact Information</h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Contact Number</label>
+                                    <label class="form-label">Contact Number <span class="text-danger">*</span></label>
                                     <input type="tel" class="form-control" name="contact_number" 
                                            value="<?php echo htmlspecialchars($currentUser['contact_number'] ?? ''); ?>"
-                                           pattern="[0-9]{11}" title="Please enter a valid 11-digit phone number">
+                                           pattern="[0-9]{11}" title="Please enter a valid 11-digit phone number" required>
                                     <div class="form-text">Format: 09XXXXXXXXX</div>
                                 </div>
                                 <div class="col-md-6">

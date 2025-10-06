@@ -43,24 +43,55 @@ if (isset($_GET['application_number']) && !empty($_GET['application_number'])) {
         $error = 'Application not found. Please check the application number and try again.';
     }
 }
-
-include 'header.php';
-include 'sidebar.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $pageTitle; ?> - <?php echo SYSTEM_NAME; ?></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 8px;
+        }
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-processing { background-color: #17a2b8; color: #fff; }
+        .status-ready_for_pickup { background-color: #28a745; color: #fff; }
+        .status-completed { background-color: #6c757d; color: #fff; }
+        .status-rejected { background-color: #dc3545; color: #fff; }
+    </style>
+</head>
+<body>
 
-<div class="main-content">
-    <div class="container-fluid py-4">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h1 class="h3 mb-2">Track Application</h1>
-                        <p class="text-muted mb-0">Enter your application number to track its status</p>
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="dashboard.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </a>
+                        <div>
+                            <h1 class="h3 mb-2">Track Application</h1>
+                            <p class="text-muted mb-0">Enter your application number to track its status</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Search Form -->
         <div class="row mb-4">
@@ -341,4 +372,8 @@ include 'sidebar.php';
 }
 </style>
 
-<?php include 'scripts.php'; ?> 
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html> 

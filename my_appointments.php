@@ -24,23 +24,51 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$_SESSION['user_id']]);
 $appointments = $stmt->fetchAll();
-
-include 'header.php';
-include 'sidebar.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $pageTitle; ?> - <?php echo SYSTEM_NAME; ?></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
 
-<div class="main-content">
-    <div class="container-fluid py-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h1 class="h3 mb-2">My Appointments</h1>
-                        <p class="text-muted mb-0">View your scheduled appointments for document verification or pickup.</p>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="dashboard.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </a>
+                        <div>
+                            <h1 class="h3 mb-2">My Appointments</h1>
+                            <p class="text-muted mb-0">View your scheduled appointments for document verification or pickup.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <div class="row">
             <div class="col-12">
@@ -187,4 +215,13 @@ $(document).ready(function() {
 });
 </script>
 
-<?php include 'scripts.php'; ?> 
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+</body>
+</html> 

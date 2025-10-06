@@ -85,7 +85,7 @@ if (isset($_GET['verify'])) {
         ");
         $stmt->execute([
             $payment['application_id'],
-            'GCash payment verified. Reference: ' . $payment['reference_number'],
+            'GCash payment verified. Reference: ' . $payment['reference_number'] . '. Processing started automatically. Processing time: 3 to 5 working days (except holidays)',
             $_SESSION['user_id']
         ]);
         

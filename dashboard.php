@@ -134,7 +134,7 @@ include 'sidebar.php';
                                     echo 'Manage residents and applications in your purok.';
                                     break;
                                 case 'resident':
-                                    echo 'Apply for documents and track your applications here.';
+                                    echo 'Request documents and track your transactions here.';
                                     break;
                             }
                             ?>
@@ -309,7 +309,7 @@ include 'sidebar.php';
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="card-title text-muted mb-2">Total Applications</h6>
+                                    <h6 class="card-title text-muted mb-2">Total Documents</h6>
                                     <h2 class="mb-0 text-primary"><?php echo number_format($stats['total_applications']); ?></h2>
                                 </div>
                                 <div class="text-primary">
@@ -454,13 +454,13 @@ include 'sidebar.php';
                                 <div class="col-lg-3 col-md-6">
                                     <a href="apply.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                                         <i class="bi bi-file-earmark-plus fs-1 mb-2"></i>
-                                        <span class="small">Apply for Document</span>
+                                        <span class="small">Request Document</span>
                                     </a>
                                 </div>
                                 <div class="col-lg-3 col-md-6">
                                     <a href="my-applications.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                                         <i class="bi bi-list-ul fs-1 mb-2"></i>
-                                        <span class="small">My Applications</span>
+                                        <span class="small">Documents Status</span>
                                     </a>
                                 </div>
                                 <div class="col-lg-3 col-md-6">
@@ -470,9 +470,9 @@ include 'sidebar.php';
                                     </a>
                                 </div>
                                 <div class="col-lg-3 col-md-6">
-                                    <a href="profile.php" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
-                                        <i class="bi bi-person fs-1 mb-2"></i>
-                                        <span class="small">My Profile</span>
+                                    <a href="my_appointments.php" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                        <i class="bi bi-calendar-check fs-1 mb-2"></i>
+                                        <span class="small">My Appointments</span>
                                     </a>
                                 </div>
                             <?php endif; ?>
@@ -532,7 +532,7 @@ include 'sidebar.php';
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="bi bi-file-earmark-text me-2"></i>My Recent Applications
+                                <i class="bi bi-file-earmark-text me-2"></i>Recent Transactions
                             </h5>
                             <a href="my-applications.php" class="btn btn-sm btn-outline-primary">
                                 View All <i class="bi bi-arrow-right"></i>
@@ -578,10 +578,10 @@ include 'sidebar.php';
                             <?php else: ?>
                                 <div class="text-center py-4">
                                     <i class="bi bi-file-earmark-plus text-muted" style="font-size: 4rem;"></i>
-                                    <h5 class="text-muted mt-3">No Applications Yet</h5>
-                                    <p class="text-muted">Start by applying for your first document</p>
+                                    <h5 class="text-muted mt-3">No Transactions Yet</h5>
+                                    <p class="text-muted">Start by requesting your first document</p>
                                     <a href="apply.php" class="btn btn-primary">
-                                        <i class="bi bi-file-earmark-plus me-2"></i>Apply Now
+                                        <i class="bi bi-file-earmark-plus me-2"></i>Request Now
                                     </a>
                                 </div>
                             <?php endif; ?>

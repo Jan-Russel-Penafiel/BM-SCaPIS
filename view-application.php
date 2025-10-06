@@ -178,7 +178,12 @@ include 'sidebar.php';
                             
                             <div class="col-md-6">
                                 <h6 class="text-muted mb-1">Processing Time</h6>
-                                <p class="mb-0"><?php echo $application['processing_days']; ?> working days</p>
+                                <p class="mb-0">3 to 5 working days<br><small class="text-muted">(except holidays)</small></p>
+                                <?php if ($application['payment_status'] === 'paid' && $application['payment_date']): ?>
+                                    <small class="text-success d-block mt-1">
+                                        <i class="bi bi-clock-history me-1"></i>Started: <?php echo date('M j, Y', strtotime($application['payment_date'])); ?>
+                                    </small>
+                                <?php endif; ?>
                             </div>
                             
                             <div class="col-md-6">
@@ -345,12 +350,19 @@ include 'sidebar.php';
                                         <p class="text-primary mb-0">
                                             <i class="bi bi-arrow-repeat me-1"></i>Document is being processed
                                         </p>
+                                        <?php if ($application['payment_date']): ?>
+                                            <small class="text-muted d-block">
+                                                Processing time: 3 to 5 working days (except holidays)<br>
+                                                Started: <?php echo date('M j, Y', strtotime($application['payment_date'])); ?>
+                                            </small>
+                                        <?php endif; ?>
                                     <?php elseif ($application['status'] === 'completed' || $application['status'] === 'ready_for_pickup'): ?>
                                         <p class="text-success mb-0">
                                             <i class="bi bi-check-circle me-1"></i>Processing completed
                                         </p>
                                     <?php else: ?>
-                                        <p class="text-muted mb-0">Waiting for processing</p>
+                                        <p class="text-muted mb-0">Waiting for processing<br>
+                                        <small>Will start after payment is confirmed</small></p>
                                     <?php endif; ?>
                                 </div>
                             </div>

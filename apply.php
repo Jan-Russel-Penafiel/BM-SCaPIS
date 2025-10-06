@@ -24,6 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('Please fill in all required fields.');
         }
 
+        // Handle custom purpose if "Others" is selected
+        $purpose = $_POST['purpose'];
+        if ($purpose === 'Others') {
+            if (empty($_POST['custom_purpose'])) {
+                throw new Exception('Please specify your purpose.');
+            }
+            $purpose = trim($_POST['custom_purpose']);
+        }
+
         // Generate application number
         $applicationNumber = 'APP-' . date('Ymd') . '-' . rand(1000, 9999);
 
@@ -44,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $applicationNumber,
             $_SESSION['user_id'],
             $_POST['document_type'],
-            $_POST['purpose'],
+            $purpose,
             $_POST['urgency'] ?? 'Regular',
             $fee
         ]);
@@ -134,8 +143,25 @@ include 'sidebar.php';
 
                             <div class="mb-4">
                                 <label class="form-label">Purpose <span class="text-danger">*</span></label>
-                                <textarea name="purpose" class="form-control" rows="3" required></textarea>
-                                <div class="invalid-feedback">Please provide the purpose for this document.</div>
+                                <select name="purpose" id="purposeSelect" class="form-select" required>
+                                    <option value="">Select Purpose</option>
+                                    <option value="Employment">Employment</option>
+                                    <option value="School Requirements">School Requirements</option>
+                                    <option value="Business Permit">Business Permit</option>
+                                    <option value="Loan Application">Loan Application</option>
+                                    <option value="Government Transaction">Government Transaction</option>
+                                    <option value="Legal Purposes">Legal Purposes</option>
+                                    <option value="Medical Assistance">Medical Assistance</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                                <div class="invalid-feedback">Please select the purpose for this document.</div>
+                            </div>
+
+                            <div class="mb-4 d-none" id="customPurposeDiv">
+                                <label class="form-label">Specify Purpose <span class="text-danger">*</span></label>
+                                <textarea name="custom_purpose" id="customPurpose" class="form-control" rows="3" placeholder="Please specify your purpose..."></textarea>
+                                <div class="invalid-feedback">Please specify the purpose for this document.</div>
                             </div>
 
                             <div class="mb-4">
@@ -171,22 +197,27 @@ include 'sidebar.php';
             </div>
 
             <div class="col-lg-4">
-                <!-- Fee Information -->
+                <!-- Processing Fee -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
-                            <i class="bi bi-cash me-2"></i>Fee Information
+                            <i class="bi bi-cash me-2"></i>Processing Fee
                         </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span>Processing Fee:</span>
-                            <span class="h5 mb-0" id="processingFee">₱0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Processing Time:</span>
-                            <span id="processingDays">-</span>
-                        </div>
+                    <div class="card-body text-center">
+                        <h2 class="mb-0" id="processingFee">₱0.00</h2>
+                    </div>
+                </div>
+
+                <!-- Processing Time -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock me-2"></i>Processing Time
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-0" id="processingDays">-</h5>
                     </div>
                 </div>
 
@@ -245,7 +276,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         processingFee.textContent = fee ? `₱${parseFloat(fee).toFixed(2)}` : '₱0.00';
-        processingDays.textContent = days ? `${days} working days` : '-';
+        processingDays.textContent = '3 to 5 working days (except holidays)';
+    });
+
+    // Handle purpose selection
+    const purposeSelect = document.getElementById('purposeSelect');
+    const customPurposeDiv = document.getElementById('customPurposeDiv');
+    const customPurpose = document.getElementById('customPurpose');
+
+    purposeSelect.addEventListener('change', function() {
+        if (this.value === 'Others') {
+            customPurposeDiv.classList.remove('d-none');
+            customPurpose.required = true;
+        } else {
+            customPurposeDiv.classList.add('d-none');
+            customPurpose.required = false;
+            customPurpose.value = '';
+        }
     });
 
     // Form validation

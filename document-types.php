@@ -103,7 +103,7 @@ include 'sidebar.php';
                                 </div>
                                 <div class="text-end">
                                     <small class="text-muted d-block">Processing Time</small>
-                                    <strong><?php echo $type['processing_days']; ?> days</strong>
+                                    <strong>3 to 5 working days<br><small class="text-muted">(except holidays)</small></strong>
                                 </div>
                             </div>
 

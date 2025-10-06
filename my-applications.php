@@ -25,31 +25,65 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$_SESSION['user_id']]);
 $applications = $stmt->fetchAll();
-
-include 'header.php';
-include 'sidebar.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $pageTitle; ?> - <?php echo SYSTEM_NAME; ?></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 8px;
+        }
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-processing { background-color: #17a2b8; color: #fff; }
+        .status-ready_for_pickup { background-color: #28a745; color: #fff; }
+        .status-completed { background-color: #6c757d; color: #fff; }
+        .status-rejected { background-color: #dc3545; color: #fff; }
+    </style>
+</head>
+<body>
 
-<div class="main-content">
-    <div class="container-fluid py-4">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="dashboard.php" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back
+                            </a>
                             <div>
                                 <h1 class="h3 mb-2">My Applications</h1>
                                 <p class="text-muted mb-0">Track and manage your document applications</p>
                             </div>
-                            <a href="apply.php" class="btn btn-primary">
-                                <i class="bi bi-plus-lg me-2"></i>New Application
-                            </a>
                         </div>
+                        <a href="apply.php" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-2"></i>New Application
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Success Message -->
         <?php if (isset($_SESSION['success'])): ?>
@@ -118,6 +152,46 @@ include 'sidebar.php';
                                                             <?php endif; ?>
                                                             <?php echo ucfirst($app['status']); ?>
                                                         </span>
+                                                        <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                            <?php
+                                                            // Calculate expected completion date (5 working days from payment date)
+                                                            try {
+                                                                $paymentDate = new DateTime($app['payment_date']);
+                                                                $today = new DateTime();
+                                                                $today->setTime(0, 0, 0); // Reset to start of day for comparison
+                                                                
+                                                                // Calculate expected date from payment date
+                                                                $expectedDate = clone $paymentDate;
+                                                                $daysAdded = 0;
+                                                                while ($daysAdded < 5) {
+                                                                    $expectedDate->modify('+1 day');
+                                                                    // Skip weekends
+                                                                    if ($expectedDate->format('N') < 6) {
+                                                                        $daysAdded++;
+                                                                    }
+                                                                }
+                                                                
+                                                                // If expected date is in the past, recalculate from today
+                                                                if ($expectedDate < $today) {
+                                                                    $expectedDate = clone $today;
+                                                                    $daysAdded = 0;
+                                                                    while ($daysAdded < 5) {
+                                                                        $expectedDate->modify('+1 day');
+                                                                        if ($expectedDate->format('N') < 6) {
+                                                                            $daysAdded++;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <small class="d-block text-muted mt-1">
+                                                                    <i class="bi bi-calendar-check me-1"></i>Expected: <?php echo $expectedDate->format('M j, Y'); ?>
+                                                                </small>
+                                                                <?php
+                                                            } catch (Exception $e) {
+                                                                // Skip if date is invalid
+                                                            }
+                                                            ?>
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td>
                                                         <span class="badge bg-<?php 
@@ -135,24 +209,23 @@ include 'sidebar.php';
                                                                 <i class="bi bi-eye"></i>
                                                             </a>
                                                             <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
-                                                                <?php if ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed'): ?>
+                                                                <?php 
+                                                                // Allow payment if:
+                                                                // 1. No appointment required (no appointment exists), OR
+                                                                // 2. Appointment exists and is allowed by admin
+                                                                $canPay = !$app['payment_appointment_id'] || $app['payment_appointment_status'] === 'payment_allowed';
+                                                                ?>
+                                                                <?php if ($canPay): ?>
                                                                     <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
                                                                        class="btn btn-sm btn-outline-success"
-                                                                       title="Payment is now allowed. Click to proceed with payment.">
+                                                                       title="Click to proceed with payment">
                                                                         <i class="bi bi-credit-card"></i>
                                                                     </a>
-                                                                <?php elseif ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled'): ?>
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-outline-secondary"
-                                                                            disabled
-                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
-                                                                        <i class="bi bi-credit-card"></i>
-                                                                    </button>
                                                                 <?php else: ?>
                                                                     <button type="button" 
                                                                             class="btn btn-sm btn-outline-secondary"
                                                                             disabled
-                                                                            title="Payment appointment required. Please contact the barangay office.">
+                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
                                                                         <i class="bi bi-credit-card"></i>
                                                                     </button>
                                                                 <?php endif; ?>
@@ -195,6 +268,46 @@ include 'sidebar.php';
                                                             <?php endif; ?>
                                                             <?php echo ucfirst($app['status']); ?>
                                                         </span>
+                                                        <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                            <?php
+                                                            // Calculate expected completion date (5 working days from payment date)
+                                                            try {
+                                                                $paymentDate = new DateTime($app['payment_date']);
+                                                                $today = new DateTime();
+                                                                $today->setTime(0, 0, 0); // Reset to start of day for comparison
+                                                                
+                                                                // Calculate expected date from payment date
+                                                                $expectedDate = clone $paymentDate;
+                                                                $daysAdded = 0;
+                                                                while ($daysAdded < 5) {
+                                                                    $expectedDate->modify('+1 day');
+                                                                    // Skip weekends
+                                                                    if ($expectedDate->format('N') < 6) {
+                                                                        $daysAdded++;
+                                                                    }
+                                                                }
+                                                                
+                                                                // If expected date is in the past, recalculate from today
+                                                                if ($expectedDate < $today) {
+                                                                    $expectedDate = clone $today;
+                                                                    $daysAdded = 0;
+                                                                    while ($daysAdded < 5) {
+                                                                        $expectedDate->modify('+1 day');
+                                                                        if ($expectedDate->format('N') < 6) {
+                                                                            $daysAdded++;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <br><small class="text-muted">
+                                                                    <i class="bi bi-calendar-check me-1"></i>Expected: <?php echo $expectedDate->format('M j, Y'); ?>
+                                                                </small>
+                                                                <?php
+                                                            } catch (Exception $e) {
+                                                                // Skip if date is invalid
+                                                            }
+                                                            ?>
+                                                        <?php endif; ?>
                                                     </div>
                                                     
                                                     <div class="mb-2">
@@ -228,24 +341,23 @@ include 'sidebar.php';
                                                             <i class="bi bi-eye me-1"></i>View
                                                         </a>
                                                         <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
-                                                            <?php if ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed'): ?>
+                                                            <?php 
+                                                            // Allow payment if:
+                                                            // 1. No appointment required (no appointment exists), OR
+                                                            // 2. Appointment exists and is allowed by admin
+                                                            $canPay = !$app['payment_appointment_id'] || $app['payment_appointment_status'] === 'payment_allowed';
+                                                            ?>
+                                                            <?php if ($canPay): ?>
                                                                 <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
                                                                    class="btn btn-sm btn-outline-success flex-fill"
-                                                                   title="Payment is now allowed. Click to proceed with payment.">
+                                                                   title="Click to proceed with payment">
                                                                     <i class="bi bi-credit-card me-1"></i>Pay
                                                                 </a>
-                                                            <?php elseif ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled'): ?>
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-secondary flex-fill"
-                                                                        disabled
-                                                                        title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
-                                                                    <i class="bi bi-credit-card me-1"></i>Pay
-                                                                </button>
                                                             <?php else: ?>
                                                                 <button type="button" 
                                                                         class="btn btn-sm btn-outline-secondary flex-fill"
                                                                         disabled
-                                                                        title="Payment appointment required. Please contact the barangay office.">
+                                                                        title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
                                                                     <i class="bi bi-credit-card me-1"></i>Pay
                                                                 </button>
                                                             <?php endif; ?>
@@ -272,6 +384,26 @@ include 'sidebar.php';
         <!-- Application Status Guide -->
         <div class="row mt-4">
             <div class="col-12">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>Processing Time Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-0">
+                            <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>Important Information</h6>
+                            <p class="mb-2">
+                                <strong>Processing Time:</strong> All document applications take <strong>3 to 5 working days (except holidays)</strong> to process.
+                            </p>
+                            <p class="mb-0">
+                                <strong>When does processing start?</strong> Processing begins automatically after your payment is confirmed. 
+                                The countdown starts from the payment date, not the application submission date.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
@@ -283,11 +415,11 @@ include 'sidebar.php';
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center mb-3">
                                     <span class="badge status-pending me-2">Pending</span>
-                                    <span>Application is under initial review</span>
+                                    <span>Waiting for payment</span>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="badge status-processing me-2">Processing</span>
-                                    <span>Document is being processed</span>
+                                    <span>Document is being processed (3-5 days)</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -303,11 +435,11 @@ include 'sidebar.php';
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center mb-3">
                                     <span class="badge bg-success me-2">Paid</span>
-                                    <span>Payment has been received</span>
+                                    <span>Payment received - Processing started</span>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-warning me-2">Unpaid</span>
-                                    <span>Payment is pending</span>
+                                    <span>Payment pending - Processing not yet started</span>
                                 </div>
                             </div>
                         </div>
@@ -337,4 +469,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include 'scripts.php'; ?> 
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+</body>
+</html> 

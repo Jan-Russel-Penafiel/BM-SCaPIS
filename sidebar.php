@@ -67,6 +67,64 @@ if (!isLoggedIn()) {
                 <i class="bi bi-building me-2"></i><?php echo SYSTEM_NAME; ?>
             </a>
             
+            <!-- User profile dropdown - moved to left -->
+            <div class="dropdown ms-3">
+                <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                    <div class="me-2">
+                        <?php if ($currentUser['profile_picture']): ?>
+                            <img src="uploads/profiles/<?php echo htmlspecialchars($currentUser['profile_picture']); ?>" 
+                                 alt="Profile" class="rounded-circle" width="32" height="32">
+                        <?php else: ?>
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-person text-white"></i>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="d-none d-md-block">
+                        <div class="fw-bold" style="font-size: 0.9rem;">
+                            <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
+                        </div>
+                        <div class="small text-light">
+                            <?php echo ucfirst($currentUser['role']); ?>
+                        </div>
+                    </div>
+                </a>
+                <ul class="dropdown-menu shadow">
+                    <li>
+                        <h6 class="dropdown-header">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
+                            <small class="d-block text-muted"><?php echo ucfirst($currentUser['role']); ?></small>
+                        </h6>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="profile.php">
+                            <i class="bi bi-person me-2"></i>My Profile
+                        </a>
+                    </li>
+                    <?php if ($currentUser['role'] === 'resident'): ?>
+                        <li>
+                            <a class="dropdown-item" href="my-applications.php">
+                                <i class="bi bi-file-earmark-text me-2"></i>My Applications
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <li>
+                        <a class="dropdown-item" href="settings.php">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="logout.php">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
             <div class="d-flex align-items-center ms-auto">
                 <!-- Notifications -->
                 <div class="dropdown me-3">
@@ -133,64 +191,6 @@ if (!isLoggedIn()) {
                         <?php endif; ?>
                     </div>
                 </div>
-                
-                <!-- User profile dropdown -->
-                <div class="dropdown">
-                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" data-bs-toggle="dropdown">
-                        <div class="me-2">
-                            <?php if ($currentUser['profile_picture']): ?>
-                                <img src="uploads/profiles/<?php echo htmlspecialchars($currentUser['profile_picture']); ?>" 
-                                     alt="Profile" class="rounded-circle" width="32" height="32">
-                            <?php else: ?>
-                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
-                                     style="width: 32px; height: 32px;">
-                                    <i class="bi bi-person text-white"></i>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="d-none d-md-block">
-                            <div class="fw-bold" style="font-size: 0.9rem;">
-                                <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
-                            </div>
-                            <div class="small text-light">
-                                <?php echo ucfirst($currentUser['role']); ?>
-                            </div>
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow">
-                        <li>
-                            <h6 class="dropdown-header">
-                                <i class="bi bi-person-circle me-2"></i>
-                                <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
-                                <small class="d-block text-muted"><?php echo ucfirst($currentUser['role']); ?></small>
-                            </h6>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" href="profile.php">
-                                <i class="bi bi-person me-2"></i>My Profile
-                            </a>
-                        </li>
-                        <?php if ($currentUser['role'] === 'resident'): ?>
-                            <li>
-                                <a class="dropdown-item" href="my-applications.php">
-                                    <i class="bi bi-file-earmark-text me-2"></i>My Applications
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                        <li>
-                            <a class="dropdown-item" href="settings.php">
-                                <i class="bi bi-gear me-2"></i>Settings
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item text-danger" href="logout.php">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
         </div>
     </nav>
@@ -224,32 +224,6 @@ if (!isLoggedIn()) {
                             <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'apply.php' ? 'active' : ''; ?>" 
                                href="apply.php">
                                 <i class="bi bi-file-earmark-plus"></i>Apply for Document
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my-applications.php' ? 'active' : ''; ?>" 
-                               href="my-applications.php">
-                                <i class="bi bi-file-earmark-text"></i>My Applications
-                                <?php
-                                // Get count of pending applications for the resident
-                                $stmt = $pdo->prepare("SELECT COUNT(*) FROM applications WHERE user_id = ? AND status = 'pending'");
-                                $stmt->execute([$_SESSION['user_id']]);
-                                $pendingCount = $stmt->fetchColumn();
-                                if ($pendingCount > 0): ?>
-                                    <span class="badge bg-warning text-dark ms-2"><?php echo $pendingCount; ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'my-appointments.php' ? 'active' : ''; ?>" 
-                               href="my_appointments.php">
-                                <i class="bi bi-calendar-check"></i>My Appointments
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'track-application.php' ? 'active' : ''; ?>" 
-                               href="track-application.php">
-                                <i class="bi bi-search"></i>Track Application
                             </a>
                         </li>
                     </ul>

@@ -76,6 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Validate email format if provided
+    if (!empty($formData['email']) && !filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Please enter a valid email address.';
+    }
+
     // Validate birthdate if provided
     if (!empty($formData['birthdate'])) {
         $birthdate = new DateTime($formData['birthdate']);

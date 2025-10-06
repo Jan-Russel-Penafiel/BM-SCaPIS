@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 28, 2025 at 08:38 AM
+-- Generation Time: Oct 06, 2025 at 08:44 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -214,7 +214,75 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `table_affected`, `recor
 (278, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-07-28 04:03:19'),
 (279, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-07-28 04:03:22'),
 (280, 1, 'Marked application #APP-20250728-8520 as ready for pickup', 'applications', 6, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-07-28 04:13:52'),
-(281, 1, 'Marked application #APP-20250728-7081 as ready for pickup', 'applications', 7, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-07-28 04:27:51');
+(281, 1, 'Marked application #APP-20250728-7081 as ready for pickup', 'applications', 7, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-07-28 04:27:51'),
+(283, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', '2025-08-11 13:04:19'),
+(284, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-23 04:11:22'),
+(285, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-23 04:11:33'),
+(286, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-23 04:11:38'),
+(287, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-23 04:20:41'),
+(288, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:08:01'),
+(289, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:08:20'),
+(290, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:08:23'),
+(291, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:08:58'),
+(292, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:09:01'),
+(293, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:09:11'),
+(294, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:09:17'),
+(295, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:09:54'),
+(296, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:09:57'),
+(297, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:10:03'),
+(298, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:11:26'),
+(299, 30, 'GCash payment verified for application #APP-20250728-8474', 'applications', 8, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:12:22'),
+(300, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:14:53'),
+(301, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-25 13:14:59'),
+(302, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-09-29 07:38:22'),
+(303, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:16:49'),
+(304, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:32:04'),
+(305, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:32:12'),
+(306, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:32:29'),
+(307, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:32:32'),
+(308, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:44:09'),
+(309, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:44:14'),
+(310, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:44:33'),
+(311, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:44:36'),
+(312, 1, 'Scheduled payment appointment for application #APP-20251005-4518', 'appointments', 6, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:44:56'),
+(313, 1, 'Completed payment appointment for application #APP-20251005-4518', 'appointments', 6, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:45:37'),
+(314, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:46:14'),
+(315, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:46:19'),
+(316, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:47:12'),
+(317, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:47:15'),
+(318, 1, 'Rescheduled pickup appointment for application #APP-20250728-8520', 'appointments', 4, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:48:10'),
+(319, 1, 'Scheduled payment appointment for application #APP-20251005-4518', 'appointments', 7, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-05 05:48:42'),
+(320, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:49:12'),
+(321, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:49:18'),
+(322, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:49:54'),
+(323, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:49:58'),
+(324, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:50:13'),
+(325, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:50:16'),
+(326, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:50:28'),
+(327, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:50:34'),
+(328, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:52:42'),
+(329, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:52:47'),
+(330, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:57:36'),
+(331, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:57:43'),
+(332, 1, 'waive_payment', 'applications', 10, '{\"payment_status\":\"unpaid\",\"payment_amount\":\"25.00\"}', '{\"payment_status\":\"waived\",\"payment_amount\":\"25.00\"}', '::1', NULL, '2025-10-06 05:58:10'),
+(333, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:59:23'),
+(334, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:59:29'),
+(335, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:59:44'),
+(336, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 05:59:47'),
+(337, 1, 'remove_purok_leader', 'users', 5, '{\"role\":\"purok_leader\",\"purok_id\":1,\"purok_name\":\"Purok 1\"}', '{\"role\":\"resident\",\"remarks\":\"sfsd\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:03:09'),
+(338, 1, 'assign_purok_leader', 'puroks', 1, '{\"purok_leader_id\":null}', '{\"purok_leader_id\":30,\"resident_name\":\"Jan Russelsss Pe\\u00f1afielsss\",\"purok_name\":\"Purok 1\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:03:16'),
+(339, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:05:08'),
+(340, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:05:14'),
+(341, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:07:26'),
+(342, 31, 'User registered', 'users', 31, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:08:58');
+INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `table_affected`, `record_id`, `old_values`, `new_values`, `ip_address`, `user_agent`, `created_at`) VALUES
+(343, 30, 'User logged in', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:01'),
+(344, 30, 'approve_registration', 'users', 31, '{\"user_id\":\"31\",\"approved_by\":30,\"approved_by_name\":\"Jan Russelsss Pe\\u00f1afielsss\",\"remarks\":\"asdada\",\"approved_at\":\"2025-10-06 14:10:07\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:07'),
+(345, 30, 'User logged out', 'users', 30, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:11'),
+(346, 1, 'User logged in', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:14'),
+(347, 1, 'approve_registration', 'users', 31, '{\"user_id\":\"31\",\"approved_by\":1,\"approved_by_name\":\"System Administrator\",\"remarks\":\"ada\",\"approved_at\":\"2025-10-06 14:10:25\"}', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:25'),
+(348, 1, 'User logged out', 'users', 1, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:32'),
+(349, 31, 'User logged in', 'users', 31, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '2025-10-06 06:10:46');
 
 -- --------------------------------------------------------
 
@@ -251,9 +319,11 @@ CREATE TABLE `applications` (
 --
 
 INSERT INTO `applications` (`id`, `application_number`, `user_id`, `document_type_id`, `purpose`, `urgency`, `status`, `payment_status`, `payment_method`, `payment_amount`, `payment_date`, `payment_reference`, `payment_receipt`, `admin_remarks`, `pickup_date`, `appointment_date`, `processed_by`, `priority_level`, `supporting_documents`, `created_at`, `updated_at`) VALUES
-(6, 'APP-20250728-8520', 30, 2, 'sdasdad', 'Regular', 'ready_for_pickup', 'unpaid', 'gcash', 30.00, '2025-07-28 03:08:54', 'GC17536719835758', NULL, '2025-07-28 12:13:49 - Ready for pickup: sadada', '2025-07-31 04:13:00', NULL, NULL, 1, NULL, '2025-07-28 00:53:53', '2025-07-28 04:13:49'),
+(6, 'APP-20250728-8520', 30, 2, 'sdasdad', 'Regular', 'ready_for_pickup', 'unpaid', 'gcash', 30.00, '2025-07-28 03:08:54', 'GC17536719835758', NULL, '2025-07-28 12:13:49 - Ready for pickup: sadada2025-10-05 13:48:08 - Pickup appointment rescheduled to 2025-10-06T13:48 by System Administrator', '2025-07-31 04:13:00', NULL, NULL, 1, NULL, '2025-07-28 00:53:53', '2025-10-05 05:48:08'),
 (7, 'APP-20250728-7081', 30, 1, 'asda', 'Regular', 'ready_for_pickup', 'paid', 'gcash', 50.00, '2025-07-28 03:15:38', 'GC17536724943183', NULL, '2025-07-28 12:27:48 - Ready for pickup: asdadada', '2025-07-30 04:27:00', NULL, NULL, 1, NULL, '2025-07-28 03:10:01', '2025-07-28 04:27:48'),
-(8, 'APP-20250728-8474', 30, 2, 'Ysysusus', 'Regular', 'pending', 'unpaid', NULL, 30.00, NULL, NULL, NULL, '2025-07-28 11:47:57 - Payment appointment scheduled for 2025-07-30T11:47 by System Administrator', NULL, NULL, NULL, 1, NULL, '2025-07-28 03:16:23', '2025-07-28 03:47:57');
+(8, 'APP-20250728-8474', 30, 2, 'Ysysusus', 'Regular', 'processing', 'paid', 'gcash', 30.00, '2025-08-25 13:12:18', 'GC17561275005981', NULL, '2025-07-28 11:47:57 - Payment appointment scheduled for 2025-07-30T11:47 by System Administrator', NULL, NULL, NULL, 1, NULL, '2025-07-28 03:16:23', '2025-08-25 13:12:18'),
+(9, 'APP-20251005-4518', 30, 1, 'asdadad', 'Regular', 'pending', 'unpaid', NULL, 50.00, NULL, NULL, NULL, '2025-10-05 13:44:55 - Payment appointment scheduled for 2025-10-16T13:44 by System Administrator2025-10-05 13:45:35 - Payment appointment completed by System Administrator2025-10-05 13:48:41 - Payment appointment scheduled for 2025-10-06T13:48 by System Administrator', NULL, NULL, NULL, 1, NULL, '2025-10-05 05:44:25', '2025-10-05 05:48:41'),
+(10, 'APP-20251005-7148', 30, 3, 'sdfs', 'Regular', 'processing', 'waived', NULL, 25.00, '2025-10-06 05:58:10', 'Waived by Admin', NULL, '2025-10-06 13:58:10 - Payment waived by System Administrator. Processing started automatically.', NULL, NULL, 1, 1, NULL, '2025-10-05 05:47:08', '2025-10-06 05:58:10');
 
 -- --------------------------------------------------------
 
@@ -279,7 +349,14 @@ INSERT INTO `application_history` (`id`, `application_id`, `status`, `remarks`, 
 (11, 7, 'processing', 'GCash payment verified. Reference: GC17536724943183', 30, '2025-07-28 03:15:38'),
 (12, 8, 'pending', 'Payment appointment scheduled for Jul 30, 2025 11:47 AM', 1, '2025-07-28 03:47:57'),
 (13, 6, 'ready_for_pickup', 'sadada', 1, '2025-07-28 04:13:49'),
-(14, 7, 'ready_for_pickup', 'asdadada', 1, '2025-07-28 04:27:48');
+(14, 7, 'ready_for_pickup', 'asdadada', 1, '2025-07-28 04:27:48'),
+(15, 8, 'processing', 'GCash payment verified. Reference: GC17561275005981', 30, '2025-08-25 13:12:18'),
+(16, 9, 'pending', 'Payment appointment scheduled for Oct 16, 2025 1:44 PM', 1, '2025-10-05 05:44:55'),
+(17, 9, 'pending', 'Payment appointment completed', 1, '2025-10-05 05:45:35'),
+(18, 6, 'pending', 'Pickup appointment rescheduled to Oct 6, 2025 1:48 PM', 1, '2025-10-05 05:48:08'),
+(19, 9, 'pending', 'Payment appointment scheduled for Oct 6, 2025 1:48 PM', 1, '2025-10-05 05:48:41'),
+(20, 10, 'payment_waived', 'Payment waived by administrator', 1, '2025-10-06 05:58:10'),
+(21, 10, 'processing', 'Processing started automatically after payment waiver. Processing time: 3 to 5 working days (except holidays)', 1, '2025-10-06 05:58:10');
 
 -- --------------------------------------------------------
 
@@ -306,8 +383,10 @@ CREATE TABLE `appointments` (
 
 INSERT INTO `appointments` (`id`, `application_id`, `user_id`, `appointment_type`, `appointment_date`, `status`, `notes`, `created_by`, `created_at`, `updated_at`) VALUES
 (3, 8, 30, 'payment', '2025-07-30 11:47:00', 'scheduled', 'Pay With Gcash', 1, '2025-07-28 03:47:57', '2025-07-28 03:47:57'),
-(4, 6, 30, 'pickup', '2025-07-31 12:13:00', 'scheduled', 'sadada', 1, '2025-07-28 04:13:49', '2025-07-28 04:13:49'),
-(5, 7, 30, 'pickup', '2025-07-30 12:27:00', 'scheduled', 'asdadada', 1, '2025-07-28 04:27:48', '2025-07-28 04:27:48');
+(4, 6, 30, 'pickup', '2025-10-06 13:48:00', 'rescheduled', 'sadada\nRescheduled on 2025-10-05 13:48:08 to 2025-10-06T13:48 by System Administrator', 1, '2025-07-28 04:13:49', '2025-10-05 05:48:08'),
+(5, 7, 30, 'pickup', '2025-07-30 12:27:00', 'scheduled', 'asdadada', 1, '2025-07-28 04:27:48', '2025-07-28 04:27:48'),
+(6, 9, 30, 'payment', '2025-10-16 13:44:00', 'completed', 'asda\nCompleted on 2025-10-05 13:45:35 by System Administrator', 1, '2025-10-05 05:44:55', '2025-10-05 05:45:35'),
+(7, 9, 30, 'payment', '2025-10-06 13:48:00', 'scheduled', 'sdfs', 1, '2025-10-05 05:48:41', '2025-10-05 05:48:41');
 
 -- --------------------------------------------------------
 
@@ -336,7 +415,7 @@ INSERT INTO `document_types` (`id`, `type_name`, `description`, `fee`, `requirem
 (3, 'Certificate of Indigency', 'Certificate for low-income residents', 25.00, 'Valid ID, Income Statement, Barangay ID', 3, 1, '2025-07-24 02:40:48'),
 (4, 'Business Permit', 'Permit for small business operations', 200.00, 'Valid ID, Business Registration, Location Map', 5, 1, '2025-07-24 02:40:48'),
 (5, 'Building Permit', 'Permit for construction/renovation', 500.00, 'Valid ID, Construction Plans, Lot Title', 7, 1, '2025-07-24 02:40:48'),
-(6, 'Certificate of Good Moral', 'Character certificate', 40.00, 'Valid ID, Character References', 3, 1, '2025-07-24 02:40:48');
+(6, 'Community Tax (Cedula)', 'Community Tax Certificate (also known as Cedula)', 40.00, 'Valid ID, Character References', 3, 1, '2025-07-24 02:40:48');
 
 -- --------------------------------------------------------
 
@@ -372,7 +451,9 @@ INSERT INTO `payment_verifications` (`id`, `application_id`, `reference_number`,
 (10, 8, 'GC17536729252419', 30.00, 'pending', '2025-07-28 03:22:05', NULL, '2025-07-28 03:37:05'),
 (11, 8, 'GC17536729887681', 30.00, 'pending', '2025-07-28 03:23:08', NULL, '2025-07-28 03:38:08'),
 (12, 8, 'GC17536747708186', 30.00, 'pending', '2025-07-28 03:52:50', NULL, '2025-07-28 04:07:50'),
-(13, 8, 'GC17536751537253', 30.00, 'pending', '2025-07-28 03:59:13', NULL, '2025-07-28 04:14:13');
+(13, 8, 'GC17536751537253', 30.00, 'pending', '2025-07-28 03:59:13', NULL, '2025-07-28 04:14:13'),
+(14, 8, 'GC17561275005981', 30.00, 'verified', '2025-08-25 13:11:40', '2025-08-25 13:12:18', '2025-08-25 13:26:40'),
+(15, 10, 'GC17597300853961', 25.00, 'failed', '2025-10-06 05:54:45', NULL, '2025-10-06 06:09:45');
 
 -- --------------------------------------------------------
 
@@ -392,7 +473,7 @@ CREATE TABLE `puroks` (
 --
 
 INSERT INTO `puroks` (`id`, `purok_name`, `purok_leader_id`, `created_at`) VALUES
-(1, 'Purok 1', 5, '2025-07-24 02:40:48'),
+(1, 'Purok 1', 30, '2025-07-24 02:40:48'),
 (2, 'Purok 2', NULL, '2025-07-24 02:40:48'),
 (4, 'Purok 4', NULL, '2025-07-24 02:40:48'),
 (5, 'Purok 5', NULL, '2025-07-24 02:40:48'),
@@ -458,7 +539,17 @@ INSERT INTO `sms_notifications` (`id`, `user_id`, `phone_number`, `message`, `st
 (54, 30, '09677726917', 'GCash payment received for application #APP-20250728-7081. Amount: ₱50.00. Reference: GC17536724943183 Your Barangay Clearance is now being processed.', 'failed', '{\"success\":false,\"message\":\"API Error: Telco Issues\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"Telco Issues\"}}', NULL, '2025-07-28 03:15:38'),
 (55, 30, '09677726917', 'Hi Jan Russelsss, your payment appointment for Certificate of Residency application #APP-20250728-8474 has been scheduled for Jul 30, 2025 11:47 AM. Please bring ₱30.00 for payment.', 'pending', NULL, NULL, '2025-07-28 03:47:57'),
 (56, 30, '09677726917', 'Your Certificate of Residency (#APP-20250728-8520) is ready for pickup. Please visit the barangay office on Jul 29, 2025.', 'sent', '{\"success\":true,\"message\":\"SMS sent successfully\",\"reference_id\":null,\"delivery_status\":\"success\",\"timestamp\":\"2025-07-28 12:13 PM\"}', '2025-07-28 04:13:52', '2025-07-28 04:13:49'),
-(57, 30, '09677726917', 'Your Barangay Clearance (#APP-20250728-7081) is ready for pickup. Please visit the barangay office on Jul 30, 2025.', 'sent', '{\"success\":true,\"message\":\"SMS sent successfully\",\"reference_id\":null,\"delivery_status\":\"success\",\"timestamp\":\"2025-07-28 12:27 PM\"}', '2025-07-28 04:27:51', '2025-07-28 04:27:48');
+(57, 30, '09677726917', 'Your Barangay Clearance (#APP-20250728-7081) is ready for pickup. Please visit the barangay office on Jul 30, 2025.', 'sent', '{\"success\":true,\"message\":\"SMS sent successfully\",\"reference_id\":null,\"delivery_status\":\"success\",\"timestamp\":\"2025-07-28 12:27 PM\"}', '2025-07-28 04:27:51', '2025-07-28 04:27:48'),
+(58, 1, '09123456789', 'Test SMS from BM-SCaPIS system. Time: 2025-08-03 15:53:26', 'sent', '{\"success\":true,\"message\":\"SMS sent successfully\",\"reference_id\":null,\"delivery_status\":\"success\",\"timestamp\":\"2025-08-03 3:53 PM\"}', '2025-08-03 07:53:30', '2025-08-03 07:53:26'),
+(59, 30, '09677726917', 'GCash payment received for application #APP-20250728-8474. Amount: ₱30.00. Reference: GC17561275005981 Your Certificate of Residency is now being processed.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 1.05\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 1.05\"}}', NULL, '2025-08-25 13:12:18'),
+(60, 30, '09677726917', 'Hi Jan Russelsss, your payment appointment for Barangay Clearance application #APP-20251005-4518 has been scheduled for Oct 16, 2025 1:44 PM. Please bring ₱50.00 for payment.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 1.05\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 1.05\"}}', NULL, '2025-10-05 05:44:55'),
+(61, 30, '09677726917', 'Hi Jan Russelsss, your Payment appointment for Barangay Clearance application #APP-20251005-4518 has been completed successfully. Thank you for visiting the barangay office.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 0.7\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 0.7\"}}', NULL, '2025-10-05 05:45:35'),
+(62, 30, '09677726917', 'Hi Jan Russelsss, your Pickup appointment for Certificate of Residency application #APP-20250728-8520 has been rescheduled to Oct 6, 2025 1:48 PM. Note: sdfsfs', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 0.35\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 0.35\"}}', NULL, '2025-10-05 05:48:08'),
+(63, 30, '09677726917', 'Hi Jan Russelsss, your payment appointment for Barangay Clearance application #APP-20251005-4518 has been scheduled for Oct 6, 2025 1:48 PM. Please bring ₱50.00 for payment.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 1.05\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 1.05\"}}', NULL, '2025-10-05 05:48:41'),
+(64, 30, '09677726917', 'Your application #APP-20251005-7148 payment has been waived. Your Certificate of Indigency application is now being processed.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 0.35\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 0.35\"}}', NULL, '2025-10-06 05:58:10'),
+(65, 5, '09677726912', 'Dear Jan Russel, you have been removed from your position as purok leader of Purok 1. Reason: sfsd', 'pending', NULL, NULL, '2025-10-06 06:03:09'),
+(66, 30, '09677726917', 'Dear Jan Russelsss, you have been assigned as the leader of Purok 1. Please log in to your account to manage your purok.', 'pending', NULL, NULL, '2025-10-06 06:03:16'),
+(67, 31, '09942270388', 'Congratulations! Your BM-SCaPIS registration has been approved.\n\nUsername: janruss01159\nPassword: bmscapis2025\n\nYou can now log in to your account and apply for documents.', 'failed', '{\"success\":false,\"message\":\"API Error: There is not enough balance available to send this message.You have 0.3 of the 0.7\",\"error_code\":403,\"error_details\":{\"status\":\"error\",\"message\":\"There is not enough balance available to send this message.You have 0.3 of the 0.7\"}}', NULL, '2025-10-06 06:10:22');
 
 -- --------------------------------------------------------
 
@@ -558,7 +649,20 @@ INSERT INTO `system_notifications` (`id`, `type`, `title`, `message`, `target_ro
 (112, 'document_ready', 'Document Ready for Pickup', 'Your Certificate of Residency is ready for pickup.', '', 30, 0, '{\"application_id\":\"6\",\"application_number\":\"APP-20250728-8520\",\"pickup_date\":\"2025-07-31 12:13:00\",\"remarks\":\"sadada\"}', '2025-07-28 04:13:52', NULL),
 (113, 'document_ready_admin', 'Document Ready for Pickup', 'Document for Jan Russelsss Peñafielsss is ready for pickup.', 'admin', NULL, 0, '{\"application_id\":\"6\",\"application_number\":\"APP-20250728-8520\",\"resident_name\":\"Jan Russelsss Pe\\u00f1afielsss\",\"pickup_date\":\"2025-07-31 12:13:00\"}', '2025-07-28 04:13:52', NULL),
 (114, 'document_ready', 'Document Ready for Pickup', 'Your Barangay Clearance is ready for pickup.', '', 30, 0, '{\"application_id\":\"7\",\"application_number\":\"APP-20250728-7081\",\"pickup_date\":\"2025-07-30 12:27:00\",\"remarks\":\"asdadada\"}', '2025-07-28 04:27:51', NULL),
-(115, 'document_ready_admin', 'Document Ready for Pickup', 'Document for Jan Russelsss Peñafielsss is ready for pickup.', 'admin', NULL, 0, '{\"application_id\":\"7\",\"application_number\":\"APP-20250728-7081\",\"resident_name\":\"Jan Russelsss Pe\\u00f1afielsss\",\"pickup_date\":\"2025-07-30 12:27:00\"}', '2025-07-28 04:27:51', NULL);
+(115, 'document_ready_admin', 'Document Ready for Pickup', 'Document for Jan Russelsss Peñafielsss is ready for pickup.', 'admin', NULL, 0, '{\"application_id\":\"7\",\"application_number\":\"APP-20250728-7081\",\"resident_name\":\"Jan Russelsss Pe\\u00f1afielsss\",\"pickup_date\":\"2025-07-30 12:27:00\"}', '2025-07-28 04:27:51', NULL),
+(116, 'application_submitted', 'New Document Application', 'New application APP-20251005-4518 submitted by Jan Russelsss Peñafielsss', 'admin', NULL, 0, '{\"application_id\":\"9\"}', '2025-10-05 05:44:25', NULL),
+(117, 'payment_appointment_scheduled', 'Payment Appointment Scheduled - Application #APP-20251005-4518', '\r\n        Dear Jan Russelsss Peñafielsss,\r\n        \r\n        Your payment appointment for the following application has been scheduled:\r\n        \r\n        Application Details:\r\n        - Application Number: APP-20251005-4518\r\n        - Document Type: Barangay Clearance\r\n        - Amount Due: ₱50.00\r\n        - Appointment Date: October 16, 2025 1:44 PM\r\n        \r\n        Please bring the exact amount for payment. If you have any questions, please contact the barangay office.\r\n        \r\n        Thank you,\r\n        Barangay Malangit Administration\r\n        ', '', 30, 0, '{\"application_id\":\"9\",\"appointment_id\":\"6\",\"appointment_date\":\"2025-10-16T13:44\",\"amount\":\"50.00\"}', '2025-10-05 05:44:56', NULL),
+(118, 'appointment_completed', 'Payment Appointment Completed - Application #APP-20251005-4518', '\r\n        Dear Jan Russelsss Peñafielsss,\r\n        \r\n        Your Payment appointment for the following application has been completed:\r\n        \r\n        Application Details:\r\n        - Application Number: APP-20251005-4518\r\n        - Document Type: Barangay Clearance\r\n        - Appointment Type: Payment\r\n        - Completion Date: October 5, 2025 1:45 PM\r\n        \r\n        Thank you for visiting the barangay office. If you have any questions, please contact us.\r\n        \r\n        Thank you,\r\n        Barangay Malangit Administration\r\n        ', '', 30, 0, '{\"application_id\":9,\"appointment_id\":6,\"appointment_type\":\"payment\",\"completion_date\":\"2025-10-05 13:45:37\"}', '2025-10-05 05:45:37', NULL),
+(119, 'application_submitted', 'New Document Application', 'New application APP-20251005-7148 submitted by Jan Russelsss Peñafielsss', 'admin', NULL, 0, '{\"application_id\":\"10\"}', '2025-10-05 05:47:08', NULL),
+(120, 'appointment_rescheduled', 'Pickup Appointment Rescheduled - Application #APP-20250728-8520', '\r\n        Dear Jan Russelsss Peñafielsss,\r\n        \r\n        Your Pickup appointment for the following application has been rescheduled:\r\n        \r\n        Application Details:\r\n        - Application Number: APP-20250728-8520\r\n        - Document Type: Certificate of Residency\r\n        - Appointment Type: Pickup\r\n        - New Appointment Date: October 6, 2025 1:48 PM\r\n        - Reason: sdfsfs\n\r\n        Please note the new appointment time. If you have any questions, please contact the barangay office.\r\n        \r\n        Thank you,\r\n        Barangay Malangit Administration\r\n        ', '', 30, 0, '{\"application_id\":6,\"appointment_id\":\"4\",\"appointment_type\":\"pickup\",\"new_appointment_date\":\"2025-10-06T13:48\",\"notes\":\"sdfsfs\"}', '2025-10-05 05:48:10', NULL),
+(121, 'payment_appointment_scheduled', 'Payment Appointment Scheduled - Application #APP-20251005-4518', '\r\n        Dear Jan Russelsss Peñafielsss,\r\n        \r\n        Your payment appointment for the following application has been scheduled:\r\n        \r\n        Application Details:\r\n        - Application Number: APP-20251005-4518\r\n        - Document Type: Barangay Clearance\r\n        - Amount Due: ₱50.00\r\n        - Appointment Date: October 6, 2025 1:48 PM\r\n        \r\n        Please bring the exact amount for payment. If you have any questions, please contact the barangay office.\r\n        \r\n        Thank you,\r\n        Barangay Malangit Administration\r\n        ', '', 30, 0, '{\"application_id\":\"9\",\"appointment_id\":\"7\",\"appointment_date\":\"2025-10-06T13:48\",\"amount\":\"50.00\"}', '2025-10-05 05:48:42', NULL),
+(122, 'payment_waived', 'Payment Waived - Application #APP-20251005-7148', '\n        Dear Jan Russelsss Peñafielsss,\n        \n        Your payment for Certificate of Indigency application #APP-20251005-7148 has been waived.\n        \n        Application Details:\n        - Application Number: APP-20251005-7148\n        - Document Type: Certificate of Indigency\n        - Original Fee: ₱25.00\n        - Status: Payment Waived\n        \n        Your application is now being processed. You will be notified once it\'s ready for pickup.\n        \n        Thank you,\n        Barangay Malangit Administration\n        ', 'all', 30, 0, '{\"application_id\":10,\"document_type\":\"Certificate of Indigency\",\"original_fee\":\"25.00\"}', '2025-10-06 05:58:11', NULL),
+(123, 'leader_removed', 'Purok Leader Removed', 'Purok leader position removed from Jan Russel Peñafiel for Purok 1. Reason: sfsd', 'admin', 5, 0, NULL, '2025-10-06 06:03:09', NULL),
+(124, 'leader_assigned', 'New Purok Leader Assigned', 'Jan Russelsss Peñafielsss has been assigned as leader of Purok 1', 'admin', 30, 0, NULL, '2025-10-06 06:03:16', NULL),
+(125, 'new_registration', 'New Resident Registration', 'New registration from Jan Russel Peñafielsss', 'admin', NULL, 0, '{\"user_id\": 31, \"purok_id\": 1}', '2025-10-06 06:08:58', NULL),
+(126, 'new_registration', 'New Resident Registration in Your Purok', 'New registration from Jan Russel Peñafielsss in your purok', 'purok_leader', NULL, 0, '{\"user_id\": 31, \"purok_id\": 1}', '2025-10-06 06:08:58', NULL),
+(127, 'registration_approved', 'Registration Approved', 'Your registration has been approved by Purok Leader (Jan Russelsss Peñafielsss)', '', 31, 0, '{\"approved_by\":30,\"approved_at\":\"2025-10-06 14:10:07\",\"remarks\":\"asdada\"}', '2025-10-06 06:10:07', NULL),
+(128, 'registration_approved', 'Registration Approved', 'Your registration has been fully approved (System Administrator)', '', 31, 0, '{\"approved_by\":1,\"approved_at\":\"2025-10-06 14:10:25\",\"remarks\":\"ada\"}', '2025-10-06 06:10:25', NULL);
 
 -- --------------------------------------------------------
 
@@ -610,8 +714,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `status`, `first_name`, `middle_name`, `last_name`, `suffix`, `birthdate`, `age`, `gender`, `civil_status`, `contact_number`, `email`, `purok_id`, `address`, `occupation`, `monthly_income`, `emergency_contact_name`, `emergency_contact_number`, `profile_picture`, `valid_id_front`, `valid_id_back`, `purok_leader_approval`, `admin_approval`, `purok_leader_remarks`, `admin_remarks`, `approved_by_purok_leader`, `approved_by_admin`, `approved_at`, `sms_notifications`, `email_notifications`, `created_at`, `updated_at`) VALUES
 (1, 'admin001', 'admin123', 'admin', 'approved', 'System', NULL, 'Administrator', NULL, NULL, NULL, 'Male', 'Single', '09677726912', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'approved', 'approved', NULL, NULL, NULL, NULL, NULL, 1, 1, '2025-07-24 02:40:48', '2025-07-26 07:15:14'),
-(5, 'jpeafiel_p5', '3d881bf7', 'purok_leader', 'approved', 'Jan Russel', 'asdadgd', 'Peñafiel', '', '2003-01-20', 22, 'Female', 'Widowed', '09677726912', 'artiedastephany@gmail.com', 1, 'Panay Santo Niño South Cotabato', 'asda', 2000.00, 'Jan Russel asdadgd Peñafiel', '09677726912', NULL, NULL, NULL, 'approved', 'approved', NULL, NULL, NULL, 1, '2025-07-24 06:52:15', 1, 1, '2025-07-24 06:52:15', '2025-07-24 07:15:09'),
-(30, 'janpe01297', 'bmscapis2025', 'resident', 'approved', 'Jan Russelsss', 'Elizaressss', 'Peñafielsss', '', '2002-02-02', 23, 'Male', 'Single', '09677726917', 'penafielliezl9999s@gmail.com', 1, 'Purok Paghidaet 1&2 Panay Santo Nino South Cotabato', '', 0.00, 'Jan Russel Elizares Peñafiel', '09677726912', '6884e6fc8fe827.86404042.png', '6884e6fc905625.35238474.png', '6884e6fc90b094.79721121.png', 'approved', 'approved', 'asdada', 'asda', 5, 1, '2025-07-27 11:31:06', 1, 1, '2025-07-26 14:32:28', '2025-07-27 11:31:06');
+(5, 'jpeafiel_p5', '3d881bf7', 'resident', 'approved', 'Jan Russel', 'asdadgd', 'Peñafiel', '', '2003-01-20', 22, 'Female', 'Widowed', '09677726912', 'artiedastephany@gmail.com', 1, 'Panay Santo Niño South Cotabato', 'asda', 2000.00, 'Jan Russel asdadgd Peñafiel', '09677726912', NULL, NULL, NULL, 'approved', 'approved', NULL, NULL, NULL, 1, '2025-07-24 06:52:15', 1, 1, '2025-07-24 06:52:15', '2025-10-06 06:03:09'),
+(30, 'janpe01297', 'bmscapis2025', 'purok_leader', 'approved', 'Jan Russelsss', 'Elizaressss', 'Peñafielsss', '', '2002-02-02', 23, 'Male', 'Single', '09677726917', 'penafielliezl9999s@gmail.com', 1, 'Purok Paghidaet 1&2 Panay Santo Nino South Cotabato', '', 0.00, 'Jan Russel Elizares Peñafiel', '09677726912', '6884e6fc8fe827.86404042.png', '6884e6fc905625.35238474.png', '6884e6fc90b094.79721121.png', 'approved', 'approved', 'asdada', 'asda', 5, 1, '2025-07-27 11:31:06', 1, 1, '2025-07-26 14:32:28', '2025-10-06 06:03:16'),
+(31, 'janruss01159', 'bmscapis2025', 'resident', 'approved', 'Jan', 'Elizares', 'Russel Peñafielsss', '', '1997-02-05', 28, 'Male', 'Single', '09942270388', 'penafielliezl9999@gmail.com', 1, 'Panay Sto. Niño South Cotabato', 'asdada', 1312313.00, 'asdad', '09677726912', '68e35cfa713f59.55372625.png', '68e35cfa718603.94421453.png', '68e35cfa71d6e0.49000045.jpg', 'approved', 'approved', 'asdada', 'ada', 30, 1, '2025-10-06 06:10:22', 1, 1, '2025-10-06 06:08:58', '2025-10-06 06:10:22');
 
 --
 -- Triggers `users`
@@ -817,25 +922,25 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=282;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=350;
 
 --
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `application_history`
 --
 ALTER TABLE `application_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `document_types`
@@ -847,7 +952,7 @@ ALTER TABLE `document_types`
 -- AUTO_INCREMENT for table `payment_verifications`
 --
 ALTER TABLE `payment_verifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `puroks`
@@ -865,7 +970,7 @@ ALTER TABLE `reports_cache`
 -- AUTO_INCREMENT for table `sms_notifications`
 --
 ALTER TABLE `sms_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `system_config`
@@ -877,13 +982,13 @@ ALTER TABLE `system_config`
 -- AUTO_INCREMENT for table `system_notifications`
 --
 ALTER TABLE `system_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=116;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- Constraints for dumped tables

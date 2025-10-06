@@ -165,6 +165,12 @@ include 'sidebar.php';
         <!-- Applications Table -->
         <div class="row">
             <div class="col-12">
+                <?php if ($_SESSION['role'] === 'admin'): ?>
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i><strong>Note:</strong> When payment is completed, applications automatically start processing. 
+                    Processing time is <strong>3 to 5 working days (except holidays)</strong> from the payment date.
+                </div>
+                <?php endif; ?>
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
@@ -224,6 +230,46 @@ include 'sidebar.php';
                                                     <?php endif; ?>
                                                     <?php echo ucfirst($app['status']); ?>
                                                 </span>
+                                                <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                    <?php
+                                                    // Calculate expected completion date (5 working days from payment date)
+                                                    try {
+                                                        $paymentDate = new DateTime($app['payment_date']);
+                                                        $today = new DateTime();
+                                                        $today->setTime(0, 0, 0); // Reset to start of day for comparison
+                                                        
+                                                        // Calculate expected date from payment date
+                                                        $expectedDate = clone $paymentDate;
+                                                        $daysAdded = 0;
+                                                        while ($daysAdded < 5) {
+                                                            $expectedDate->modify('+1 day');
+                                                            // Skip weekends
+                                                            if ($expectedDate->format('N') < 6) {
+                                                                $daysAdded++;
+                                                            }
+                                                        }
+                                                        
+                                                        // If expected date is in the past, recalculate from today
+                                                        if ($expectedDate < $today) {
+                                                            $expectedDate = clone $today;
+                                                            $daysAdded = 0;
+                                                            while ($daysAdded < 5) {
+                                                                $expectedDate->modify('+1 day');
+                                                                if ($expectedDate->format('N') < 6) {
+                                                                    $daysAdded++;
+                                                                }
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <small class="d-block text-muted mt-1">
+                                                            <i class="bi bi-calendar-check me-1"></i>Expected: <?php echo $expectedDate->format('M j, Y'); ?>
+                                                        </small>
+                                                        <?php
+                                                    } catch (Exception $e) {
+                                                        // Skip if date is invalid
+                                                    }
+                                                    ?>
+                                                <?php endif; ?>
                                             </td>
                                             <td>
                                                 <span class="badge bg-<?php 
@@ -298,23 +344,25 @@ include 'sidebar.php';
                                                                 </button>
                                                             <?php else: ?>
                                                                 <?php 
-                                                                // Check if today is the payment appointment date
+                                                                // Check if today is on or after the payment appointment date
                                                                 $appointmentDate = new DateTime($app['payment_appointment_date']);
+                                                                $appointmentDate->setTime(0, 0, 0);
                                                                 $today = new DateTime();
-                                                                $isAppointmentToday = $appointmentDate->format('Y-m-d') === $today->format('Y-m-d');
+                                                                $today->setTime(0, 0, 0);
+                                                                $isAppointmentDue = $today >= $appointmentDate;
                                                                 ?>
-                                                                <?php if ($isAppointmentToday): ?>
+                                                                <?php if ($isAppointmentDue): ?>
                                                                     <button type="button" 
                                                                             class="btn btn-sm btn-outline-success"
                                                                             onclick="allowPayment(<?php echo $app['id']; ?>)"
-                                                                            title="Allow Payment - Appointment is today">
+                                                                            title="Allow Payment - Appointment date has arrived (<?php echo date('M j, Y', strtotime($app['payment_appointment_date'])); ?>)">
                                                                         <i class="bi bi-check-circle"></i>
                                                                     </button>
                                                                 <?php else: ?>
                                                                     <button type="button" 
                                                                             class="btn btn-sm btn-outline-secondary"
                                                                             disabled
-                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Payment can only be allowed on the appointment date.">
+                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Payment can be allowed starting on that date.">
                                                                         <i class="bi bi-calendar-x"></i>
                                                                     </button>
                                                                 <?php endif; ?>

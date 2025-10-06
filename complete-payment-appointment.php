@@ -83,7 +83,7 @@ try {
     ");
     $stmt->execute([
         $appointment['application_id'],
-        'Payment received at appointment. Application moved to processing.',
+        'Payment received at appointment. Processing started automatically. Processing time: 3 to 5 working days (except holidays)',
         $_SESSION['user_id']
     ]);
     

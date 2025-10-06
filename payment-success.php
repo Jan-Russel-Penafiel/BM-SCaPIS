@@ -49,9 +49,13 @@ include 'sidebar.php';
                             </div>
                         </div>
                         <h1 class="h2 mb-3 text-success">Payment Successful!</h1>
-                        <p class="text-muted mb-0">
+                        <p class="text-muted mb-4">
                             Your GCash payment has been verified and your application is now being processed.
                         </p>
+                        <div class="alert alert-info">
+                            <i class="bi bi-clock-history me-2"></i><strong>Processing Time:</strong> 3 to 5 working days (except holidays)<br>
+                            <small>Processing started: <?php echo date('F j, Y', strtotime($application['payment_date'])); ?></small>
+                        </div>
                     </div>
                 </div>
             </div>

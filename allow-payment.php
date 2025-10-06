@@ -48,11 +48,14 @@ try {
         throw new Exception('No payment appointment found or appointment not scheduled.');
     }
     
-    // Check if today is the payment appointment date
+    // Check if today is on or after the payment appointment date
     $appointmentDate = new DateTime($application['payment_appointment_date']);
+    $appointmentDate->setTime(0, 0, 0); // Reset to start of day
     $today = new DateTime();
-    if ($appointmentDate->format('Y-m-d') !== $today->format('Y-m-d')) {
-        throw new Exception('Payment can only be allowed on the scheduled appointment date (' . $appointmentDate->format('M j, Y') . ').');
+    $today->setTime(0, 0, 0); // Reset to start of day
+    
+    if ($today < $appointmentDate) {
+        throw new Exception('Payment can only be allowed on or after the scheduled appointment date (' . $appointmentDate->format('M j, Y') . ').');
     }
     
     // Start transaction

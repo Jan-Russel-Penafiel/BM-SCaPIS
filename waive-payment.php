@@ -43,21 +43,24 @@ try {
     // Start transaction
     $pdo->beginTransaction();
     
-    // Update application payment status
+    // Update application payment status and start processing
     $stmt = $pdo->prepare("
         UPDATE applications 
         SET payment_status = 'waived',
             payment_date = CURRENT_TIMESTAMP,
             payment_reference = 'Waived by Admin',
+            status = 'processing',
+            processed_by = ?,
             admin_remarks = CONCAT(COALESCE(admin_remarks, ''), ?\n)
         WHERE id = ?
     ");
     $stmt->execute([
-        date('Y-m-d H:i:s') . ' - Payment waived by ' . $_SESSION['first_name'] . ' ' . $_SESSION['last_name'],
+        $_SESSION['user_id'],
+        date('Y-m-d H:i:s') . ' - Payment waived by ' . $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] . '. Processing started automatically.',
         $applicationId
     ]);
     
-    // Add to application history
+    // Add to application history for payment waived
     $stmt = $pdo->prepare("
         INSERT INTO application_history (
             application_id, status, remarks, changed_by
@@ -66,6 +69,18 @@ try {
     $stmt->execute([
         $applicationId,
         'Payment waived by administrator',
+        $_SESSION['user_id']
+    ]);
+    
+    // Add to application history for processing started
+    $stmt = $pdo->prepare("
+        INSERT INTO application_history (
+            application_id, status, remarks, changed_by
+        ) VALUES (?, 'processing', ?, ?)
+    ");
+    $stmt->execute([
+        $applicationId,
+        'Processing started automatically after payment waiver. Processing time: 3 to 5 working days (except holidays)',
         $_SESSION['user_id']
     ]);
     
@@ -155,4 +170,3 @@ try {
     header('Location: applications.php');
     exit;
 }
-?> 
