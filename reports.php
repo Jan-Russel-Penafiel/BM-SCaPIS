@@ -551,7 +551,7 @@ include 'sidebar.php';
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-container">
                             <table class="table" id="reportTable">
                                 <thead>
                                     <tr>
@@ -660,7 +660,8 @@ include 'sidebar.php';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTables
     $('#reportTable').DataTable({
-        pageLength: 25,
+        paging: false,
+        info: false,
         responsive: true,
         dom: 'Bfrtip',
         buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
@@ -833,5 +834,54 @@ function exportToExcel() {
     $('#reportTable').DataTable().button('2').trigger();
 }
 </script>
+
+<style>
+.table-container {
+    overflow: hidden;
+}
+
+.table-container table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.table-container th,
+.table-container td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    padding: 0.5rem 0.75rem;
+}
+
+.table-container small {
+    font-size: 0.75rem;
+}
+
+/* Default column widths for reports table */
+.table-container th {
+    width: auto;
+}
+
+/* Allow text wrapping for certain cells */
+.table-container td:nth-child(1),
+.table-container td:nth-child(2) {
+    white-space: normal;
+}
+
+/* Responsive adjustments for different report types */
+.table-container.residents-demographics th:nth-child(1) { width: 15%; } /* Purok */
+.table-container.residents-demographics th:nth-child(2) { width: 8%; }  /* Total */
+.table-container.residents-demographics th:nth-child(3) { width: 7%; }  /* Male */
+.table-container.residents-demographics th:nth-child(4) { width: 7%; }  /* Female */
+.table-container.residents-demographics th:nth-child(5) { width: 8%; }  /* Avg Age */
+.table-container.residents-demographics th:nth-child(6) { width: 7%; }  /* Minors */
+.table-container.residents-demographics th:nth-child(7) { width: 8%; }  /* Young Adults */
+.table-container.residents-demographics th:nth-child(8) { width: 7%; }  /* Adults */
+.table-container.residents-demographics th:nth-child(9) { width: 7%; }  /* Seniors */
+.table-container.residents-demographics th:nth-child(10) { width: 8%; } /* Employed */
+.table-container.residents-demographics th:nth-child(11) { width: 10%; } /* Avg Income */
+</style>
 
 <?php include 'scripts.php'; ?> 

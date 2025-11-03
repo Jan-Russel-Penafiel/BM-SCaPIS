@@ -126,6 +126,90 @@ include 'sidebar.php';
             </div>
         <?php endif; ?>
 
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Total Residents</h6>
+                                <h3 class="mb-0"><?php echo count($residents); ?></h3>
+                            </div>
+                            <div class="text-primary">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Male</h6>
+                                <h3 class="mb-0">
+                                    <?php 
+                                    echo count(array_filter($residents, function($r) {
+                                        return $r['gender'] === 'Male';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-info">
+                                <i class="bi bi-gender-male" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Female</h6>
+                                <h3 class="mb-0">
+                                    <?php 
+                                    echo count(array_filter($residents, function($r) {
+                                        return $r['gender'] === 'Female';
+                                    }));
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-danger">
+                                <i class="bi bi-gender-female" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Average Age</h6>
+                                <h3 class="mb-0">
+                                    <?php 
+                                    $ages = array_column($residents, 'age');
+                                    echo $ages ? round(array_sum($ages) / count($ages)) : 0;
+                                    ?>
+                                </h3>
+                            </div>
+                            <div class="text-success">
+                                <i class="bi bi-calendar" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Residents List -->
         <div class="row">
             <div class="col-12">
@@ -139,7 +223,7 @@ include 'sidebar.php';
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-container">
                             <table class="table table-hover" id="residentsTable">
                                 <thead>
                                     <tr>
@@ -236,90 +320,6 @@ include 'sidebar.php';
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row g-4 mt-4">
-            <div class="col-lg-3 col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Total Residents</h6>
-                                <h3 class="mb-0"><?php echo count($residents); ?></h3>
-                            </div>
-                            <div class="text-primary">
-                                <i class="bi bi-people" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Male</h6>
-                                <h3 class="mb-0">
-                                    <?php 
-                                    echo count(array_filter($residents, function($r) {
-                                        return $r['gender'] === 'Male';
-                                    }));
-                                    ?>
-                                </h3>
-                            </div>
-                            <div class="text-info">
-                                <i class="bi bi-gender-male" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Female</h6>
-                                <h3 class="mb-0">
-                                    <?php 
-                                    echo count(array_filter($residents, function($r) {
-                                        return $r['gender'] === 'Female';
-                                    }));
-                                    ?>
-                                </h3>
-                            </div>
-                            <div class="text-danger">
-                                <i class="bi bi-gender-female" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Average Age</h6>
-                                <h3 class="mb-0">
-                                    <?php 
-                                    $ages = array_column($residents, 'age');
-                                    echo $ages ? round(array_sum($ages) / count($ages)) : 0;
-                                    ?>
-                                </h3>
-                            </div>
-                            <div class="text-success">
-                                <i class="bi bi-calendar" style="font-size: 2rem;"></i>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -655,7 +655,8 @@ include 'sidebar.php';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTables
     $('#residentsTable').DataTable({
-        pageLength: 25,
+        paging: false,
+        info: false,
         responsive: true,
         language: {
             search: '<i class="bi bi-search"></i>',
@@ -968,6 +969,44 @@ function showToast(type, title, message) {
 @keyframes pickupPulse {
     0% { box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
     100% { box-shadow: 0 0 10px 4px rgba(13,110,253,0.3); }
+}
+
+.table-container {
+    overflow: hidden;
+}
+
+.table-container table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.table-container th,
+.table-container td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    padding: 0.5rem 0.75rem;
+}
+
+.table-container small {
+    font-size: 0.75rem;
+}
+
+/* Specific column widths */
+.table-container th:nth-child(1) { width: 25%; }
+.table-container th:nth-child(2) { width: 15%; }
+.table-container th:nth-child(3) { width: 20%; }
+.table-container th:nth-child(4) { width: 8%; }
+.table-container th:nth-child(5) { width: 10%; }
+.table-container th:nth-child(6) { width: 12%; }
+.table-container th:nth-child(7) { width: 10%; }
+
+.table-container td:nth-child(1),
+.table-container td:nth-child(2),
+.table-container td:nth-child(3) {
+    white-space: normal;
 }
 </style>
 

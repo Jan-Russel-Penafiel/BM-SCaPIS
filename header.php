@@ -213,6 +213,7 @@
             margin-top: 3rem;
         }
         
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             body {
                 padding-top: 56px;
@@ -250,6 +251,245 @@
             .sidebar-backdrop.show {
                 display: block;
             }
+            
+            .dropdown-menu {
+                min-width: 280px;
+                max-height: 300px;
+            }
+            
+            .dropdown-item {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .dropdown-toggle {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+        
+        /* Enhanced Dropdown Styles */
+        .dropdown-menu {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-width: 280px;
+            max-width: 350px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            z-index: 1050 !important;
+            position: absolute !important;
+            background: white;
+            border-radius: 0.375rem;
+            word-wrap: break-word;
+        }
+        
+        .dropup {
+            position: static !important;
+        }
+        
+        .dropup .dropdown-menu {
+            bottom: 100%;
+            top: auto;
+            margin-bottom: 0.125rem;
+            position: absolute !important;
+            transform: translate3d(0px, 0px, 0px) !important;
+        }
+        
+        .dropdown-menu-end {
+            --bs-position: end;
+            right: 0;
+            left: auto;
+        }
+        
+        .dropdown-menu.show {
+            position: absolute !important;
+            z-index: 1060 !important;
+        }
+        
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease-in-out;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+        
+        .dropdown-item.active {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border-left: 3px solid #1976d2;
+        }
+        
+        .dropdown-item .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .dropdown-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #495057;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0;
+            border-bottom: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+        
+        .dropdown-divider {
+            margin: 0.5rem 0;
+        }
+        
+        .dropdown-toggle {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.75rem;
+            font-weight: 500;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .dropdown-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .dropdown-toggle i {
+            font-size: 0.85rem;
+        }
+        
+        /* Text truncation for long content */
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Ensure flex items don't overflow */
+        .d-flex {
+            min-width: 0;
+        }
+        
+        .flex-grow-1 {
+            min-width: 0;
+        }
+        
+        .flex-shrink-0 {
+            flex-shrink: 0;
+        }
+        
+        /* Notification specific styles */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Table container styles for consistency */
+        .table-container {
+            overflow: visible !important;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .table-container table {
+            table-layout: fixed;
+            width: 100%;
+            font-size: 0.85rem;
+        }
+        
+        .table-container th,
+        .table-container td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .table-container small {
+            font-size: 0.75rem;
+        }
+        
+        /* Reduce horizontal gaps between elements */
+        .table-container .badge {
+            margin-left: 0.25rem;
+            margin-right: 0.25rem;
+        }
+        
+        .table-container .d-block {
+            margin-bottom: 0.25rem;
+        }
+        
+        .table-container .mt-1 {
+            margin-top: 0.25rem !important;
+        }
+        
+        .table-container .me-1 {
+            margin-right: 0.25rem !important;
+        }
+        
+        .table-container .ms-1 {
+            margin-left: 0.25rem !important;
+        }
+        
+        .table-responsive {
+            overflow: visible !important;
+        }
+        
+        .card-body {
+            overflow: visible !important;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Ensure dropdowns appear above everything */
+        .card {
+            overflow: visible !important;
+        }
+        
+        .main-content {
+            overflow: visible !important;
+        }
+        
+        /* Button and Badge Styles */
+        .ready-pickup-badge {
+            animation: pickupPulse 1.2s infinite alternate;
+        }
+        
+        @keyframes pickupPulse {
+            0% { box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
+            100% { box-shadow: 0 0 10px 4px rgba(13,110,253,0.3); }
+        }
+        
+        /* Make action buttons smaller */
+        .table-container .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+        
+        .table-container .btn-group .btn i {
+            font-size: 0.8rem;
         }
         
         /* Loading spinner */
@@ -337,7 +577,7 @@
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: linear-gradient(135deg, var(--primary-color), #3d6db0);">
-        <div class="container">
+        <div class="container-fluid">
             <a class="navbar-brand" href="index.php">
                 <i class="bi bi-building"></i>
                 <?php echo SYSTEM_NAME; ?>
@@ -372,44 +612,45 @@
                     <?php if (!isset($_SESSION['user_id'])): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="login.php">
-                                <i class="bi bi-box-arrow-in-right"></i> Login
+                                /* Lines 375-376 omitted */
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-light ms-2" href="register.php">
-                                <i class="bi bi-person-plus"></i> Register
+                                /* Lines 380-381 omitted */
                             </a>
                         </li>
                     <?php else: ?>
                         <!-- Notifications Dropdown -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" 
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                               data-bs-toggle="dropdown" 
+                               data-bs-auto-close="true"
+                               data-bs-boundary="viewport"
+                               aria-expanded="false">
                                 <i class="bi bi-bell"></i>
                                 <span class="notification-badge d-none" id="notificationBadge">0</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end shadow-sm" 
-                                 aria-labelledby="notificationsDropdown" 
-                                 style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                 aria-labelledby="notificationsDropdown"
+                                 style="width: 350px; max-height: 400px; overflow-y: auto;">
                                 <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                    <span><i class="bi bi-bell me-2"></i>Notifications</span>
-                                    <a href="#" class="text-primary text-decoration-none" id="markAllRead">
-                                        <small>Mark all as read</small>
-                                    </a>
+                                    <span>Notifications</span>
+                                    <a href="#" class="btn btn-sm btn-outline-primary" id="markAllRead">Mark all read</a>
                                 </div>
                                 <div class="dropdown-divider"></div>
                                 <div id="notificationsList">
-                                    <!-- Notifications will be loaded here -->
-                                    <div class="text-center p-3">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <div class="dropdown-item text-center py-3 text-muted">
+                                        <div class="spinner-border spinner-border-sm" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
+                                        Loading notifications...
                                     </div>
                                 </div>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-center" href="notifications.php">
-                                    <small>View All Notifications</small>
-                                </a>
+                                <div class="dropdown-item text-center">
+                                    <a href="notifications.php" class="btn btn-sm btn-primary">View All</a>
+                                </div>
                             </div>
                         </li>
                     <?php endif; ?>
@@ -431,6 +672,44 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dropdowns with proper positioning
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggle) {
+            new bootstrap.Dropdown(dropdownToggle, {
+                boundary: 'viewport',
+                placement: 'bottom-end'
+            });
+            
+            // Handle dropdown positioning for notifications
+            dropdownToggle.addEventListener('show.bs.dropdown', function (e) {
+                const dropdown = this.nextElementSibling;
+                if (dropdown && this.id === 'notificationsDropdown') {
+                    // Ensure dropdown doesn't get clipped
+                    dropdown.style.position = 'absolute';
+                    dropdown.style.zIndex = '1060';
+                    dropdown.style.minWidth = '350px';
+                    dropdown.style.maxWidth = '400px';
+                    dropdown.style.maxHeight = '400px';
+                    dropdown.style.overflowY = 'auto';
+                    
+                    // Position dropdown
+                    const rect = this.getBoundingClientRect();
+                    dropdown.style.top = (rect.bottom + 5) + 'px';
+                    dropdown.style.right = '20px';
+                }
+            });
+            
+            dropdownToggle.addEventListener('hide.bs.dropdown', function (e) {
+                const dropdown = this.nextElementSibling;
+                if (dropdown && this.id === 'notificationsDropdown') {
+                    // Reset positioning
+                    dropdown.style.position = '';
+                    dropdown.style.top = '';
+                    dropdown.style.right = '';
+                    dropdown.style.zIndex = '';
+                }
+            });
+        });
+
         if (document.getElementById('notificationsDropdown')) {
             const notificationSound = document.getElementById('notificationSound');
             const notificationBadge = document.getElementById('notificationBadge');
@@ -516,53 +795,57 @@
                             throw new Error(data.error || 'Unknown error occurred');
                         }
                         
+                        const currentCount = parseInt(data.count) || 0;
+                        
                         // Update badge
-                        if (data.count > 0) {
-                            notificationBadge.textContent = data.count;
+                        if (currentCount > 0) {
+                            notificationBadge.textContent = currentCount > 99 ? '99+' : currentCount;
                             notificationBadge.classList.remove('d-none');
                             
-                            // Play sound automatically if there are NEW notifications
-                            if (data.count > lastNotificationCount && data.count > 0) {
-                                // Reset sound flag when new notifications arrive
-                                if (typeof window.NotificationSound !== 'undefined') {
-                                    window.NotificationSound.resetSoundFlag();
-                                }
-                                // Play notification sound
+                            // Play sound for new notifications
+                            if (currentCount > lastNotificationCount && lastNotificationCount > 0) {
                                 playNotificationSound();
-                            }
-                            
-                            // Reset sound flag when notification count drops to 0
-                            if (data.count === 0 && typeof window.NotificationSound !== 'undefined') {
-                                window.NotificationSound.resetSoundFlag();
                             }
                         } else {
                             notificationBadge.classList.add('d-none');
-                            // Reset sound flag when no notifications
-                            if (typeof window.NotificationSound !== 'undefined') {
-                                window.NotificationSound.resetSoundFlag();
-                            }
                         }
-                        lastNotificationCount = data.count;
+                        lastNotificationCount = currentCount;
 
-                        // Update notifications list
-                        if (data.notifications && Array.isArray(data.notifications)) {
-                            notificationsList.innerHTML = data.notifications.map(notification => `
-                                <a href="#" class="dropdown-item py-2 ${!notification.is_read ? 'fw-bold bg-light' : ''}">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-grow-1">
-                                            <div class="small text-muted">${timeAgo(notification.created_at)}</div>
-                                            ${notification.message}
+                        // Update notifications list with enhanced formatting
+                        if (data.notifications && data.notifications.length > 0) {
+                            let html = '';
+                            data.notifications.forEach(function(notification, index) {
+                                if (index < 5) { // Show only first 5 in dropdown
+                                    html += `
+                                        <div class="dropdown-item${!notification.is_read ? ' bg-light' : ''}" style="white-space: normal;">
+                                            <div class="d-flex">
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold text-dark">${notification.title || 'Notification'}</div>
+                                                    <div class="text-muted small mt-1">${notification.message}</div>
+                                                    <div class="text-muted small mt-1">
+                                                        <i class="bi bi-clock me-1"></i>${timeAgo(notification.created_at)}
+                                                    </div>
+                                                </div>
+                                                ${!notification.is_read ? '<div class="flex-shrink-0 ms-2"><span class="badge bg-primary">New</span></div>' : ''}
+                                            </div>
                                         </div>
-                                    </div>
-                                </a>
-                            `).join('') || '<div class="dropdown-item text-center py-3">No notifications</div>';
+                                    `;
+                                }
+                            });
+                            
+                            if (data.notifications.length > 5) {
+                                html += `<div class="dropdown-item text-center text-muted">
+                                    <i class="bi bi-three-dots"></i> ${data.notifications.length - 5} more notifications
+                                </div>`;
+                            }
+                            
+                            notificationsList.innerHTML = html;
                         } else {
-                            notificationsList.innerHTML = '<div class="dropdown-item text-center py-3">No notifications</div>';
+                            notificationsList.innerHTML = '<div class="dropdown-item text-center py-3 text-muted">No notifications</div>';
                         }
                     })
                     .catch(error => {
                         console.error('Error updating notifications:', error);
-                        // Only show error in console, don't break the UI
                         notificationsList.innerHTML = '<div class="dropdown-item text-center py-3 text-muted">Error loading notifications</div>';
                     });
             }

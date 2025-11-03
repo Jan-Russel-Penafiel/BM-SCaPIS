@@ -40,6 +40,23 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
+// Group applications by user
+$groupedApplications = [];
+foreach ($applications as $app) {
+    $userId = $app['user_id'];
+    if (!isset($groupedApplications[$userId])) {
+        $groupedApplications[$userId] = [
+            'user_info' => [
+                'first_name' => $app['first_name'],
+                'last_name' => $app['last_name'],
+                'contact_number' => $app['contact_number']
+            ],
+            'applications' => []
+        ];
+    }
+    $groupedApplications[$userId]['applications'][] = $app;
+}
+
 include 'header.php';
 include 'sidebar.php';
 ?>
@@ -49,24 +66,20 @@ include 'sidebar.php';
         <!-- Page Header -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h1 class="h3 mb-2">Document Applications</h1>
-                                <p class="text-muted mb-0">
-                                    <?php echo $_SESSION['role'] === 'admin' ? 
-                                        'Manage and process all document applications' : 
-                                        'View applications from residents in your purok'; ?>
-                                </p>
-                            </div>
-                            <?php if ($_SESSION['role'] === 'admin'): ?>
-                                <a href="export-applications.php" class="btn btn-success">
-                                    <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
-                                </a>
-                            <?php endif; ?>
-                        </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-2">Document Applications</h1>
+                        <p class="text-muted mb-0">
+                            <?php echo $_SESSION['role'] === 'admin' ? 
+                                'Manage and process all document applications' : 
+                                'View applications from residents in your purok'; ?>
+                        </p>
                     </div>
+                    <?php if ($_SESSION['role'] === 'admin'): ?>
+                        <a href="export-applications.php" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -178,63 +191,125 @@ include 'sidebar.php';
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-container">
                             <table class="table table-hover" id="applicationsTable">
                                 <thead>
                                     <tr>
-                                        <th>Application #</th>
                                         <th>Applicant</th>
                                         <th>Document</th>
-                                        <th>Status</th>
                                         <th>Payment</th>
-                                        <th>Date Applied</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($applications as $app): ?>
-                                        <tr>
-                                            <td>
-                                                <strong><?php echo htmlspecialchars($app['application_number']); ?></strong>
-                                                <?php if ($app['urgency'] === 'Rush'): ?>
-                                                    <span class="badge bg-danger ms-1">Rush</span>
-                                                <?php endif; ?>
-                                            </td>
+                                    <?php foreach ($groupedApplications as $userId => $userData): ?>
+                                        <?php 
+                                        $applications = $userData['applications'];
+                                        $userInfo = $userData['user_info'];
+                                        $hasMultipleApps = count($applications) > 1;
+                                        
+                                        // Show the first application by default
+                                        $mainApp = $applications[0];
+                                        ?>
+                                        <tr data-user-id="<?php echo $userId; ?>">
                                             <td>
                                                 <div>
                                                     <strong>
-                                                        <?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?>
+                                                        <?php echo htmlspecialchars($userInfo['first_name'] . ' ' . $userInfo['last_name']); ?>
                                                     </strong>
-                                                    <?php if ($app['contact_number']): ?>
+                                                    <?php if ($mainApp['urgency'] === 'Rush'): ?>
+                                                        <span class="badge bg-danger ms-1">Rush</span>
+                                                    <?php endif; ?>
+                                                    <?php if ($userInfo['contact_number']): ?>
                                                         <small class="text-muted d-block">
                                                             <i class="bi bi-telephone me-1"></i>
-                                                            <?php echo htmlspecialchars($app['contact_number']); ?>
+                                                            <?php echo htmlspecialchars($userInfo['contact_number']); ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                    
+                                                    <?php if ($hasMultipleApps): ?>
+                                                        <!-- Dropup for multiple applications -->
+                                                        <div class="dropup mt-2">
+                                                            <button class="btn btn-sm btn-primary dropdown-toggle" 
+                                                                    type="button" 
+                                                                    id="appDropup<?php echo $userId; ?>" 
+                                                                    data-bs-toggle="dropdown" 
+                                                                    data-bs-auto-close="true"
+                                                                    data-bs-boundary="viewport"
+                                                                    data-bs-placement="top"
+                                                                    aria-expanded="false">
+                                                                <i class="bi bi-layers me-1"></i>
+                                                                <?php echo count($applications); ?> Applications
+                                                            </button>
+                                                            <ul class="dropdown-menu shadow" aria-labelledby="appDropup<?php echo $userId; ?>">
+                                                                <li><h6 class="dropdown-header">Select Application:</h6></li>
+                                                                <?php foreach ($applications as $index => $app): ?>
+                                                                    <li>
+                                                                        <a class="dropdown-item application-item <?php echo $index === 0 ? 'active' : ''; ?>" 
+                                                                           href="#" 
+                                                                           data-user-id="<?php echo $userId; ?>"
+                                                                           data-app-index="<?php echo $index; ?>"
+                                                                           data-app-id="<?php echo $app['id']; ?>">
+                                                                            <div class="d-flex flex-column">
+                                                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                                                    <div class="fw-bold text-dark text-truncate" style="max-width: 180px;">
+                                                                                        <?php echo htmlspecialchars($app['type_name']); ?>
+                                                                                    </div>
+                                                                                    <span class="badge status-<?php echo $app['status']; ?> ms-2 flex-shrink-0
+                                                                                        <?php if ($app['status'] === 'ready_for_pickup') echo 'bg-primary text-white'; ?>
+                                                                                        <?php if ($app['status'] === 'pending') echo 'bg-warning text-dark'; ?>
+                                                                                        <?php if ($app['status'] === 'processing') echo 'bg-info text-white'; ?>
+                                                                                        <?php if ($app['status'] === 'completed') echo 'bg-success text-white'; ?>">
+                                                                                        <?php echo ucfirst(str_replace('_', ' ', $app['status'])); ?>
+                                                                                    </span>
+                                                                                </div>
+                                                                                <small class="text-muted d-block text-truncate">
+                                                                                    <i class="bi bi-hash me-1"></i><?php echo htmlspecialchars($app['application_number']); ?>
+                                                                                </small>
+                                                                                <small class="text-muted d-block">
+                                                                                    <i class="bi bi-clock me-1"></i><?php echo date('M j, Y g:i A', strtotime($app['created_at'])); ?>
+                                                                                </small>
+                                                                                <?php if ($app['urgency'] === 'Rush'): ?>
+                                                                                    <span class="badge bg-danger text-white mt-1" style="width: fit-content;">Rush</span>
+                                                                                <?php endif; ?>
+                                                                            </div>
+                                                                        </a>
+                                                                    </li>
+                                                                    <?php if ($index < count($applications) - 1): ?>
+                                                                        <li><hr class="dropdown-divider"></li>
+                                                                    <?php endif; ?>
+                                                                <?php endforeach; ?>
+                                                            </ul>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <small class="text-muted d-block">
+                                                            <i class="bi bi-hash me-1"></i><?php echo htmlspecialchars($mainApp['application_number']); ?>
                                                         </small>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <?php echo htmlspecialchars($app['type_name']); ?>
+                                            <td class="document-column">
+                                                <?php echo htmlspecialchars($mainApp['type_name']); ?>
                                                 <small class="text-muted d-block">
                                                     <?php 
-                                                    $purpose = htmlspecialchars($app['purpose']);
+                                                    $purpose = htmlspecialchars($mainApp['purpose']);
                                                     echo strlen($purpose) > 30 ? substr($purpose, 0, 27) . '...' : $purpose;
                                                     ?>
                                                 </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge status-<?php echo $app['status']; ?>
-                                                    <?php if ($app['status'] === 'ready_for_pickup') echo ' bg-primary text-white fw-bold ready-pickup-badge'; ?>">
-                                                    <?php if ($app['status'] === 'ready_for_pickup'): ?>
-                                                        <i class="bi bi-check-circle me-1"></i>
-                                                    <?php endif; ?>
-                                                    <?php echo ucfirst($app['status']); ?>
-                                                </span>
-                                                <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                <div class="mt-1">
+                                                    <span class="badge status-<?php echo $mainApp['status']; ?>
+                                                        <?php if ($mainApp['status'] === 'ready_for_pickup') echo ' bg-primary text-white fw-bold ready-pickup-badge'; ?>">
+                                                        <?php if ($mainApp['status'] === 'ready_for_pickup'): ?>
+                                                            <i class="bi bi-check-circle me-1"></i>
+                                                        <?php endif; ?>
+                                                        <?php echo ucfirst($mainApp['status']); ?>
+                                                    </span>
+                                                </div>
+                                                <?php if ($mainApp['status'] === 'processing' && $mainApp['payment_date'] && ($mainApp['payment_status'] === 'paid' || $mainApp['payment_status'] === 'waived')): ?>
                                                     <?php
                                                     // Calculate expected completion date (5 working days from payment date)
                                                     try {
-                                                        $paymentDate = new DateTime($app['payment_date']);
+                                                        $paymentDate = new DateTime($mainApp['payment_date']);
                                                         $today = new DateTime();
                                                         $today->setTime(0, 0, 0); // Reset to start of day for comparison
                                                         
@@ -271,81 +346,79 @@ include 'sidebar.php';
                                                     ?>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td class="payment-column">
                                                 <span class="badge bg-<?php 
-                                                    echo $app['payment_status'] === 'paid' ? 'success' : 
-                                                        ($app['payment_status'] === 'waived' ? 'info' : 'warning');
+                                                    echo $mainApp['payment_status'] === 'paid' ? 'success' : 
+                                                        ($mainApp['payment_status'] === 'waived' ? 'info' : 'warning');
                                                 ?>">
-                                                    <?php echo ucfirst($app['payment_status']); ?>
+                                                    <?php echo ucfirst($mainApp['payment_status']); ?>
                                                 </span>
-                                                <?php if ($app['payment_amount']): ?>
-                                                    <small class="d-block">₱<?php echo number_format($app['payment_amount'], 2); ?></small>
+                                                <?php if ($mainApp['payment_amount']): ?>
+                                                    <small class="d-block">₱<?php echo number_format($mainApp['payment_amount'], 2); ?></small>
                                                 <?php endif; ?>
-                                                <?php if ($app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled'): ?>
+                                                <?php if ($mainApp['payment_appointment_id'] && $mainApp['payment_appointment_status'] === 'scheduled'): ?>
                                                     <small class="d-block text-info">
                                                         <i class="bi bi-calendar-check me-1"></i>
-                                                        Payment appt: <?php echo date('M j, g:i A', strtotime($app['payment_appointment_date'])); ?>
+                                                        Payment appt: <?php echo date('M j, g:i A', strtotime($mainApp['payment_appointment_date'])); ?>
                                                     </small>
                                                 <?php endif; ?>
+                                                <small class="text-muted d-block mt-1">
+                                                    <i class="bi bi-clock me-1"></i>Applied: <?php echo date('M j, Y', strtotime($mainApp['created_at'])); ?>
+                                                </small>
+                                                <small class="text-muted d-block">
+                                                    <?php echo date('g:i A', strtotime($mainApp['created_at'])); ?>
+                                                </small>
                                             </td>
-                                            <td>
-                                                <?php echo date('M j, Y g:i A', strtotime($app['created_at'])); ?>
-                                                <?php if ($app['processed_by_name']): ?>
-                                                    <small class="text-muted d-block">
-                                                        By: <?php echo htmlspecialchars($app['processed_by_name']); ?>
-                                                    </small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
+                                            <td class="actions-column">
                                                 <div class="btn-group">
-                                                    <a href="view-application.php?id=<?php echo $app['id']; ?>" 
-                                                       class="btn btn-sm btn-outline-primary"
+                                                    <a href="view-application.php?id=<?php echo $mainApp['id']; ?>" 
+                                                       class="btn btn-sm btn-outline-primary view-btn"
                                                        title="View Details">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                     <?php if ($_SESSION['role'] === 'admin'): ?>
-                                                        <?php if ($app['status'] === 'pending'): ?>
+                                                        <?php if ($mainApp['status'] === 'pending'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success"
-                                                                    onclick="processApplication(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-success process-btn"
+                                                                    onclick="processApplication(<?php echo $mainApp['id']; ?>)"
                                                                     title="Process">
                                                                 <i class="bi bi-check"></i>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if ($app['status'] === 'processing'): ?>
+                                                        <?php if ($mainApp['status'] === 'processing'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-info"
-                                                                    onclick="openReadyAppointmentModal(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-info ready-btn"
+                                                                    onclick="openReadyAppointmentModal(<?php echo $mainApp['id']; ?>)"
                                                                     title="Mark as Ready & Schedule Appointment">
                                                                 <i class="bi bi-box-seam"></i>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if ($app['status'] === 'ready_for_pickup'): ?>
+                                                        <?php if ($mainApp['status'] === 'ready_for_pickup'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success"
-                                                                    onclick="completeApplication(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-success complete-btn"
+                                                                    onclick="completeApplication(<?php echo $mainApp['id']; ?>)"
                                                                     title="Complete">
                                                                 <i class="bi bi-check-all"></i>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
+                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'unpaid'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-warning"
-                                                                    onclick="waivePayment(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-warning waive-btn"
+                                                                    onclick="waivePayment(<?php echo $mainApp['id']; ?>)"
                                                                     title="Waive Payment">
                                                                 <i class="bi bi-cash-stack"></i>
                                                             </button>
-                                                            <?php if (!$app['payment_appointment_id'] || $app['payment_appointment_status'] !== 'scheduled'): ?>
+                                                            <?php if (!$mainApp['payment_appointment_id'] || $mainApp['payment_appointment_status'] !== 'scheduled'): ?>
                                                                 <button type="button" 
-                                                                        class="btn btn-sm btn-outline-info"
-                                                                        onclick="schedulePaymentAppointment(<?php echo $app['id']; ?>)"
+                                                                        class="btn btn-sm btn-outline-info schedule-payment-btn"
+                                                                        onclick="schedulePaymentAppointment(<?php echo $mainApp['id']; ?>)"
                                                                         title="Schedule Payment Appointment">
                                                                     <i class="bi bi-calendar-plus"></i>
                                                                 </button>
                                                             <?php else: ?>
                                                                 <?php 
                                                                 // Check if today is on or after the payment appointment date
-                                                                $appointmentDate = new DateTime($app['payment_appointment_date']);
+                                                                $appointmentDate = new DateTime($mainApp['payment_appointment_date']);
                                                                 $appointmentDate->setTime(0, 0, 0);
                                                                 $today = new DateTime();
                                                                 $today->setTime(0, 0, 0);
@@ -353,40 +426,40 @@ include 'sidebar.php';
                                                                 ?>
                                                                 <?php if ($isAppointmentDue): ?>
                                                                     <button type="button" 
-                                                                            class="btn btn-sm btn-outline-success"
-                                                                            onclick="allowPayment(<?php echo $app['id']; ?>)"
-                                                                            title="Allow Payment - Appointment date has arrived (<?php echo date('M j, Y', strtotime($app['payment_appointment_date'])); ?>)">
+                                                                            class="btn btn-sm btn-outline-success allow-payment-btn"
+                                                                            onclick="allowPayment(<?php echo $mainApp['id']; ?>)"
+                                                                            title="Allow Payment - Appointment date has arrived (<?php echo date('M j, Y', strtotime($mainApp['payment_appointment_date'])); ?>)">
                                                                         <i class="bi bi-check-circle"></i>
                                                                     </button>
                                                                 <?php else: ?>
                                                                     <button type="button" 
                                                                             class="btn btn-sm btn-outline-secondary"
                                                                             disabled
-                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Payment can be allowed starting on that date.">
+                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($mainApp['payment_appointment_date'])); ?>. Payment can be allowed starting on that date.">
                                                                         <i class="bi bi-calendar-x"></i>
                                                                     </button>
                                                                 <?php endif; ?>
                                                                 <!-- Appointment Done button for advance payment scenarios -->
                                                                 <button type="button" 
-                                                                        class="btn btn-sm btn-outline-primary"
-                                                                        onclick="markAppointmentDone(<?php echo $app['id']; ?>)"
+                                                                        class="btn btn-sm btn-outline-primary appointment-done-btn"
+                                                                        onclick="markAppointmentDone(<?php echo $mainApp['id']; ?>)"
                                                                         title="Mark Appointment as Done - For advance payment scenarios">
                                                                     <i class="bi bi-calendar-check"></i>
                                                                 </button>
                                                             <?php endif; ?>
                                                         <?php endif; ?>
-                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'paid'): ?>
+                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'paid'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success"
-                                                                    onclick="autoProcessApplication(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-success auto-process-btn"
+                                                                    onclick="autoProcessApplication(<?php echo $mainApp['id']; ?>)"
                                                                     title="Start Processing (Payment Received)">
                                                                 <i class="bi bi-play-circle"></i>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
+                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'unpaid'): ?>
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success"
-                                                                    onclick="markPaymentDone(<?php echo $app['id']; ?>)"
+                                                                    class="btn btn-sm btn-outline-success mark-payment-btn"
+                                                                    onclick="markPaymentDone(<?php echo $mainApp['id']; ?>)"
                                                                     title="Mark Payment as Done - For manual payments (cash, bank transfer, etc.)">
                                                                 <i class="bi bi-cash-coin"></i>
                                                             </button>
@@ -395,6 +468,14 @@ include 'sidebar.php';
                                                 </div>
                                             </td>
                                         </tr>
+                                        
+                                        <?php if ($hasMultipleApps): ?>
+                                            <!-- Hidden application data for dropdown switching -->
+                                            <script type="text/javascript">
+                                                window.applicationData = window.applicationData || {};
+                                                window.applicationData[<?php echo $userId; ?>] = <?php echo json_encode($applications); ?>;
+                                            </script>
+                                        <?php endif; ?>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
@@ -496,15 +577,281 @@ include 'sidebar.php';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTables
     $('#applicationsTable').DataTable({
-        order: [[5, 'desc']], // Sort by date applied
-        pageLength: 25,
+        order: [[2, 'desc']], // Sort by payment column (which now contains date)
+        paging: false,
+        info: false,
         responsive: true,
         language: {
             search: '<i class="bi bi-search"></i>',
             searchPlaceholder: 'Search applications...'
         }
     });
+
+    // Initialize dropdowns with proper positioning
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggle) {
+        new bootstrap.Dropdown(dropdownToggle, {
+            boundary: 'viewport',
+            placement: 'top-start'
+        });
+        
+        // Handle dropdown positioning
+        dropdownToggle.addEventListener('show.bs.dropdown', function (e) {
+            const dropdown = this.nextElementSibling;
+            if (dropdown) {
+                // Ensure dropdown doesn't get clipped
+                dropdown.style.position = 'fixed';
+                dropdown.style.zIndex = '1050';
+                
+                // Position dropdown above the button
+                const rect = this.getBoundingClientRect();
+                const dropdownHeight = dropdown.offsetHeight || 300; // estimated height
+                
+                // Check if there's enough space above
+                if (rect.top > dropdownHeight + 20) {
+                    dropdown.style.top = (rect.top - dropdownHeight - 5) + 'px';
+                } else {
+                    // If not enough space above, show below
+                    dropdown.style.top = (rect.bottom + 5) + 'px';
+                }
+                
+                dropdown.style.left = rect.left + 'px';
+                dropdown.style.minWidth = '280px';
+                dropdown.style.maxWidth = '350px';
+            }
+        });
+        
+        dropdownToggle.addEventListener('hide.bs.dropdown', function (e) {
+            const dropdown = this.nextElementSibling;
+            if (dropdown) {
+                // Reset positioning
+                dropdown.style.position = '';
+                dropdown.style.top = '';
+                dropdown.style.left = '';
+                dropdown.style.zIndex = '';
+            }
+        });
+    });
+
+    // Handle dropdown application switching
+    document.querySelectorAll('.application-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const userId = this.dataset.userId;
+            const appIndex = parseInt(this.dataset.appIndex);
+            const applications = window.applicationData[userId];
+            
+            if (applications && applications[appIndex]) {
+                // Remove active class from all items in this dropdown
+                const dropdown = this.closest('.dropdown-menu');
+                dropdown.querySelectorAll('.application-item').forEach(function(item) {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                switchToApplication(userId, applications[appIndex]);
+                
+                // Close the dropdown
+                const dropdownToggle = dropdown.previousElementSibling;
+                if (dropdownToggle && dropdownToggle.classList.contains('dropdown-toggle')) {
+                    bootstrap.Dropdown.getInstance(dropdownToggle).hide();
+                }
+            }
+        });
+    });
 });
+
+function switchToApplication(userId, appData) {
+    const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+    if (!row) return;
+    
+    // Update document column
+    const documentColumn = row.querySelector('.document-column');
+    documentColumn.innerHTML = generateDocumentColumnContent(appData);
+    
+    // Update payment column
+    const paymentColumn = row.querySelector('.payment-column');
+    paymentColumn.innerHTML = generatePaymentColumnContent(appData);
+    
+    // Update actions column
+    const actionsColumn = row.querySelector('.actions-column');
+    actionsColumn.innerHTML = generateActionsColumnContent(appData);
+}
+
+function generateDocumentColumnContent(app) {
+    let html = `${escapeHtml(app.type_name)}`;
+    
+    if (app.purpose) {
+        const purpose = escapeHtml(app.purpose);
+        const truncatedPurpose = purpose.length > 30 ? purpose.substring(0, 27) + '...' : purpose;
+        html += `<small class="text-muted d-block">${truncatedPurpose}</small>`;
+    }
+    
+    html += `<div class="mt-1">
+        <span class="badge status-${app.status}${app.status === 'ready_for_pickup' ? ' bg-primary text-white fw-bold ready-pickup-badge' : ''}">
+            ${app.status === 'ready_for_pickup' ? '<i class="bi bi-check-circle me-1"></i>' : ''}
+            ${capitalizeFirst(app.status)}
+        </span>
+    </div>`;
+    
+    // Add expected completion date logic if needed
+    if (app.status === 'processing' && app.payment_date && (app.payment_status === 'paid' || app.payment_status === 'waived')) {
+        // Add expected completion date calculation here if needed
+    }
+    
+    return html;
+}
+
+function generatePaymentColumnContent(app) {
+    let badgeClass = 'warning';
+    if (app.payment_status === 'paid') badgeClass = 'success';
+    else if (app.payment_status === 'waived') badgeClass = 'info';
+    
+    let html = `<span class="badge bg-${badgeClass}">${capitalizeFirst(app.payment_status)}</span>`;
+    
+    if (app.payment_amount) {
+        html += `<small class="d-block">₱${parseFloat(app.payment_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</small>`;
+    }
+    
+    if (app.payment_appointment_id && app.payment_appointment_status === 'scheduled') {
+        const appointmentDate = new Date(app.payment_appointment_date);
+        html += `<small class="d-block text-info">
+            <i class="bi bi-calendar-check me-1"></i>
+            Payment appt: ${appointmentDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})} ${appointmentDate.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}
+        </small>`;
+    }
+    
+    const createdDate = new Date(app.created_at);
+    html += `<small class="text-muted d-block mt-1">
+        <i class="bi bi-clock me-1"></i>Applied: ${createdDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
+    </small>`;
+    html += `<small class="text-muted d-block">
+        ${createdDate.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}
+    </small>`;
+    
+    return html;
+}
+
+function generateActionsColumnContent(app) {
+    let html = `<div class="btn-group">
+        <a href="view-application.php?id=${app.id}" 
+           class="btn btn-sm btn-outline-primary view-btn"
+           title="View Details">
+            <i class="bi bi-eye"></i>
+        </a>`;
+    
+    // Add admin-specific buttons based on application status
+    // This would need to check the user's role from PHP session
+    <?php if ($_SESSION['role'] === 'admin'): ?>
+    if (app.status === 'pending') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-success process-btn"
+                        onclick="processApplication(${app.id})"
+                        title="Process">
+                    <i class="bi bi-check"></i>
+                </button>`;
+    }
+    
+    if (app.status === 'processing') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-info ready-btn"
+                        onclick="openReadyAppointmentModal(${app.id})"
+                        title="Mark as Ready & Schedule Appointment">
+                    <i class="bi bi-box-seam"></i>
+                </button>`;
+    }
+    
+    if (app.status === 'ready_for_pickup') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-success complete-btn"
+                        onclick="completeApplication(${app.id})"
+                        title="Complete">
+                    <i class="bi bi-check-all"></i>
+                </button>`;
+    }
+    
+    if (app.status === 'pending' && app.payment_status === 'unpaid') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-warning waive-btn"
+                        onclick="waivePayment(${app.id})"
+                        title="Waive Payment">
+                    <i class="bi bi-cash-stack"></i>
+                </button>`;
+        
+        if (!app.payment_appointment_id || app.payment_appointment_status !== 'scheduled') {
+            html += `<button type="button" 
+                            class="btn btn-sm btn-outline-info schedule-payment-btn"
+                            onclick="schedulePaymentAppointment(${app.id})"
+                            title="Schedule Payment Appointment">
+                        <i class="bi bi-calendar-plus"></i>
+                    </button>`;
+        } else {
+            // Check if appointment date has arrived
+            const appointmentDate = new Date(app.payment_appointment_date);
+            appointmentDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isAppointmentDue = today >= appointmentDate;
+            
+            if (isAppointmentDue) {
+                html += `<button type="button" 
+                                class="btn btn-sm btn-outline-success allow-payment-btn"
+                                onclick="allowPayment(${app.id})"
+                                title="Allow Payment - Appointment date has arrived">
+                            <i class="bi bi-check-circle"></i>
+                        </button>`;
+            } else {
+                html += `<button type="button" 
+                                class="btn btn-sm btn-outline-secondary"
+                                disabled
+                                title="Payment appointment scheduled. Payment can be allowed starting on appointment date.">
+                            <i class="bi bi-calendar-x"></i>
+                        </button>`;
+            }
+            
+            html += `<button type="button" 
+                            class="btn btn-sm btn-outline-primary appointment-done-btn"
+                            onclick="markAppointmentDone(${app.id})"
+                            title="Mark Appointment as Done - For advance payment scenarios">
+                        <i class="bi bi-calendar-check"></i>
+                    </button>`;
+        }
+    }
+    
+    if (app.status === 'pending' && app.payment_status === 'paid') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-success auto-process-btn"
+                        onclick="autoProcessApplication(${app.id})"
+                        title="Start Processing (Payment Received)">
+                    <i class="bi bi-play-circle"></i>
+                </button>`;
+    }
+    
+    if (app.status === 'pending' && app.payment_status === 'unpaid') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-success mark-payment-btn"
+                        onclick="markPaymentDone(${app.id})"
+                        title="Mark Payment as Done - For manual payments">
+                    <i class="bi bi-cash-coin"></i>
+                </button>`;
+    }
+    <?php endif; ?>
+    
+    html += '</div>';
+    return html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 function processApplication(id) {
     document.getElementById('processApplicationId').value = id;
@@ -560,6 +907,259 @@ function markPaymentDone(appId) {
     }
 }
 </script>
+
+<style>
+.table-container {
+    overflow: visible !important;
+    position: relative;
+}
+
+.table-container table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.table-container th,
+.table-container td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    padding: 0.25rem 0.5rem;
+}
+
+.table-container small {
+    font-size: 0.75rem;
+}
+
+/* Reduce horizontal gaps between elements */
+.table-container .badge {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+}
+
+.table-container .d-block {
+    margin-bottom: 0.25rem;
+}
+
+.table-container .mt-1 {
+    margin-top: 0.25rem !important;
+}
+
+.table-container .me-1 {
+    margin-right: 0.25rem !important;
+}
+
+.table-container .ms-1 {
+    margin-left: 0.25rem !important;
+}
+
+/* Specific column widths for applications table */
+.table-container th:nth-child(1) { width: 30%; } /* Applicant */
+.table-container th:nth-child(2) { width: 30%; } /* Document (now includes status) */
+.table-container th:nth-child(3) { width: 25%; } /* Payment */
+.table-container th:nth-child(4) { width: 15%; } /* Actions */
+
+.table-container td:nth-child(1),
+.table-container td:nth-child(2),
+.table-container td:nth-child(3) {
+    white-space: normal;
+}
+
+.ready-pickup-badge {
+    animation: pickupPulse 1.2s infinite alternate;
+}
+@keyframes pickupPulse {
+    0% { box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
+    100% { box-shadow: 0 0 10px 4px rgba(13,110,253,0.3); }
+}
+
+/* Make action buttons smaller */
+.table-container .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.table-container .btn-group .btn i {
+    font-size: 0.8rem;
+}
+
+/* Dropdown styles for multiple applications */
+.dropdown-menu {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 280px;
+    max-width: 350px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    z-index: 1050 !important;
+    position: absolute !important;
+    background: white;
+    border-radius: 0.375rem;
+    word-wrap: break-word;
+}
+
+.dropup {
+    position: static !important;
+}
+
+.dropup .dropdown-menu {
+    bottom: 100%;
+    top: auto;
+    margin-bottom: 0.125rem;
+    position: absolute !important;
+    transform: translate3d(0px, 0px, 0px) !important;
+}
+
+.dropdown-menu-end {
+    --bs-position: end;
+    right: 0;
+    left: auto;
+}
+
+.card-body {
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+}
+
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* Ensure table container doesn't clip dropdowns */
+.table-container {
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Fix for Bootstrap's overflow hidden on cards */
+.card {
+    overflow: visible !important;
+}
+
+.main-content {
+    overflow: visible !important;
+}
+
+/* Ensure dropdowns appear above everything */
+.dropdown-menu.show {
+    z-index: 1060 !important;
+    position: fixed !important;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f3f4;
+    transition: all 0.2s ease-in-out;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(2px);
+}
+
+.dropdown-item.active {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-left: 3px solid #1976d2;
+}
+
+.dropdown-item .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+}
+
+.dropdown-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0;
+    border-bottom: 1px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.application-item {
+    cursor: pointer;
+}
+
+.application-item:hover {
+    color: inherit !important;
+    text-decoration: none;
+}
+
+.dropdown-toggle {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+    font-weight: 500;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease-in-out;
+}
+
+.dropdown-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.dropdown-toggle i {
+    font-size: 0.85rem;
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0;
+}
+
+/* Text truncation for long content */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ensure flex items don't overflow */
+.d-flex {
+    min-width: 0;
+}
+
+.flex-grow-1 {
+    min-width: 0;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        min-width: 280px;
+        max-height: 300px;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .dropdown-toggle {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
 
 <?php include 'scripts.php'; ?>
 
