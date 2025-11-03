@@ -48,27 +48,33 @@ try {
         throw new Exception('No payment appointment found or appointment not scheduled.');
     }
     
+    // Check if this is an "appointment done" action (for advance payment scenarios)
+    $appointmentDone = isset($_GET['appointment_done']) && $_GET['appointment_done'] === 'true';
+    
     // Check if today is on or after the payment appointment date
     $appointmentDate = new DateTime($application['payment_appointment_date']);
     $appointmentDate->setTime(0, 0, 0); // Reset to start of day
     $today = new DateTime();
     $today->setTime(0, 0, 0); // Reset to start of day
     
-    if ($today < $appointmentDate) {
-        throw new Exception('Payment can only be allowed on or after the scheduled appointment date (' . $appointmentDate->format('M j, Y') . ').');
+    // Only check date if it's not an "appointment done" action
+    if (!$appointmentDone && $today < $appointmentDate) {
+        throw new Exception('Payment can only be allowed on or after the scheduled appointment date (' . $appointmentDate->format('M j, Y') . '). Use "Appointment Done" button for advance payment scenarios.');
     }
     
     // Start transaction
     $pdo->beginTransaction();
     
     // Update payment appointment status to allow payment
+    $actionNote = $appointmentDone ? 'Appointment marked as done (advance payment)' : 'Payment allowed on scheduled date';
     $stmt = $pdo->prepare("
         UPDATE appointments 
         SET status = 'payment_allowed',
-            notes = CONCAT(COALESCE(notes, ''), '\nPayment allowed on ', NOW(), ' by ', ?)
+            notes = CONCAT(COALESCE(notes, ''), '\n', ?, ' on ', NOW(), ' by ', ?)
         WHERE id = ?
     ");
     $stmt->execute([
+        $actionNote,
         $_SESSION['first_name'] . ' ' . $_SESSION['last_name'],
         $application['payment_appointment_id']
     ]);
@@ -98,33 +104,26 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $message = "Hi {$application['first_name']}, payment for your {$application['type_name']} application #{$application['application_number']} is now allowed. You can proceed with payment through the system.";
+        $paymentMessage = $appointmentDone ? 
+            "Hi {$application['first_name']}, your payment appointment for {$application['type_name']} application #{$application['application_number']} has been marked as completed. You can now proceed with payment through the system." :
+            "Hi {$application['first_name']}, payment for your {$application['type_name']} application #{$application['application_number']} is now allowed. You can proceed with payment through the system.";
         
         $stmt = $pdo->prepare("
             INSERT INTO sms_notifications (user_id, phone_number, message, status)
             VALUES (?, ?, ?, 'pending')
         ");
-        $stmt->execute([$application['user_id'], $application['contact_number'], $message]);
+        $stmt->execute([$application['user_id'], $application['contact_number'], $paymentMessage]);
     }
     
     // Send email notification if enabled
     if ($application['email_notifications'] && $application['email']) {
-        $subject = "Payment Now Allowed - Application #{$application['application_number']}";
-        $message = "
-        Dear {$application['first_name']} {$application['last_name']},
+        $emailSubject = $appointmentDone ? 
+            "Payment Appointment Completed - Application #{$application['application_number']}" :
+            "Payment Now Allowed - Application #{$application['application_number']}";
         
-        Payment for your application is now allowed:
-        
-        Application Details:
-        - Application Number: {$application['application_number']}
-        - Document Type: {$application['type_name']}
-        - Amount Due: ₱" . number_format($application['fee'], 2) . "
-        
-        You can now proceed with payment through the system. Please log in to your account to make the payment.
-        
-        Thank you,
-        Barangay Malangit Administration
-        ";
+        $emailMessage = $appointmentDone ?
+            "Dear {$application['first_name']} {$application['last_name']},\n\nYour payment appointment has been marked as completed:\n\nApplication Details:\n- Application Number: {$application['application_number']}\n- Document Type: {$application['type_name']}\n- Amount Due: ₱" . number_format($application['fee'], 2) . "\n\nYou can now proceed with payment through the system. Please log in to your account to make the payment.\n\nThank you,\nBarangay Malangit Administration" :
+            "Dear {$application['first_name']} {$application['last_name']},\n\nPayment for your application is now allowed:\n\nApplication Details:\n- Application Number: {$application['application_number']}\n- Document Type: {$application['type_name']}\n- Amount Due: ₱" . number_format($application['fee'], 2) . "\n\nYou can now proceed with payment through the system. Please log in to your account to make the payment.\n\nThank you,\nBarangay Malangit Administration";
         
         // Add to notification queue
         $stmt = $pdo->prepare("
@@ -133,22 +132,27 @@ try {
             ) VALUES (?, ?, ?, 'resident', ?, ?)
         ");
         $stmt->execute([
-            'payment_allowed',
-            $subject,
-            $message,
+            $appointmentDone ? 'appointment_completed' : 'payment_allowed',
+            $emailSubject,
+            $emailMessage,
             $application['user_id'],
             json_encode([
                 'application_id' => $applicationId,
                 'appointment_id' => $application['payment_appointment_id'],
-                'amount' => $application['fee']
+                'amount' => $application['fee'],
+                'appointment_done' => $appointmentDone
             ])
         ]);
     }
     
     // Log activity
+    $logMessage = $appointmentDone ? 
+        'Marked payment appointment as done (advance payment) for application #' . $application['application_number'] :
+        'Allowed payment for application #' . $application['application_number'];
+    
     logActivity(
         $_SESSION['user_id'],
-        'Allowed payment for application #' . $application['application_number'],
+        $logMessage,
         'applications',
         $applicationId
     );
@@ -156,7 +160,11 @@ try {
     $pdo->commit();
     
     // Set success message and redirect
-    $_SESSION['success'] = 'Payment has been allowed for application #' . $application['application_number'] . '. The resident can now make payment.';
+    $successMessage = $appointmentDone ? 
+        'Payment appointment marked as done for application #' . $application['application_number'] . '. The resident can now make payment.' :
+        'Payment has been allowed for application #' . $application['application_number'] . '. The resident can now make payment.';
+    
+    $_SESSION['success'] = $successMessage;
     header('Location: applications.php');
     exit;
     

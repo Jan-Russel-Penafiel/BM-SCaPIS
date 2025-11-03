@@ -1,0 +1,200 @@
+/* Additional Chat System CSS Animations */
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(20px);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-5px);
+    }
+    70% {
+        transform: scale(0.95) translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Success animation for sending messages */
+.chat-input-wrapper.send-success {
+    animation: sendSuccess 1s ease;
+}
+
+@keyframes sendSuccess {
+    0%, 100% {
+        background-color: #f8f9fa;
+    }
+    50% {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+}
+
+/* Notification dot animation */
+@keyframes notificationPulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.chat-badge {
+    animation: notificationPulse 2s infinite;
+}
+
+/* Loading dots animation */
+@keyframes loadingDots {
+    0%, 20% {
+        color: transparent;
+    }
+    50% {
+        color: #6c757d;
+    }
+    100% {
+        color: transparent;
+    }
+}
+
+.loading-dots::after {
+    content: '...';
+    animation: loadingDots 1.5s infinite;
+}
+
+/* Smooth transitions */
+.chat-window,
+.chat-messages,
+.conversation-list {
+    transition: all 0.3s ease;
+}
+
+.message-item {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.message-item:hover {
+    transform: translateY(-1px);
+}
+
+/* Focus styles for accessibility */
+.chat-input:focus,
+.btn-chat-action:focus,
+.btn-send-message:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.admin-mode .chat-input:focus,
+.admin-mode .btn-chat-action:focus,
+.admin-mode .btn-send-message:focus {
+    outline-color: #28a745;
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+    .chat-window {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .chat-input-wrapper {
+        background: #4a5568;
+        border-color: #718096;
+    }
+    
+    .chat-input {
+        color: #e2e8f0;
+    }
+    
+    .message-content {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .message-item.own .message-content {
+        background: #007bff;
+    }
+    
+    .admin-mode .message-item.own .message-content {
+        background: #28a745;
+    }
+}
+
+/* Print styles */
+@media print {
+    .support-chat-widget {
+        display: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .chat-window {
+        border: 2px solid #000;
+    }
+    
+    .chat-toggle-btn {
+        border: 2px solid #000;
+    }
+    
+    .message-content {
+        border: 1px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .chat-pulse,
+    .chat-badge {
+        animation: none !important;
+    }
+}

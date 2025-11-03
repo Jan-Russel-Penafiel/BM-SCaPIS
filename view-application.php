@@ -45,12 +45,16 @@ $stmt = $pdo->prepare("
     SELECT a.*, dt.type_name, dt.fee, dt.processing_days,
            CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name,
            CONCAT(u.first_name, ' ', u.last_name) as applicant_name,
-           u.contact_number, u.email, p.purok_name
+           u.contact_number, u.email, p.purok_name,
+           apt.id as payment_appointment_id,
+           apt.appointment_date as payment_appointment_date,
+           apt.status as payment_appointment_status
     FROM applications a
     JOIN document_types dt ON a.document_type_id = dt.id
     JOIN users u ON a.user_id = u.id
     LEFT JOIN users pb ON a.processed_by = pb.id
     LEFT JOIN puroks p ON u.purok_id = p.id
+    LEFT JOIN appointments apt ON a.id = apt.application_id AND apt.appointment_type = 'payment'
     WHERE a.id = ?
 ");
 $stmt->execute([$applicationId]);
@@ -246,12 +250,119 @@ include 'sidebar.php';
                             </div>
                             <?php endif; ?>
                             
+                            <?php if ($application['payment_method']): ?>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Payment Method</h6>
+                                <p class="mb-0"><?php echo ucfirst(htmlspecialchars($application['payment_method'])); ?></p>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <!-- Payment Appointment Information -->
+                            <?php if ($application['payment_appointment_id']): ?>
+                            <div class="col-12">
+                                <hr class="my-3">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-calendar-check me-2"></i>Payment Appointment
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-1">Appointment Date</h6>
+                                        <p class="mb-0">
+                                            <?php echo date('F j, Y g:i A', strtotime($application['payment_appointment_date'])); ?>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-1">Appointment Status</h6>
+                                        <span class="badge bg-<?php 
+                                            echo $application['payment_appointment_status'] === 'payment_allowed' ? 'success' : 
+                                                ($application['payment_appointment_status'] === 'scheduled' ? 'warning' : 'secondary');
+                                        ?>">
+                                            <?php 
+                                            switch($application['payment_appointment_status']) {
+                                                case 'payment_allowed':
+                                                    echo 'Payment Allowed';
+                                                    break;
+                                                case 'scheduled':
+                                                    echo 'Waiting for Approval';
+                                                    break;
+                                                case 'completed':
+                                                    echo 'Completed';
+                                                    break;
+                                                default:
+                                                    echo ucfirst($application['payment_appointment_status']);
+                                            }
+                                            ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
                             <?php if ($application['payment_status'] === 'unpaid'): ?>
                             <div class="col-12">
-                                <a href="pay-application.php?id=<?php echo $application['id']; ?>" 
-                                   class="btn btn-success">
-                                    <i class="bi bi-credit-card me-2"></i>Pay Now
-                                </a>
+                                <hr class="my-3">
+                                <?php 
+                                // Allow payment only if:
+                                // 1. Payment appointment is scheduled AND
+                                // 2. Appointment is allowed by admin (status = 'payment_allowed')
+                                $canPay = $application['payment_appointment_id'] && $application['payment_appointment_status'] === 'payment_allowed';
+                                $hasScheduledAppointment = $application['payment_appointment_id'] && $application['payment_appointment_status'] === 'scheduled';
+                                ?>
+                                
+                                <?php if ($canPay): ?>
+                                    <a href="pay-application.php?id=<?php echo $application['id']; ?>" 
+                                       class="btn btn-success">
+                                        <i class="bi bi-credit-card me-2"></i>Pay Now
+                                    </a>
+                                    <p class="text-success mt-2 mb-0">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Payment has been approved and is now available for processing.
+                                    </p>
+                                    
+                                <?php elseif ($hasScheduledAppointment): ?>
+                                    <button type="button" 
+                                            class="btn btn-secondary" 
+                                            disabled
+                                            title="Payment is scheduled for <?php echo date('M j, Y g:i A', strtotime($application['payment_appointment_date'])); ?>. Waiting for admin approval.">
+                                        <i class="bi bi-lock me-2"></i>Payment Pending Approval
+                                    </button>
+                                    
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-info-circle me-2"></i>Payment Appointment Scheduled
+                                        </h6>
+                                        <p class="mb-2">
+                                            Your payment appointment is scheduled for <strong><?php echo date('F j, Y \a\t g:i A', strtotime($application['payment_appointment_date'])); ?></strong>.
+                                        </p>
+                                        <p class="mb-0">
+                                            <small class="text-muted">
+                                                The "Pay Now" button will be enabled once the administrator approves your payment after the scheduled appointment time.
+                                            </small>
+                                        </p>
+                                    </div>
+                                    
+                                <?php else: ?>
+                                    <button type="button" 
+                                            class="btn btn-secondary" 
+                                            disabled
+                                            title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
+                                        <i class="bi bi-lock me-2"></i>Payment Not Available
+                                    </button>
+                                    
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>Payment Appointment Required
+                                        </h6>
+                                        <p class="mb-2">
+                                            A payment appointment must be scheduled before you can make payment.
+                                        </p>
+                                        <p class="mb-0">
+                                            <small class="text-muted">
+                                                Please wait for the administrator to schedule your payment appointment. You will be notified once it's available.
+                                            </small>
+                                        </p>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -327,14 +438,40 @@ include 'sidebar.php';
                                             <i class="bi bi-check-circle me-1"></i>Paid on 
                                             <?php echo date('M j, Y g:i A', strtotime($application['payment_date'])); ?>
                                         </p>
+                                        <?php if ($application['payment_method']): ?>
+                                            <small class="text-muted d-block">
+                                                via <?php echo ucfirst($application['payment_method']); ?>
+                                            </small>
+                                        <?php endif; ?>
                                     <?php elseif ($application['payment_status'] === 'waived'): ?>
                                         <p class="text-info mb-0">
                                             <i class="bi bi-info-circle me-1"></i>Fee Waived
                                         </p>
                                     <?php else: ?>
-                                        <p class="text-warning mb-0">
-                                            <i class="bi bi-exclamation-circle me-1"></i>Payment Pending
-                                        </p>
+                                        <?php if ($application['payment_appointment_id']): ?>
+                                            <?php if ($application['payment_appointment_status'] === 'payment_allowed'): ?>
+                                                <p class="text-success mb-0">
+                                                    <i class="bi bi-check-circle me-1"></i>Payment Approved
+                                                </p>
+                                                <small class="text-muted d-block">Ready to pay online</small>
+                                            <?php elseif ($application['payment_appointment_status'] === 'scheduled'): ?>
+                                                <p class="text-warning mb-0">
+                                                    <i class="bi bi-calendar-clock me-1"></i>Appointment Scheduled
+                                                </p>
+                                                <small class="text-muted d-block">
+                                                    <?php echo date('M j, Y g:i A', strtotime($application['payment_appointment_date'])); ?>
+                                                </small>
+                                            <?php else: ?>
+                                                <p class="text-info mb-0">
+                                                    <i class="bi bi-hourglass-split me-1"></i>Appointment Processing
+                                                </p>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <p class="text-warning mb-0">
+                                                <i class="bi bi-exclamation-circle me-1"></i>Payment Pending
+                                            </p>
+                                            <small class="text-muted d-block">Ready to pay online</small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -438,15 +575,6 @@ include 'sidebar.php';
                                 <p class="mb-0"><?php echo date('g:i A', strtotime($appointment['appointment_date'])); ?></p>
                                 <?php if ($appointment['notes']): ?>
                                     <p class="text-muted mt-2"><?php echo htmlspecialchars($appointment['notes']); ?></p>
-                                <?php endif; ?>
-                                
-                                <?php if ($appointment['status'] === 'scheduled'): ?>
-                                    <div class="mt-3">
-                                        <a href="reschedule-pickup.php?id=<?php echo $application['id']; ?>" 
-                                           class="btn btn-outline-primary">
-                                            <i class="bi bi-calendar me-2"></i>Reschedule
-                                        </a>
-                                    </div>
                                 <?php endif; ?>
                             </div>
                         <?php else: ?>
@@ -554,4 +682,8 @@ include 'sidebar.php';
 }
 </style>
 
-<?php include 'scripts.php'; ?> 
+<?php include 'scripts.php'; ?>
+
+<!-- Support Chat Widget -->
+<?php include 'includes/support-widget.php'; ?>
+<script src="includes/support-chat-functions.js"></script> 

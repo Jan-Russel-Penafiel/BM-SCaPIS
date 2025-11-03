@@ -161,7 +161,7 @@ include 'sidebar.php';
         <?php endif; ?>
 
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-12">
                 <!-- Payment Details -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
@@ -295,119 +295,6 @@ include 'sidebar.php';
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-4">
-                <!-- Payment Status -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="mb-0">
-                            <i class="bi bi-clock me-2"></i>Payment Status
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="payment-timer text-center mb-4">
-                            <div class="timer-display">
-                                <span id="minutes">15</span>:<span id="seconds">00</span>
-                            </div>
-                            <p class="text-muted mb-0">Time remaining to complete payment</p>
-                        </div>
-                        
-                        <div class="payment-steps">
-                            <div class="step active">
-                                <div class="step-icon">
-                                    <i class="bi bi-phone"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h6>Open GCash</h6>
-                                    <p class="text-muted mb-0">Launch your GCash app</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step">
-                                <div class="step-icon">
-                                    <i class="bi bi-send"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h6>Send Payment</h6>
-                                    <p class="text-muted mb-0">Send money to the provided number</p>
-                                </div>
-                            </div>
-                            
-                            <div class="step">
-                                <div class="step-icon">
-                                    <i class="bi bi-check-circle"></i>
-                                </div>
-                                <div class="step-content">
-                                    <h6>Complete Payment</h6>
-                                    <p class="text-muted mb-0">Verify payment and return here</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="text-center">
-                            <button type="button" class="btn btn-secondary btn-lg" id="verifyPaymentBtn" onclick="verifyPayment()" disabled>
-                                <i class="bi bi-lock me-2"></i>I've Completed Payment
-                            </button>
-                            <div class="form-text mt-2" id="verifyPaymentHint">
-                                <i class="bi bi-info-circle me-1"></i>Please click "Open GCash App" first to enable payment verification
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <style>
-            .payment-timer {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 2rem;
-                border-radius: 1rem;
-                margin-bottom: 2rem;
-            }
-            
-            .timer-display {
-                font-size: 3rem;
-                font-weight: bold;
-                margin-bottom: 0.5rem;
-            }
-            
-            .payment-steps {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-            
-            .step {
-                display: flex;
-                align-items: flex-start;
-                gap: 1rem;
-                opacity: 0.5;
-                transition: opacity 0.3s ease;
-            }
-            
-            .step.active {
-                opacity: 1;
-            }
-            
-            .step-icon {
-                width: 40px;
-                height: 40px;
-                background-color: var(--primary-color);
-                color: white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.2rem;
-            }
-            
-            .step-content h6 {
-                margin-bottom: 0.25rem;
-                color: var(--primary-color);
-            }
-            </style>
         </div>
     </div>
 </div>
@@ -442,35 +329,217 @@ function updateTimerDisplay() {
 // Track if GCash app was opened
 let gcashAppOpened = false;
 let gcashOpenedTime = null;
+let paymentVerified = false;
+let paymentCheckInterval = null;
+
+// Start continuous payment monitoring
+function startPaymentMonitoring() {
+    // Check payment status every 10 seconds
+    paymentCheckInterval = setInterval(() => {
+        checkPaymentStatus();
+    }, 10000);
+    
+    // Initial check
+    setTimeout(() => {
+        checkPaymentStatus();
+    }, 2000);
+}
+
+// Check payment status via AJAX
+function checkPaymentStatus() {
+    fetch('check-payment-status.php?payment_id=<?php echo $paymentId; ?>')
+        .then(response => response.json())
+        .then(data => {
+            updatePaymentStatus(data);
+        })
+        .catch(error => {
+            console.error('Payment status check failed:', error);
+            updatePaymentStatusUI('error', 'Failed to check payment status');
+        });
+}
+
+// Update payment status based on server response
+function updatePaymentStatus(data) {
+    if (data.error) {
+        updatePaymentStatusUI('error', data.error);
+        return;
+    }
+    
+    if (data.verified) {
+        paymentVerified = true;
+        updatePaymentStatusUI('verified', data.message);
+        enableVerificationButton(true);
+        
+        // Stop monitoring and redirect to success page after a delay
+        if (paymentCheckInterval) {
+            clearInterval(paymentCheckInterval);
+            paymentCheckInterval = null;
+        }
+        
+        setTimeout(() => {
+            window.location.href = 'payment-success.php?id=<?php echo $payment['application_id']; ?>';
+        }, 3000);
+        
+    } else if (data.status === 'expired') {
+        updatePaymentStatusUI('expired', 'Payment session has expired');
+        disableVerificationButton();
+        
+        if (paymentCheckInterval) {
+            clearInterval(paymentCheckInterval);
+        }
+        
+        setTimeout(() => {
+            window.location.href = 'pay-application.php?id=<?php echo $payment['application_id']; ?>';
+        }, 3000);
+        
+    } else {
+        updatePaymentStatusUI('pending', data.message || 'Waiting for payment...');
+        
+        // Update button state based on whether payment can be verified manually
+        if (data.can_verify && gcashAppOpened) {
+            enableVerificationButton(false); // Enable manual verification
+        } else {
+            disableVerificationButton();
+        }
+    }
+}
+
+// Update payment status UI elements
+function updatePaymentStatusUI(status, message) {
+    const statusIndicator = document.getElementById('paymentStatusIndicator');
+    const statusSpinner = document.getElementById('paymentStatusSpinner');
+    const statusText = document.getElementById('paymentStatusText');
+    const verifyHint = document.getElementById('verifyPaymentHint');
+    
+    if (!statusIndicator || !statusSpinner || !statusText || !verifyHint) return;
+    
+    switch (status) {
+        case 'verified':
+            statusSpinner.className = 'spinner-border spinner-border-sm text-success me-2 d-none';
+            statusText.className = 'text-success fw-bold';
+            statusText.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + message;
+            verifyHint.innerHTML = '<i class="bi bi-check-circle me-1 text-success"></i>Payment verified! Redirecting...';
+            verifyHint.className = 'form-text mt-2 text-success';
+            break;
+            
+        case 'expired':
+            statusSpinner.className = 'spinner-border spinner-border-sm text-danger me-2 d-none';
+            statusText.className = 'text-danger fw-bold';
+            statusText.innerHTML = '<i class="bi bi-x-circle me-1"></i>' + message;
+            verifyHint.innerHTML = '<i class="bi bi-x-circle me-1 text-danger"></i>Session expired. Redirecting...';
+            verifyHint.className = 'form-text mt-2 text-danger';
+            break;
+            
+        case 'error':
+            statusSpinner.className = 'spinner-border spinner-border-sm text-warning me-2 d-none';
+            statusText.className = 'text-warning';
+            statusText.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + message;
+            verifyHint.innerHTML = '<i class="bi bi-exclamation-triangle me-1 text-warning"></i>Error checking payment';
+            verifyHint.className = 'form-text mt-2 text-warning';
+            break;
+            
+        default: // pending
+            statusSpinner.className = 'spinner-border spinner-border-sm text-warning me-2';
+            statusText.className = 'text-muted';
+            statusText.innerHTML = message;
+            if (gcashAppOpened) {
+                verifyHint.innerHTML = '<i class="bi bi-clock me-1 text-info"></i>Payment monitoring active. Complete payment in GCash app.';
+                verifyHint.className = 'form-text mt-2 text-info';
+            } else {
+                verifyHint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Please open GCash app first to enable payment verification';
+                verifyHint.className = 'form-text mt-2';
+            }
+            break;
+    }
+}
+
+// Enable verification button
+function enableVerificationButton(autoVerified = false) {
+    const verifyBtn = document.getElementById('verifyPaymentBtn');
+    const verifyHint = document.getElementById('verifyPaymentHint');
+    
+    if (verifyBtn && verifyHint) {
+        verifyBtn.disabled = false;
+        verifyBtn.classList.remove('btn-secondary');
+        verifyBtn.classList.add('btn-success');
+        
+        if (autoVerified) {
+            verifyBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Payment Verified!';
+            verifyHint.innerHTML = '<i class="bi bi-check-circle me-1 text-success"></i>Payment verified automatically!';
+            verifyHint.className = 'form-text mt-2 text-success';
+        } else {
+            verifyBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirm Payment Completion';
+            verifyHint.innerHTML = '<i class="bi bi-check-circle me-1 text-success"></i>You can now confirm your payment!';
+            verifyHint.className = 'form-text mt-2 text-success';
+        }
+    }
+}
+
+// Disable verification button
+function disableVerificationButton() {
+    const verifyBtn = document.getElementById('verifyPaymentBtn');
+    const verifyHint = document.getElementById('verifyPaymentHint');
+    
+    if (verifyBtn && verifyHint) {
+        verifyBtn.disabled = true;
+        verifyBtn.classList.remove('btn-success');
+        verifyBtn.classList.add('btn-secondary');
+        verifyBtn.innerHTML = '<i class="bi bi-lock me-2"></i>I\'ve Completed Payment';
+        
+        if (!gcashAppOpened) {
+            verifyHint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Please open GCash app first to enable payment verification';
+            verifyHint.className = 'form-text mt-2';
+        }
+    }
+}
 
 // Detect if user is on mobile device
 function isMobileDevice() {
-    // Check user agent for mobile devices
-    const mobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Check user agent for mobile devices (more comprehensive)
+    const mobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Phone/i.test(navigator.userAgent);
     
     // Check screen size
-    const smallScreen = window.innerWidth <= 768;
+    const smallScreen = window.innerWidth <= 768 || window.screen.width <= 768;
     
     // Check for touch capability
     const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     
     // Check for mobile-specific features
-    const hasMobileFeatures = 'orientation' in window || 'devicePixelRatio' in window;
+    const hasMobileFeatures = 'orientation' in window || window.DeviceMotionEvent !== undefined;
     
-    return mobileUserAgent || (smallScreen && hasTouch) || hasMobileFeatures;
+    // Check platform
+    const mobileplatform = /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.platform);
+    
+    return mobileUserAgent || (smallScreen && hasTouch) || hasMobileFeatures || mobileplatform;
 }
 
-// Open GCash app or website based on device
+// Detect specific mobile OS
+function getMobileOS() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        return 'ios';
+    }
+    
+    if (/android/i.test(userAgent)) {
+        return 'android';
+    }
+    
+    return 'unknown';
+}
+
+// Open GCash app (direct app opening or app store redirect)
 function openGCash() {
     const isMobile = isMobileDevice();
+    const mobileOS = getMobileOS();
     
     // Update button appearance to show it's been clicked
     const openBtn = document.getElementById('openGCashBtn');
     if (openBtn) {
         openBtn.disabled = true;
         openBtn.classList.remove('btn-primary');
-        openBtn.classList.add('btn-success');
-        openBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>GCash Opened';
+        openBtn.classList.add('btn-info');
+        openBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Opening GCash...';
     }
     
     // Mark that GCash was opened
@@ -478,198 +547,182 @@ function openGCash() {
     gcashOpenedTime = Date.now();
     
     if (isMobile) {
-        // Mobile: Try to open GCash app with multiple methods
+        // Mobile: Try to open GCash app directly, fallback to store
         const gcashNumber = '<?php echo htmlspecialchars($gcashNumber); ?>';
         const amount = '<?php echo $payment['amount']; ?>';
         const reference = '<?php echo $payment['reference_number']; ?>';
         
-        // Try multiple deep link formats
-        const deepLinks = [
-            `gcash://send?number=${gcashNumber}&amount=${amount}&reference=${reference}`,
-            `https://www.gcash.com/send?number=${gcashNumber}&amount=${amount}&reference=${reference}`,
-            `intent://send?number=${gcashNumber}&amount=${amount}&reference=${reference}#Intent;scheme=gcash;package=com.globe.gcash.android;end`
-        ];
+        // Simplified and more effective deep link formats
+        const deepLinks = [];
         
-        // Try to open GCash app with first deep link
-        tryOpenGCashApp(deepLinks, 0);
+        if (mobileOS === 'android') {
+            // Android: Direct app links with immediate store fallback
+            deepLinks.push(
+                `intent://send?number=${gcashNumber}&amount=${amount}&message=${reference}#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.globe.gcash.android;end`,
+                `gcash://send?number=${gcashNumber}&amount=${amount}&message=${reference}`
+            );
+        } else if (mobileOS === 'ios') {
+            // iOS: App scheme with App Store fallback
+            deepLinks.push(
+                `gcash://send?number=${gcashNumber}&amount=${amount}&message=${reference}`,
+                `gcash://pay?number=${gcashNumber}&amount=${amount}&reference=${reference}`
+            );
+        } else {
+            // Generic mobile: Try common schemes
+            deepLinks.push(
+                `gcash://send?number=${gcashNumber}&amount=${amount}&message=${reference}`
+            );
+        }
+        
+        // Try to open GCash app directly
+        tryOpenGCashApp(deepLinks, 0, mobileOS);
         
     } else {
-        // Desktop: Open GCash website in new tab
-        const gcashWebsite = 'https://www.gcash.com';
-        window.open(gcashWebsite, '_blank');
-        
-        // Show instructions for desktop users
+        // Desktop: Show message to use mobile device
         setTimeout(() => {
-            alert('GCash website opened in new tab!\n\nPlease:\n1. Log in to your GCash account\n2. Navigate to "Send Money" or "Pay Bills"\n3. Enter the payment details:\n   - Number: <?php echo htmlspecialchars($gcashNumber); ?>\n   - Amount: ₱<?php echo number_format($payment['amount'], 2); ?>\n   - Reference: <?php echo $payment['reference_number']; ?>');
+            alert('GCash Payment requires a mobile device!\n\nPlease:\n1. Open this page on your smartphone\n2. The GCash app will open automatically\n3. If not installed, you\'ll be redirected to install it\n\nPayment Details:\n- Number: <?php echo htmlspecialchars($gcashNumber); ?>\n- Amount: ₱<?php echo number_format($payment['amount'], 2); ?>\n- Reference: <?php echo $payment['reference_number']; ?>');
+            
+            // Reset button for desktop users
+            if (openBtn) {
+                openBtn.disabled = false;
+                openBtn.classList.remove('btn-info');
+                openBtn.classList.add('btn-warning');
+                openBtn.innerHTML = '<i class="bi bi-phone me-2"></i>Use Mobile Device';
+            }
         }, 500);
     }
     
     // Enable verification button after a short delay
     setTimeout(() => {
-        enableVerificationButton();
-    }, 2000);
+        enableVerificationButtonAfterAppOpen();
+    }, 3000);
 }
 
-// Try to open GCash app with multiple deep link formats
-function tryOpenGCashApp(deepLinks, index) {
+// Try to open GCash app with enhanced deep link detection
+function tryOpenGCashApp(deepLinks, index, mobileOS) {
     if (index >= deepLinks.length) {
-        // All deep links failed, show manual instructions
-        showManualInstructions();
+        // All deep links failed, redirect directly to app store
+        redirectToAppStore(mobileOS);
         return;
     }
     
     const deepLink = deepLinks[index];
-    console.log(`Trying deep link ${index + 1}: ${deepLink}`);
+    console.log(`Trying deep link ${index + 1}/${deepLinks.length}: ${deepLink}`);
     
-    // Try to open the app
-    window.location.href = deepLink;
+    // Track time when attempting to open app
+    const attemptTime = Date.now();
     
-    // Check if app opened after 2 seconds
+    // Create a hidden iframe to test app opening
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = deepLink;
+    document.body.appendChild(iframe);
+    
+    // Also try direct location change for better compatibility
     setTimeout(() => {
-        if (document.hidden || document.visibilityState === 'hidden') {
-            // App opened successfully
-            console.log('GCash app opened successfully');
-        } else {
-            // App didn't open, try next deep link
-            console.log(`Deep link ${index + 1} failed, trying next...`);
-            tryOpenGCashApp(deepLinks, index + 1);
+        window.location.href = deepLink;
+    }, 100);
+    
+    // Check if app opened after 2.5 seconds
+    setTimeout(() => {
+        // Remove the iframe
+        if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
         }
+        
+        // Check if page is hidden (indicating app opened)
+        const pageHidden = document.hidden || document.visibilityState === 'hidden';
+        const timeElapsed = Date.now() - attemptTime;
+        
+        if (pageHidden || timeElapsed > 3000) {
+            // App opened successfully or user switched away
+            console.log('GCash app opened successfully');
+            updateButtonSuccess();
+        } else {
+            // App didn't open, try next deep link quickly
+            console.log(`Deep link ${index + 1} failed, trying next...`);
+            if (index < deepLinks.length - 1) {
+                tryOpenGCashApp(deepLinks, index + 1, mobileOS);
+            } else {
+                // All attempts failed, redirect to app store
+                console.log('All deep links failed, redirecting to app store...');
+                redirectToAppStore(mobileOS);
+            }
+        }
+    }, 2500);
+}
+
+// Redirect directly to app store when GCash app is not installed
+function redirectToAppStore(mobileOS) {
+    const isIOS = mobileOS === 'ios';
+    const appStoreUrl = isIOS 
+        ? 'https://apps.apple.com/ph/app/gcash/id519926866'
+        : 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
+    
+    // Update button to show redirecting
+    const openBtn = document.getElementById('openGCashBtn');
+    if (openBtn) {
+        openBtn.innerHTML = '<i class="bi bi-download me-2"></i>Redirecting to App Store...';
+    }
+    
+    // Show quick notification
+    showToast(`GCash app not found. Redirecting to ${isIOS ? 'App Store' : 'Google Play Store'}...`, 'info');
+    
+    // Redirect after a brief moment
+    setTimeout(() => {
+        window.location.href = appStoreUrl;
+    }, 1500);
+}
+
+// Update button to show success
+function updateButtonSuccess() {
+    const openBtn = document.getElementById('openGCashBtn');
+    if (openBtn) {
+        openBtn.classList.remove('btn-info');
+        openBtn.classList.add('btn-success');
+        openBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>GCash App Opened!';
+    }
+}
+
+// Show simplified manual instructions (fallback only)
+function showEnhancedManualInstructions(mobileOS) {
+    // This function is now mainly for edge cases since we redirect to app store directly
+    const isIOS = mobileOS === 'ios';
+    const appStoreLink = isIOS ? 'https://apps.apple.com/ph/app/gcash/id519926866' : 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
+    
+    // Show toast and redirect instead of modal
+    showToast(`Redirecting to ${isIOS ? 'App Store' : 'Google Play Store'} to install GCash...`, 'info');
+    
+    setTimeout(() => {
+        window.location.href = appStoreLink;
     }, 2000);
 }
 
-// Show manual instructions when GCash app is not found
-function showManualInstructions() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const appStoreLink = isIOS ? 'https://apps.apple.com/ph/app/gcash/id519926866' : 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
-    
-    const modalContent = `
-        <div class="modal fade" id="manualInstructionsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-phone me-2"></i>GCash App Not Found
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-warning">
-                            <h6><i class="bi bi-exclamation-triangle me-2"></i>GCash App Not Installed</h6>
-                            <p class="mb-0">The GCash app is not installed on your device. Please install it first to continue with the payment.</p>
-                        </div>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-phone fs-1 text-primary mb-3"></i>
-                                        <h6>Install GCash App</h6>
-                                        <p class="text-muted">Download and install the GCash mobile app</p>
-                                        <a href="${appStoreLink}" target="_blank" class="btn btn-primary">
-                                            <i class="bi bi-download me-2"></i>Download GCash
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-globe fs-1 text-success mb-3"></i>
-                                        <h6>Use GCash Website</h6>
-                                        <p class="text-muted">Access GCash through your web browser</p>
-                                        <button type="button" class="btn btn-success" onclick="openGCashWebsite()">
-                                            <i class="bi bi-globe me-2"></i>Open GCash Website
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <h6><i class="bi bi-info-circle me-2"></i>Payment Details</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">GCash Number</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($gcashNumber); ?>" readonly>
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('<?php echo htmlspecialchars($gcashNumber); ?>')">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Amount</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="text" class="form-control" value="<?php echo number_format($payment['amount'], 2); ?>" readonly>
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('<?php echo number_format($payment['amount'], 2); ?>')">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Reference Number</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" value="<?php echo $payment['reference_number']; ?>" readonly>
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('<?php echo $payment['reference_number']; ?>')">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Account Name</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($gcashAccountName); ?>" readonly>
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('<?php echo htmlspecialchars($gcashAccountName); ?>')">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" onclick="retryOpenGCash()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Try Again
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal if any
-    const existingModal = document.getElementById('manualInstructionsModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // Add modal to page
-    document.body.insertAdjacentHTML('beforeend', modalContent);
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('manualInstructionsModal'));
-    modal.show();
-}
-
-// Show payment details modal
+// Show payment details modal (mobile-focused)
 function showPaymentDetails() {
     const isMobile = isMobileDevice();
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const mobileOS = getMobileOS();
+    const isIOS = mobileOS === 'ios';
     const appStoreLink = isIOS ? 'https://apps.apple.com/ph/app/gcash/id519926866' : 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
     
     const modalContent = `
         <div class="modal fade" id="paymentDetailsModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header">
+                    <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
-                            <i class="bi bi-credit-card me-2"></i>Payment Details
+                            <i class="bi bi-credit-card me-2"></i>GCash Payment Details
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+                        ${!isMobile ? `
+                            <div class="alert alert-warning">
+                                <h6><i class="bi bi-exclamation-triangle me-2"></i>Mobile Device Required</h6>
+                                <p class="mb-0">GCash payments require the mobile app. Please open this page on your smartphone.</p>
+                            </div>
+                        ` : ''}
+                        
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">GCash Number</label>
@@ -713,22 +766,35 @@ function showPaymentDetails() {
                         <hr class="my-4">
                         
                         <div class="alert alert-info">
-                            <h6><i class="bi bi-info-circle me-2"></i>How to Pay:</h6>
+                            <h6><i class="bi bi-info-circle me-2"></i>How to Pay using GCash Mobile App:</h6>
                             ${isMobile ? 
-                                `<p class="mb-2">1. Click "Open GCash App" to launch the mobile app</p>
-                                 <p class="mb-2">2. If app doesn't open, <a href="${appStoreLink}" target="_blank">install GCash app</a></p>
-                                 <p class="mb-0">3. Send money to the number above with the exact amount</p>` :
-                                `<p class="mb-2">1. Click "Open GCash Website" to go to GCash.com</p>
-                                 <p class="mb-2">2. Log in to your GCash account</p>
-                                 <p class="mb-0">3. Use "Send Money" feature with the details above</p>`
+                                `<ol class="mb-2">
+                                    <li>Click "Open GCash App" to launch the mobile app</li>
+                                    <li>If app doesn't open, <a href="${appStoreLink}" target="_blank">install GCash app first</a></li>
+                                    <li>In GCash app, tap "Send Money"</li>
+                                    <li>Enter the number and amount above</li>
+                                    <li>Add the reference number in the message</li>
+                                    <li>Confirm and send the payment</li>
+                                </ol>` :
+                                `<p class="mb-2"><strong>You need to use a mobile device:</strong></p>
+                                 <ol class="mb-0">
+                                    <li>Open this page on your smartphone</li>
+                                    <li>Install the <a href="${appStoreLink}" target="_blank">GCash mobile app</a></li>
+                                    <li>Use the app to send money with the details above</li>
+                                 </ol>`
                             }
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" onclick="openGCash()">
-                            <i class="bi bi-phone me-2"></i>Open GCash
-                        </button>
+                        ${isMobile ? 
+                            `<button type="button" class="btn btn-primary" onclick="openGCash(); setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById('paymentDetailsModal')).hide(); }, 500);">
+                                <i class="bi bi-phone me-2"></i>Open GCash App
+                            </button>` :
+                            `<a href="${appStoreLink}" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-download me-2"></i>Download GCash App
+                            </a>`
+                        }
                     </div>
                 </div>
             </div>
@@ -749,30 +815,13 @@ function showPaymentDetails() {
     modal.show();
 }
 
-// Open GCash website
-function openGCashWebsite() {
-    const gcashWebsite = 'https://www.gcash.com';
-    window.open(gcashWebsite, '_blank');
-    
-    // Show instructions for website users
-    setTimeout(() => {
-        alert('GCash website opened in new tab!\n\nPlease:\n1. Log in to your GCash account\n2. Navigate to "Send Money" or "Pay Bills"\n3. Enter the payment details:\n   - Number: <?php echo htmlspecialchars($gcashNumber); ?>\n   - Amount: ₱<?php echo number_format($payment['amount'], 2); ?>\n   - Reference: <?php echo $payment['reference_number']; ?>');
-    }, 500);
-}
-
-// Retry opening GCash app
+// Retry opening GCash app (simplified)
 function retryOpenGCash() {
-    // Close the modal first
-    const modal = bootstrap.Modal.getInstance(document.getElementById('manualInstructionsModal'));
-    if (modal) {
-        modal.hide();
-    }
-    
     // Reset button state
     const openBtn = document.getElementById('openGCashBtn');
     if (openBtn) {
         openBtn.disabled = false;
-        openBtn.classList.remove('btn-success');
+        openBtn.classList.remove('btn-success', 'btn-info', 'btn-warning');
         openBtn.classList.add('btn-primary');
         openBtn.innerHTML = '<i class="bi bi-phone me-2"></i><span id="gcashButtonText">Open GCash</span>';
     }
@@ -783,39 +832,37 @@ function retryOpenGCash() {
     }, 500);
 }
 
-// Enable verification button
+// Legacy function - redirected to new payment monitoring system
 function enableVerificationButton() {
-    const verifyBtn = document.getElementById('verifyPaymentBtn');
-    const verifyHint = document.getElementById('verifyPaymentHint');
-    
-    if (verifyBtn && verifyHint) {
-        verifyBtn.disabled = false;
-        verifyBtn.classList.remove('btn-secondary');
-        verifyBtn.classList.add('btn-success');
-        verifyBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>I\'ve Completed Payment';
-        verifyHint.innerHTML = '<i class="bi bi-clock me-1 text-warning"></i>GCash app opened! Please wait 30 seconds before verifying payment...';
-        verifyHint.className = 'form-text mt-2 text-warning';
-        
-        // Start countdown timer
-        startVerificationCountdown();
-    }
+    enableVerificationButtonAfterAppOpen();
 }
 
-// Start countdown for verification button
-function startVerificationCountdown() {
-    const verifyHint = document.getElementById('verifyPaymentHint');
-    let countdown = 30;
+// Enable verification button after GCash app is opened
+function enableVerificationButtonAfterAppOpen() {
+    // Mark that app was opened
+    gcashAppOpened = true;
+    gcashOpenedTime = Date.now();
     
-    const countdownInterval = setInterval(() => {
-        countdown--;
-        
-        if (countdown > 0) {
-            verifyHint.innerHTML = `<i class="bi bi-clock me-1 text-warning"></i>Please wait ${countdown} more seconds before verifying payment...`;
-        } else {
-            clearInterval(countdownInterval);
-            verifyHint.innerHTML = '<i class="bi bi-check-circle me-1 text-success"></i>Ready to verify payment!';
-            verifyHint.className = 'form-text mt-2 text-success';
-        }
+    // Update UI to show app was opened
+    const verifyHint = document.getElementById('verifyPaymentHint');
+    if (verifyHint) {
+        verifyHint.innerHTML = '<i class="bi bi-clock me-1 text-info"></i>GCash app opened! Monitoring for payment completion...';
+        verifyHint.className = 'form-text mt-2 text-info';
+    }
+    
+    // Start more frequent payment checking after app is opened
+    if (paymentCheckInterval) {
+        clearInterval(paymentCheckInterval);
+    }
+    
+    // Check every 5 seconds after app is opened
+    paymentCheckInterval = setInterval(() => {
+        checkPaymentStatus();
+    }, 5000);
+    
+    // Immediate check
+    setTimeout(() => {
+        checkPaymentStatus();
     }, 1000);
 }
 
@@ -835,21 +882,27 @@ function copyToClipboard(text) {
     });
 }
 
-// Verify payment
+// Verify payment (enhanced with real-time checking)
 function verifyPayment() {
+    // Check if payment has already been verified automatically
+    if (paymentVerified) {
+        window.location.href = 'payment-success.php?id=<?php echo $payment['application_id']; ?>';
+        return;
+    }
+    
     // Security check: Ensure GCash app was opened first
     if (!gcashAppOpened) {
         alert('Please click "Open GCash App" first before verifying payment.');
         return;
     }
     
-    // Security check: Ensure minimum time has passed (at least 30 seconds)
+    // Security check: Ensure minimum time has passed (at least 15 seconds)
     const timeSinceOpened = Date.now() - gcashOpenedTime;
-    const minimumTime = 30 * 1000; // 30 seconds
+    const minimumTime = 15 * 1000; // 15 seconds
     
     if (timeSinceOpened < minimumTime) {
         const remainingTime = Math.ceil((minimumTime - timeSinceOpened) / 1000);
-        alert(`Please wait at least 30 seconds after opening GCash app before verifying payment. Please wait ${remainingTime} more seconds.`);
+        alert(`Please wait at least 15 seconds after opening GCash app before verifying payment. Please wait ${remainingTime} more seconds.`);
         return;
     }
     
@@ -859,8 +912,29 @@ function verifyPayment() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying Payment...';
     
-    // Redirect to verification endpoint
-    window.location.href = '?payment_id=<?php echo $paymentId; ?>&verify=1';
+    // Check payment status one more time before manual verification
+    fetch('check-payment-status.php?payment_id=<?php echo $paymentId; ?>')
+        .then(response => response.json())
+        .then(data => {
+            if (data.verified) {
+                // Payment was verified automatically
+                window.location.href = 'payment-success.php?id=<?php echo $payment['application_id']; ?>';
+            } else if (data.can_verify) {
+                // Proceed with manual verification
+                window.location.href = '?payment_id=<?php echo $paymentId; ?>&verify=1';
+            } else {
+                // Cannot verify yet
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                alert('Payment not yet detected. Please ensure you have completed the payment in GCash and try again in a few moments.');
+            }
+        })
+        .catch(error => {
+            console.error('Payment verification failed:', error);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            alert('Verification failed. Please try again.');
+        });
 }
 
 // Show toast notification
@@ -903,11 +977,14 @@ window.addEventListener('popstate', function() {
 document.addEventListener('DOMContentLoaded', function() {
     initTimer();
     
+    // Start payment monitoring
+    startPaymentMonitoring();
+    
     // Update button text based on device
     updateGCashButtonText();
 });
 
-// Update GCash button text based on device
+// Update GCash button text based on device (mobile-first approach)
 function updateGCashButtonText() {
     const buttonText = document.getElementById('gcashButtonText');
     const instructions = document.getElementById('gcashInstructions');
@@ -918,41 +995,49 @@ function updateGCashButtonText() {
         if (isMobile) {
             buttonText.textContent = 'Open GCash App';
         } else {
-            buttonText.textContent = 'Open GCash Website';
+            buttonText.textContent = 'Requires Mobile Device';
         }
     }
     
     if (instructions) {
         if (isMobile) {
-            instructions.textContent = 'Click the button below to open GCash app and complete your payment';
+            instructions.textContent = 'Click the button below to open GCash mobile app and complete your payment';
         } else {
-            instructions.textContent = 'Click the button below to open GCash website in a new tab and complete your payment';
+            instructions.innerHTML = 'Please open this page on your <strong>smartphone</strong> to use the GCash mobile app';
         }
     }
     
     if (deviceInfo) {
         if (isMobile) {
-            deviceInfo.innerHTML = '<i class="bi bi-phone me-1"></i>Mobile device detected - will open GCash app';
+            const mobileOS = getMobileOS();
+            const osText = mobileOS === 'ios' ? 'iOS' : mobileOS === 'android' ? 'Android' : 'Mobile';
+            deviceInfo.innerHTML = `<i class="bi bi-phone me-1 text-success"></i>${osText} device detected - will open GCash app`;
         } else {
-            deviceInfo.innerHTML = '<i class="bi bi-laptop me-1"></i>Desktop device detected - will open GCash website';
+            deviceInfo.innerHTML = '<i class="bi bi-exclamation-triangle me-1 text-warning"></i>Desktop device detected - please use mobile device for GCash payments';
         }
     }
 }
 
-// Auto-refresh payment status every 30 seconds
-setInterval(() => {
-    // Check if payment was completed externally
-    fetch('check-payment-status.php?payment_id=<?php echo $paymentId; ?>')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'verified') {
-                window.location.href = 'payment-success.php?id=<?php echo $payment['application_id']; ?>';
-            }
-        })
-        .catch(error => {
-            console.log('Payment status check failed:', error);
-        });
-}, 30000);
+// Cleanup intervals when page is unloaded
+window.addEventListener('beforeunload', function() {
+    if (paymentCheckInterval) {
+        clearInterval(paymentCheckInterval);
+    }
+});
+
+// Page visibility change handling (for mobile apps switching)
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && gcashAppOpened) {
+        // User returned to the page, check payment status immediately
+        setTimeout(() => {
+            checkPaymentStatus();
+        }, 1000);
+    }
+});
 </script>
 
-<?php include 'scripts.php'; ?> 
+<?php include 'scripts.php'; ?>
+
+<!-- Support Chat Widget -->
+<?php include 'includes/support-widget.php'; ?>
+<script src="includes/support-chat-functions.js"></script> 

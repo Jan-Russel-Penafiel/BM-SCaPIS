@@ -42,7 +42,7 @@ require_once 'header.php';
                                     </div>
                                     <div class="col-6">
                                         <strong>Processing Time:</strong><br>
-                                        <span class="text-info"><?php echo $doc['processing_days']; ?> working days</span>
+                                        <span class="text-info">3 to 5 working days<br><small class="text-muted">(except holidays)</small></span>
                                     </div>
                                 </div>
 

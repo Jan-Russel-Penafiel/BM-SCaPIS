@@ -505,8 +505,17 @@
             // Function to update notifications
             function updateNotifications() {
                 fetch('ajax/get-notification-count.php')
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        if (!data.success) {
+                            throw new Error(data.error || 'Unknown error occurred');
+                        }
+                        
                         // Update badge
                         if (data.count > 0) {
                             notificationBadge.textContent = data.count;
@@ -536,7 +545,7 @@
                         lastNotificationCount = data.count;
 
                         // Update notifications list
-                        if (data.notifications) {
+                        if (data.notifications && Array.isArray(data.notifications)) {
                             notificationsList.innerHTML = data.notifications.map(notification => `
                                 <a href="#" class="dropdown-item py-2 ${!notification.is_read ? 'fw-bold bg-light' : ''}">
                                     <div class="d-flex align-items-center">
@@ -547,9 +556,15 @@
                                     </div>
                                 </a>
                             `).join('') || '<div class="dropdown-item text-center py-3">No notifications</div>';
+                        } else {
+                            notificationsList.innerHTML = '<div class="dropdown-item text-center py-3">No notifications</div>';
                         }
                     })
-                    .catch(error => console.error('Error updating notifications:', error));
+                    .catch(error => {
+                        console.error('Error updating notifications:', error);
+                        // Only show error in console, don't break the UI
+                        notificationsList.innerHTML = '<div class="dropdown-item text-center py-3 text-muted">Error loading notifications</div>';
+                    });
             }
 
             // Update notifications every 30 seconds

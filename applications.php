@@ -366,6 +366,13 @@ include 'sidebar.php';
                                                                         <i class="bi bi-calendar-x"></i>
                                                                     </button>
                                                                 <?php endif; ?>
+                                                                <!-- Appointment Done button for advance payment scenarios -->
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-primary"
+                                                                        onclick="markAppointmentDone(<?php echo $app['id']; ?>)"
+                                                                        title="Mark Appointment as Done - For advance payment scenarios">
+                                                                    <i class="bi bi-calendar-check"></i>
+                                                                </button>
                                                             <?php endif; ?>
                                                         <?php endif; ?>
                                                         <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'paid'): ?>
@@ -374,6 +381,14 @@ include 'sidebar.php';
                                                                     onclick="autoProcessApplication(<?php echo $app['id']; ?>)"
                                                                     title="Start Processing (Payment Received)">
                                                                 <i class="bi bi-play-circle"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    onclick="markPaymentDone(<?php echo $app['id']; ?>)"
+                                                                    title="Mark Payment as Done - For manual payments (cash, bank transfer, etc.)">
+                                                                <i class="bi bi-cash-coin"></i>
                                                             </button>
                                                         <?php endif; ?>
                                                     <?php endif; ?>
@@ -532,6 +547,22 @@ function allowPayment(appId) {
         window.location.href = `allow-payment.php?id=${appId}`;
     }
 }
+
+function markAppointmentDone(appId) {
+    if (confirm('Mark this payment appointment as done? This will enable the Pay Now button for advance payment scenarios.')) {
+        window.location.href = `allow-payment.php?id=${appId}&appointment_done=true`;
+    }
+}
+
+function markPaymentDone(appId) {
+    if (confirm('Mark payment as completed? This should only be used when payment was received through other means (cash, bank transfer, etc.). This action will automatically start processing the application.')) {
+        window.location.href = `mark-payment-done.php?id=${appId}`;
+    }
+}
 </script>
 
-<?php include 'scripts.php'; ?> 
+<?php include 'scripts.php'; ?>
+
+<!-- Support Chat Widget -->
+<?php include 'includes/support-widget.php'; ?>
+<script src="includes/support-chat-functions.js"></script> 

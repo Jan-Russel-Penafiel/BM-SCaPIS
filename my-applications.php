@@ -210,10 +210,11 @@ $applications = $stmt->fetchAll();
                                                             </a>
                                                             <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
                                                                 <?php 
-                                                                // Allow payment if:
-                                                                // 1. No appointment required (no appointment exists), OR
-                                                                // 2. Appointment exists and is allowed by admin
-                                                                $canPay = !$app['payment_appointment_id'] || $app['payment_appointment_status'] === 'payment_allowed';
+                                                                // Allow payment only if:
+                                                                // 1. Payment appointment is scheduled AND
+                                                                // 2. Appointment is allowed by admin (status = 'payment_allowed')
+                                                                $canPay = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed';
+                                                                $hasScheduledAppointment = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled';
                                                                 ?>
                                                                 <?php if ($canPay): ?>
                                                                     <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
@@ -221,11 +222,18 @@ $applications = $stmt->fetchAll();
                                                                        title="Click to proceed with payment">
                                                                         <i class="bi bi-credit-card"></i>
                                                                     </a>
-                                                                <?php else: ?>
+                                                                <?php elseif ($hasScheduledAppointment): ?>
                                                                     <button type="button" 
                                                                             class="btn btn-sm btn-outline-secondary"
                                                                             disabled
                                                                             title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
+                                                                        <i class="bi bi-credit-card"></i>
+                                                                    </button>
+                                                                <?php else: ?>
+                                                                    <button type="button" 
+                                                                            class="btn btn-sm btn-outline-secondary"
+                                                                            disabled
+                                                                            title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
                                                                         <i class="bi bi-credit-card"></i>
                                                                     </button>
                                                                 <?php endif; ?>
@@ -342,10 +350,11 @@ $applications = $stmt->fetchAll();
                                                         </a>
                                                         <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
                                                             <?php 
-                                                            // Allow payment if:
-                                                            // 1. No appointment required (no appointment exists), OR
-                                                            // 2. Appointment exists and is allowed by admin
-                                                            $canPay = !$app['payment_appointment_id'] || $app['payment_appointment_status'] === 'payment_allowed';
+                                                            // Allow payment only if:
+                                                            // 1. Payment appointment is scheduled AND
+                                                            // 2. Appointment is allowed by admin (status = 'payment_allowed')
+                                                            $canPay = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed';
+                                                            $hasScheduledAppointment = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled';
                                                             ?>
                                                             <?php if ($canPay): ?>
                                                                 <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
@@ -353,11 +362,18 @@ $applications = $stmt->fetchAll();
                                                                    title="Click to proceed with payment">
                                                                     <i class="bi bi-credit-card me-1"></i>Pay
                                                                 </a>
-                                                            <?php else: ?>
+                                                            <?php elseif ($hasScheduledAppointment): ?>
                                                                 <button type="button" 
                                                                         class="btn btn-sm btn-outline-secondary flex-fill"
                                                                         disabled
                                                                         title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
+                                                                    <i class="bi bi-credit-card me-1"></i>Pay
+                                                                </button>
+                                                            <?php else: ?>
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-secondary flex-fill"
+                                                                        disabled
+                                                                        title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
                                                                     <i class="bi bi-credit-card me-1"></i>Pay
                                                                 </button>
                                                             <?php endif; ?>
@@ -476,6 +492,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- Support Chat Widget -->
+<?php include 'includes/support-widget.php'; ?>
+<script src="includes/support-chat-functions.js"></script>
 
 </body>
 </html> 
