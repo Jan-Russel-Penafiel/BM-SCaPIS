@@ -1,8 +1,12 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once dirname(__DIR__) . '/config.php';
 
-header('Content-Type: application/json');
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 
 // Check authentication and admin role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -24,12 +28,9 @@ try {
         SELECT cc.*, 
                CONCAT(u.first_name, ' ', u.last_name) as resident_name,
                u.email as resident_email,
-               u.phone as resident_phone,
-               app.document_type,
-               app.status as application_status
+               u.contact_number as resident_phone
         FROM chat_conversations cc
         JOIN users u ON cc.resident_id = u.id
-        LEFT JOIN applications app ON cc.application_id = app.id
         WHERE cc.id = ?
     ");
     $stmt->execute([$conversationId]);
@@ -45,10 +46,8 @@ try {
         'resident_name' => $conversation['resident_name'],
         'subject' => $conversation['subject'] ?: 'General Support',
         'created_at' => $conversation['created_at'],
-        'context' => $conversation['context'],
-        'application_id' => $conversation['application_id'],
-        'application_type' => $conversation['document_type'],
-        'application_status' => $conversation['application_status']
+        'context' => $conversation['context'] ?? null,
+        'application_id' => $conversation['application_id']
     ]);
     
 } catch (Exception $e) {

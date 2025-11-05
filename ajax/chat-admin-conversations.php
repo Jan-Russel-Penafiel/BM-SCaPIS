@@ -1,8 +1,12 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once dirname(__DIR__) . '/config.php';
 
-header('Content-Type: application/json');
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 
 // Check authentication and admin role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -11,6 +15,18 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 try {
+    // First check if chat tables exist
+    $checkStmt = $pdo->query("SHOW TABLES LIKE 'chat_conversations'");
+    if ($checkStmt->rowCount() === 0) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Chat system not initialized. Please run the database setup.',
+            'error_type' => 'missing_tables',
+            'setup_url' => '../setup-chat-system.php'
+        ]);
+        exit;
+    }
+    
     $input = json_decode(file_get_contents('php://input'), true);
     $status = $input['status'] ?? 'active';
     

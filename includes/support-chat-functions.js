@@ -60,7 +60,19 @@ supportChat.loadAdminDashboard = function() {
             this.updateAdminStats(data.stats);
         } else {
             console.error('Admin dashboard error:', data.message);
-            this.showErrorState('conversationList', data.message || 'Failed to load conversations');
+            
+            // Check if it's a missing tables error
+            if (data.error_type === 'missing_tables') {
+                this.showErrorState('conversationList', 
+                    `<strong>Chat System Setup Required</strong><br>
+                     ${data.message}<br><br>
+                     <a href="${data.setup_url}" target="_blank" class="btn btn-primary btn-sm">
+                         <i class="bi bi-tools"></i> Setup Chat System
+                     </a>`
+                );
+            } else {
+                this.showErrorState('conversationList', data.message || 'Failed to load conversations');
+            }
         }
     })
     .catch(error => {
@@ -89,11 +101,14 @@ supportChat.displayAdminConversations = function(conversations) {
         return;
     }
     
-    container.innerHTML = conversations.map(conv => `
+    container.innerHTML = conversations.map(conv => {
+        const residentName = this.escapeHtml(conv.resident_name);
+        const escapedName = residentName.replace(/'/g, "\\'");
+        return `
         <div class="conversation-item ${conv.unread_count > 0 ? 'unread' : ''}" 
-             onclick="supportChat.openAdminConversation(${conv.id})">
+             onclick="supportChat.openAdminConversation(${conv.id}, '${escapedName}')">
             <div class="conversation-header">
-                <div class="resident-name">${this.escapeHtml(conv.resident_name)}</div>
+                <div class="resident-name">${residentName}</div>
                 <div class="conversation-time">${this.formatTime(conv.last_message_time)}</div>
             </div>
             <div class="conversation-preview">${this.escapeHtml(conv.last_message || 'New conversation')}</div>
@@ -101,8 +116,8 @@ supportChat.displayAdminConversations = function(conversations) {
                 <div class="conversation-subject">${this.escapeHtml(conv.subject || 'General Support')}</div>
                 ${conv.unread_count > 0 ? `<div class="unread-count">${conv.unread_count}</div>` : ''}
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
     
     // Update tab counts
     this.updateTabCounts(conversations);
@@ -160,12 +175,20 @@ supportChat.loadAdminConversations = function(status = 'active') {
 };
 
 // Open admin conversation
-supportChat.openAdminConversation = function(conversationId) {
+supportChat.openAdminConversation = function(conversationId, residentName = null) {
     this.currentConversationId = conversationId;
     
     // Show chat view
     document.getElementById('adminDashboard').style.display = 'none';
     document.getElementById('adminChatView').style.display = 'flex';
+    
+    // Set resident name immediately if provided
+    if (residentName) {
+        const residentNameElement = document.getElementById('currentResidentName');
+        if (residentNameElement) {
+            residentNameElement.textContent = residentName;
+        }
+    }
     
     // Load conversation details
     this.loadConversationDetails(conversationId);
@@ -193,16 +216,41 @@ supportChat.loadConversationDetails = function(conversationId) {
         },
         body: JSON.stringify({ conversation_id: conversationId })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Conversation details response:', data);
         if (data.success) {
-            document.getElementById('currentResidentName').textContent = data.resident_name;
-            document.getElementById('currentConversationDetails').textContent = 
-                `${data.subject || 'General Support'} • Started ${this.formatDate(data.created_at)}`;
+            const residentNameElement = document.getElementById('currentResidentName');
+            const detailsElement = document.getElementById('currentConversationDetails');
+            
+            if (residentNameElement) {
+                residentNameElement.textContent = data.resident_name || 'Unknown Resident';
+            }
+            if (detailsElement) {
+                detailsElement.textContent = 
+                    `${data.subject || 'General Support'} • Started ${this.formatDate(data.created_at)}`;
+            }
+        } else {
+            console.error('Failed to load conversation details:', data.message);
+            // Set fallback values
+            const residentNameElement = document.getElementById('currentResidentName');
+            if (residentNameElement) {
+                residentNameElement.textContent = 'Conversation Details';
+            }
         }
     })
     .catch(error => {
         console.error('Error loading conversation details:', error);
+        // Set fallback values on error
+        const residentNameElement = document.getElementById('currentResidentName');
+        if (residentNameElement) {
+            residentNameElement.textContent = 'Error Loading Details';
+        }
     });
 };
 
@@ -713,7 +761,6 @@ supportChat.showErrorState = function(containerId, message) {
                     <i class="bi bi-exclamation-triangle text-warning"></i>
                 </div>
                 <div class="empty-text">
-                    <strong>Error</strong><br>
                     ${message}
                 </div>
             </div>
