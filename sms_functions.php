@@ -11,13 +11,26 @@ function getSMSConfig($pdo) {
     $stmt = $pdo->prepare("
         SELECT config_key, config_value 
         FROM system_config 
-        WHERE config_key IN ('philsms_api_key', 'philsms_sender_name')
+        WHERE config_key IN ('iprog_api_key', 'iprog_sender_name', 'philsms_api_key', 'philsms_sender_name')
     ");
     $stmt->execute();
     $config = [];
     
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $config[$row['config_key']] = $row['config_value'];
+    }
+    
+    // For backwards compatibility, map old keys to new ones
+    if (isset($config['philsms_api_key']) && !isset($config['iprog_api_key'])) {
+        $config['iprog_api_key'] = $config['philsms_api_key'];
+    }
+    if (isset($config['philsms_sender_name']) && !isset($config['iprog_sender_name'])) {
+        $config['iprog_sender_name'] = $config['philsms_sender_name'];
+    }
+    
+    // Set default IPROG API key if not configured
+    if (!isset($config['iprog_api_key']) || empty($config['iprog_api_key'])) {
+        $config['iprog_api_key'] = '1ef3b27ea753780a90cbdf07d027fb7b52791004';
     }
     
     return $config;
@@ -48,51 +61,51 @@ function formatPhoneNumber($phone_number) {
 }
 
 /**
- * Send SMS using PhilSMS API
+ * Send SMS using IPROG SMS API
  * @param string $phone_number Recipient phone number
  * @param string $message SMS message content
- * @param string $api_key PhilSMS API key
- * @param string $sender_name Sender name
+ * @param string $api_key IPROG SMS API token
+ * @param string $sender_name Sender name (for backwards compatibility, not used in IPROG)
  * @return array Response with status and message
  */
-function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = 'BM-SCaPIS') {
-    // Format the phone number
-    $phone_number = formatPhoneNumber($phone_number);
+function sendSMSUsingIPROG($phone_number, $message, $api_key, $sender_name = 'BM-SCaPIS') {
+    // Prepare the phone number (remove any spaces and ensure 63 format for IPROG)
+    $phone_number = str_replace([' ', '-'], '', $phone_number);
+    if (substr($phone_number, 0, 1) === '0') {
+        $phone_number = '63' . substr($phone_number, 1);
+    } elseif (substr($phone_number, 0, 1) === '+') {
+        $phone_number = substr($phone_number, 1);
+    }
 
     // Validate phone number format
-    if (!preg_match('/^09[0-9]{9}$/', $phone_number)) {
+    if (!preg_match('/^63[0-9]{10}$/', $phone_number)) {
         return array(
             'success' => false,
-            'message' => 'Invalid phone number format. Must be a valid Philippine mobile number (09XXXXXXXXX).'
+            'message' => 'Invalid phone number format. Must be a valid Philippine mobile number.'
         );
     }
 
-    // Convert 09 format to +63 for API
-    $api_phone_number = '+63' . substr($phone_number, 1);
-    
-    // Prepare the request data
+    // Prepare the request data for IPROG SMS API
     $data = array(
-        'sender_id' => $sender_name,
-        'recipient' => $api_phone_number,
-        'message' => $message
+        'api_token' => $api_key,
+        'message' => $message,
+        'phone_number' => $phone_number
     );
 
     // Initialize cURL session
-    $ch = curl_init("https://app.philsms.com/api/v3/sms/send");
+    $ch = curl_init("https://sms.iprogtech.com/api/v1/sms_messages");
 
-    // Set cURL options
+    // Set cURL options for IPROG SMS
     curl_setopt_array($ch, array(
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($data),
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query($data),
         CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'Authorization: Bearer ' . $api_key
+            'Content-Type: application/x-www-form-urlencoded'
         ),
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_CONNECTTIMEOUT => 10
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYPEER => true
     ));
 
     // Execute cURL request
@@ -106,7 +119,7 @@ function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = '
 
     // Log the API request for debugging
     error_log(sprintf(
-        "PhilSMS API Request - Number: %s, Status: %d, Response: %s, Error: %s",
+        "IPROG SMS API Request - Number: %s, Status: %d, Response: %s, Error: %s",
         $phone_number,
         $http_code,
         $response,
@@ -125,13 +138,18 @@ function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = '
     // Parse response
     $result = json_decode($response, true);
 
-    // Handle API response
+    // Handle API response for IPROG SMS
     if ($http_code === 200 || $http_code === 201) {
-        if (isset($result['status']) && $result['status'] === 'success') {
+        // IPROG SMS typically returns success in different formats
+        // Check for common success indicators
+        if ((isset($result['status']) && $result['status'] === 'success') ||
+            (isset($result['success']) && $result['success'] === true) ||
+            (isset($result['message']) && stripos($result['message'], 'sent') !== false) ||
+            (!isset($result['error']) && !isset($result['errors']))) {
             return array(
                 'success' => true,
                 'message' => 'SMS sent successfully',
-                'reference_id' => $result['message_id'] ?? $result['id'] ?? null,
+                'reference_id' => $result['message_id'] ?? $result['id'] ?? $result['reference'] ?? null,
                 'delivery_status' => $result['status'] ?? 'Sent',
                 'timestamp' => $result['timestamp'] ?? date('Y-m-d g:i A')
             );
@@ -140,7 +158,8 @@ function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = '
 
     // Handle error responses
     $error_message = isset($result['message']) ? $result['message'] : 
-                    (isset($result['error']) ? $result['error'] : 'Unknown error occurred');
+                    (isset($result['error']) ? $result['error'] : 
+                    (isset($result['errors']) ? (is_array($result['errors']) ? implode(', ', $result['errors']) : $result['errors']) : 'Unknown error occurred'));
     
     return array(
         'success' => false,
@@ -148,6 +167,14 @@ function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = '
         'error_code' => $http_code,
         'error_details' => $result
     );
+}
+
+/**
+ * Legacy function name for backwards compatibility
+ * @deprecated Use sendSMSUsingIPROG() instead
+ */
+function sendSMSUsingPhilSMS($phone_number, $message, $api_key, $sender_name = 'BM-SCaPIS') {
+    return sendSMSUsingIPROG($phone_number, $message, $api_key, $sender_name);
 }
 
 /**
@@ -164,8 +191,8 @@ function sendSMSNotification($phone_number, $message, $user_id = null, $notifica
     try {
         // Get SMS configuration
         $sms_config = getSMSConfig($pdo);
-        $api_key = $sms_config['philsms_api_key'] ?? null;
-        $sender_name = $sms_config['philsms_sender_name'] ?? 'BM-SCaPIS';
+        $api_key = $sms_config['iprog_api_key'] ?? $sms_config['philsms_api_key'] ?? '1ef3b27ea753780a90cbdf07d027fb7b52791004';
+        $sender_name = $sms_config['iprog_sender_name'] ?? $sms_config['philsms_sender_name'] ?? 'BM-SCaPIS';
 
         // Handle null user_id by using a default system user
         if ($user_id === null) {
@@ -187,7 +214,7 @@ function sendSMSNotification($phone_number, $message, $user_id = null, $notifica
         }
 
         // Check if API key is configured
-        if (empty($api_key) || $api_key === 'your_philsms_api_key_here') {
+        if (empty($api_key) || $api_key === 'your_philsms_api_key_here' || $api_key === 'your_iprog_api_key_here') {
             if ($smsId !== null) {
                 $stmt = $pdo->prepare("UPDATE sms_notifications SET status = 'failed', api_response = 'No API key configured' WHERE id = ?");
                 $stmt->execute([$smsId]);
@@ -198,8 +225,8 @@ function sendSMSNotification($phone_number, $message, $user_id = null, $notifica
             );
         }
 
-        // Send SMS using PhilSMS
-        $sms_result = sendSMSUsingPhilSMS($formattedPhone, $message, $api_key, $sender_name);
+        // Send SMS using IPROG (backwards compatible with old function calls)
+        $sms_result = sendSMSUsingIPROG($formattedPhone, $message, $api_key, $sender_name);
 
         // Update SMS status in database
         if ($smsId !== null) {
