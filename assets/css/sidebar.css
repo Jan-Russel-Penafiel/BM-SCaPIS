@@ -109,10 +109,12 @@
 @media (max-width: 991.98px) {
     .sidebar {
         left: -260px;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
     
     .sidebar.show {
         left: 0;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
     }
     
     .main-content {
@@ -128,10 +130,46 @@
         bottom: 0;
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 999;
+        transition: opacity 0.3s ease;
     }
     
     .sidebar-backdrop.show {
         display: block;
+        opacity: 1;
+    }
+    
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
+    }
+    
+    /* Improve navbar spacing on mobile */
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    /* Mobile-friendly dropdown */
+    .dropdown-menu {
+        max-width: 90vw;
+    }
+    
+    /* Touch-friendly navigation items */
+    .sidebar .nav-link {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .sidebar .nav-link i {
+        font-size: 1.1rem;
+    }
+    
+    /* Larger touch targets for mobile */
+    .nav-section-title {
+        padding: 1rem 1.25rem;
+        font-size: 0.8rem;
     }
 }
 
@@ -142,4 +180,103 @@
     font-size: 0.75rem;
     text-align: center;
     margin-top: auto;
-} 
+}
+
+/* Notification badge styles */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    min-width: 20px;
+}
+
+/* Notification dropdown styles */
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 576px) {
+    /* Even smaller screens */
+    .navbar-brand div {
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand small {
+        font-size: 0.6rem !important;
+    }
+    
+    /* Full width notifications on very small screens */
+    .dropdown-menu {
+        width: calc(100vw - 30px) !important;
+        max-width: none !important;
+        left: 15px !important;
+        right: 15px !important;
+    }
+    
+    /* Compact sidebar on very small screens */
+    .sidebar {
+        width: 280px;
+        left: -290px;
+    }
+    
+    .sidebar .nav-link {
+        padding: 0.875rem 1rem;
+    }
+    
+    .nav-section-title {
+        padding: 0.875rem 1rem;
+    }
+}
+
+/* Tablet landscape improvements */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .sidebar {
+        width: 260px;
+        left: -270px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .notification-badge {
+        font-weight: 600;
+    }
+}
+
+/* Dark mode support (if needed later) */
+@media (prefers-color-scheme: dark) {
+    .notification-item {
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .notification-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}

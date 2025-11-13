@@ -1,3 +1,7 @@
+<?php
+// Include configuration and start session
+require_once 'config.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -612,12 +616,12 @@
                     <?php if (!isset($_SESSION['user_id'])): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="login.php">
-                                /* Lines 375-376 omitted */
+                                <i class="bi bi-box-arrow-in-right"></i> Login
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-light ms-2" href="register.php">
-                                /* Lines 380-381 omitted */
+                                <i class="bi bi-person-plus"></i> Register
                             </a>
                         </li>
                     <?php else: ?>
@@ -665,10 +669,10 @@
     </audio>
     
     <!-- Notification JavaScript Files -->
-    <script src="/muhai_malangit/assets/js/notification-fallback.js"></script>
-    <script src="/muhai_malangit/assets/js/notification-sound.js"></script>
-    <script src="/muhai_malangit/assets/js/notification-manager.js"></script>
-    <script src="/muhai_malangit/assets/js/notifications.js"></script>
+    <script src="assets/js/notification-fallback.js"></script>
+    <script src="assets/js/notification-sound.js"></script>
+    <script src="assets/js/notification-manager.js"></script>
+    <script src="assets/js/notifications.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -714,7 +718,7 @@
             const notificationSound = document.getElementById('notificationSound');
             const notificationBadge = document.getElementById('notificationBadge');
             const notificationsList = document.getElementById('notificationsList');
-            let lastNotificationCount = 0;
+            let lastNotificationCount = -1; // Initialize to -1 to indicate no previous count
 
             // Function to format time ago
             function timeAgo(dateString) {
@@ -742,43 +746,19 @@
 
             // Function to play notification sound
             function playNotificationSound() {
-                // Try the main notification sound system
-                if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.shouldPlayForNewNotifications(lastNotificationCount)) {
+                // Try the main notification sound system (preferred method) - only if enabled
+                if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted && window.NotificationSound.enabled) {
                     window.NotificationSound.play();
-                    window.NotificationSound.markSoundPlayed();
                 } 
-                // Try the fallback system
-                else if (typeof window.NotificationFallback !== 'undefined' && window.NotificationFallback.play) {
+                // Try the fallback system only if main system is not available
+                else if (typeof window.NotificationFallback !== 'undefined' && window.NotificationFallback.userInteracted) {
                     window.NotificationFallback.play();
                 } 
-                // Try the legacy system
-                else if (typeof window.playNotificationSound !== 'undefined') {
-                    window.playNotificationSound();
-                }
-                // Try the manager system
-                else if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.playSound) {
+                // Try the manager system only if main system is not available
+                else if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.userInteracted) {
                     window.NotificationManager.playSound();
                 }
-                // Final fallback - create a simple beep
-                else {
-                    try {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-                        
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                        
-                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                        
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.3);
-                    } catch (error) {
-                        console.log('Could not play notification sound:', error);
-                    }
-                }
+                // Don't fall back to creating new audio contexts - this prevents unwanted sounds
             }
 
             // Function to update notifications
@@ -802,12 +782,23 @@
                             notificationBadge.textContent = currentCount > 99 ? '99+' : currentCount;
                             notificationBadge.classList.remove('d-none');
                             
-                            // Play sound for new notifications
-                            if (currentCount > lastNotificationCount && lastNotificationCount > 0) {
-                                playNotificationSound();
+                            // Play sound for new notifications only (and only if we had a previous count)
+                            if (currentCount > lastNotificationCount && lastNotificationCount >= 0) {
+                                // Enable sound system only when we actually need to play a sound
+                                if (typeof window.NotificationSound !== 'undefined') {
+                                    window.NotificationSound.enable();
+                                    window.NotificationSound.playForNotifications(currentCount, lastNotificationCount);
+                                } else {
+                                    playNotificationSound();
+                                }
                             }
                         } else {
                             notificationBadge.classList.add('d-none');
+                            // Reset sound flag when no notifications
+                            if (typeof window.NotificationSound !== 'undefined') {
+                                window.NotificationSound.resetSoundFlag();
+                                window.NotificationSound.disable(); // Disable sound when no notifications
+                            }
                         }
                         lastNotificationCount = currentCount;
 
@@ -852,7 +843,11 @@
 
             // Update notifications every 30 seconds
             setInterval(updateNotifications, 30000);
-            updateNotifications(); // Initial update
+            
+            // Initial update (silent - no sounds on page load)
+            setTimeout(function() {
+                updateNotifications(); // Delay to ensure no sound on page load
+            }, 1000);
 
             // Mark all notifications as read
             document.getElementById('markAllRead').addEventListener('click', function(e) {
@@ -929,3 +924,4 @@
         </div>
     </div>
 </body>
+</html>

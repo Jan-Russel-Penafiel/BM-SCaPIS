@@ -68,24 +68,15 @@ foreach ($notifications as $notification) {
     }
 }
 
-// Play sound automatically if there are unread notifications
+// Don't play sound automatically on notifications page
+// Users visit this page to see notifications, no need for sound
 if ($hasUnread) {
     echo '<script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Play notification sound automatically when page loads with unread notifications
-            function playNotificationSound() {
-                if (typeof window.NotificationSound !== "undefined" && window.NotificationSound.shouldPlayForNewNotifications(' . $unreadCount . ')) {
-                    window.NotificationSound.play();
-                    window.NotificationSound.markSoundPlayed();
-                } else if (typeof window.playNotificationSound !== "undefined") {
-                    window.playNotificationSound();
-                } else if (typeof window.NotificationFallback !== "undefined" && window.NotificationFallback.play) {
-                    window.NotificationFallback.play();
-                }
-            }
-            
-            // Play sound immediately when page loads
-            playNotificationSound();
+            // Don\'t auto-play sound on notifications page
+            // Users are already viewing their notifications
+            console.log("Notifications page loaded with ' . $unreadCount . ' unread notifications");
+        });
         });
     </script>';
 }

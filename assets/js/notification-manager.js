@@ -122,9 +122,9 @@ if (typeof window.NotificationManager === 'undefined') {
         }
     };
 
-    // Initialize on first user interaction
+    // Initialize on first user interaction (completely silent, no auto-init)
     document.addEventListener('click', () => {
-        if (window.NotificationManager) {
+        if (window.NotificationManager && !window.NotificationManager.userInteracted) {
             window.NotificationManager.markUserInteracted();
             window.NotificationManager.initialize();
         }
@@ -132,13 +132,13 @@ if (typeof window.NotificationManager === 'undefined') {
 
     // Also listen for other user interactions
     document.addEventListener('keydown', () => {
-        if (window.NotificationManager) {
+        if (window.NotificationManager && !window.NotificationManager.userInteracted) {
             window.NotificationManager.markUserInteracted();
         }
     }, { once: true });
 
     document.addEventListener('touchstart', () => {
-        if (window.NotificationManager) {
+        if (window.NotificationManager && !window.NotificationManager.userInteracted) {
             window.NotificationManager.markUserInteracted();
         }
     }, { once: true });

@@ -128,41 +128,6 @@ include 'sidebar.php';
                 </div>
             </div>
 
-            <!-- SMS Settings -->
-            <div class="col-lg-6 mb-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">
-                            <i class="bi bi-chat-dots me-2"></i>SMS Settings
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">PhilSMS API Key</label>
-                            <div class="input-group">
-                                <input type="password" name="setting_philsms_api_key" class="form-control" 
-                                       value="<?php echo htmlspecialchars($settings['philsms_api_key']); ?>" required>
-                                <button type="button" class="btn btn-outline-secondary" onclick="togglePassword(this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
-                            <small class="text-muted">Your PhilSMS API key for sending SMS notifications</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">SMS Sender Name</label>
-                            <input type="text" name="setting_philsms_sender_name" class="form-control" 
-                                   value="<?php echo htmlspecialchars($settings['philsms_sender_name']); ?>" required>
-                            <small class="text-muted">The sender name that appears on SMS messages</small>
-                        </div>
-                        <div class="mt-4">
-                            <button type="button" class="btn btn-info" onclick="testSMSSettings()">
-                                <i class="bi bi-send me-2"></i>Test SMS Settings
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- System Maintenance -->
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -215,28 +180,6 @@ function togglePassword(button) {
     } else {
         input.type = 'password';
         icon.classList.replace('bi-eye-slash', 'bi-eye');
-    }
-}
-
-function testSMSSettings() {
-    if (confirm('Send a test SMS to your registered phone number?')) {
-        fetch('test-sms.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Test SMS sent successfully!');
-            } else {
-                alert('Failed to send test SMS: ' + data.error);
-            }
-        })
-        .catch(error => {
-            alert('Error: ' + error.message);
-        });
     }
 }
 

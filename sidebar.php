@@ -63,14 +63,23 @@ if (!isLoggedIn()) {
                 <i class="bi bi-list fs-4"></i>
             </button>
             
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="bi bi-building me-2"></i><?php echo SYSTEM_NAME; ?>
-            </a>
-            
-            <!-- User profile dropdown - moved to left -->
-            <div class="dropdown ms-3">
-                <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" data-bs-toggle="dropdown">
-                    <div class="me-2">
+            <div class="d-flex align-items-center flex-grow-1">
+                <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+                    <i class="bi bi-building me-2"></i>
+                    <div class="d-none d-sm-block">
+                        <div><?php echo SYSTEM_NAME; ?></div>
+                        <small class="d-block text-light" style="font-size: 0.7rem; line-height: 1;">
+                            <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?> • <?php echo ucfirst($currentUser['role']); ?>
+                        </small>
+                    </div>
+                    <div class="d-block d-sm-none">
+                        <?php echo SYSTEM_NAME; ?>
+                    </div>
+                </a>
+                
+                <!-- User profile icon - desktop: integrated with branding, mobile: hidden here -->
+                <div class="dropdown ms-2 d-none d-lg-block">
+                    <a class="nav-link text-white p-1" href="#" data-bs-toggle="dropdown" title="Profile Menu">
                         <?php if ($currentUser['profile_picture']): ?>
                             <img src="uploads/profiles/<?php echo htmlspecialchars($currentUser['profile_picture']); ?>" 
                                  alt="Profile" class="rounded-circle" width="32" height="32">
@@ -80,61 +89,45 @@ if (!isLoggedIn()) {
                                 <i class="bi bi-person text-white"></i>
                             </div>
                         <?php endif; ?>
-                    </div>
-                    <div class="d-none d-md-block">
-                        <div class="fw-bold" style="font-size: 0.9rem;">
-                            <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
-                        </div>
-                        <div class="small text-light">
-                            <?php echo ucfirst($currentUser['role']); ?>
-                        </div>
-                    </div>
-                </a>
-                <ul class="dropdown-menu shadow">
-                    <li>
-                        <h6 class="dropdown-header">
-                            <i class="bi bi-person-circle me-2"></i>
-                            <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
-                            <small class="d-block text-muted"><?php echo ucfirst($currentUser['role']); ?></small>
-                        </h6>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item" href="profile.php">
-                            <i class="bi bi-person me-2"></i>My Profile
-                        </a>
-                    </li>
-                    <?php if ($currentUser['role'] === 'resident'): ?>
+                    </a>
+                    <ul class="dropdown-menu shadow">
                         <li>
-                            <a class="dropdown-item" href="my-applications.php">
-                                <i class="bi bi-file-earmark-text me-2"></i>My Applications
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="bi bi-person me-2"></i>My Profile
                             </a>
                         </li>
-                    <?php endif; ?>
-                    <li>
-                        <a class="dropdown-item" href="settings.php">
-                            <i class="bi bi-gear me-2"></i>Settings
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="logout.php">
-                            <i class="bi bi-box-arrow-right me-2"></i>Logout
-                        </a>
-                    </li>
-                </ul>
+                        <?php if ($currentUser['role'] === 'resident'): ?>
+                            <li>
+                                <a class="dropdown-item" href="my-applications.php">
+                                    <i class="bi bi-file-earmark-text me-2"></i>My Applications
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <li>
+                            <a class="dropdown-item" href="settings.php">
+                                <i class="bi bi-gear me-2"></i>Settings
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="logout.php">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
             
-            <div class="d-flex align-items-center ms-auto">
+            <div class="d-flex align-items-center">
                 <!-- Notifications -->
-                <div class="dropdown me-3">
+                <div class="dropdown me-2">
                     <a class="nav-link position-relative text-white" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-bell fs-5"></i>
                         <?php if ($notificationCount > 0): ?>
                             <span class="notification-badge"><?php echo min($notificationCount, 99); ?></span>
                         <?php endif; ?>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end shadow" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                    <div class="dropdown-menu dropdown-menu-end shadow" style="width: 320px; max-width: 90vw; max-height: 400px; overflow-y: auto;">
                         <h6 class="dropdown-header">
                             <i class="bi bi-bell me-2"></i>Notifications
                             <?php if ($notificationCount > 0): ?>
@@ -190,6 +183,55 @@ if (!isLoggedIn()) {
                             </a>
                         <?php endif; ?>
                     </div>
+                </div>
+
+                <!-- User profile dropdown - mobile: next to notifications, desktop: hidden here -->
+                <div class="dropdown d-lg-none">
+                    <a class="nav-link text-white" href="#" data-bs-toggle="dropdown" title="Profile Menu">
+                        <?php if ($currentUser['profile_picture']): ?>
+                            <img src="uploads/profiles/<?php echo htmlspecialchars($currentUser['profile_picture']); ?>" 
+                                 alt="Profile" class="rounded-circle" width="32" height="32">
+                        <?php else: ?>
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-person text-white"></i>
+                            </div>
+                        <?php endif; ?>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <!-- Mobile user info header -->
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-person-circle me-2"></i>
+                                <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
+                                <small class="d-block text-muted"><?php echo ucfirst($currentUser['role']); ?></small>
+                            </h6>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="bi bi-person me-2"></i>My Profile
+                            </a>
+                        </li>
+                        <?php if ($currentUser['role'] === 'resident'): ?>
+                            <li>
+                                <a class="dropdown-item" href="my-applications.php">
+                                    <i class="bi bi-file-earmark-text me-2"></i>My Applications
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <li>
+                            <a class="dropdown-item" href="settings.php">
+                                <i class="bi bi-gear me-2"></i>Settings
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="logout.php">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -421,16 +463,85 @@ if (!isLoggedIn()) {
         const backdrop = document.getElementById('sidebarBackdrop');
         
         if (sidebarToggle && sidebar) {
-            sidebarToggle.addEventListener('click', function() {
+            sidebarToggle.addEventListener('click', function(e) {
+                e.preventDefault();
                 sidebar.classList.toggle('show');
                 if (backdrop) backdrop.classList.toggle('show');
+                document.body.classList.toggle('sidebar-open');
             });
             
             if (backdrop) {
                 backdrop.addEventListener('click', function() {
                     sidebar.classList.remove('show');
                     backdrop.classList.remove('show');
+                    document.body.classList.remove('sidebar-open');
                 });
+            }
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 992) { // Only on mobile/tablet
+                if (sidebar && sidebar.classList.contains('show')) {
+                    const isClickInsideSidebar = sidebar.contains(e.target);
+                    const isClickOnToggle = sidebarToggle && sidebarToggle.contains(e.target);
+                    
+                    if (!isClickInsideSidebar && !isClickOnToggle) {
+                        sidebar.classList.remove('show');
+                        if (backdrop) backdrop.classList.remove('show');
+                        document.body.classList.remove('sidebar-open');
+                    }
+                }
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                // Desktop view - ensure sidebar is visible and remove mobile classes
+                if (sidebar) {
+                    sidebar.classList.remove('show');
+                    document.body.classList.remove('sidebar-open');
+                }
+                if (backdrop) {
+                    backdrop.classList.remove('show');
+                }
+            }
+        });
+        
+        // Touch gestures for mobile sidebar
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (window.innerWidth < 992) { // Only on mobile
+                const swipeDistance = touchEndX - touchStartX;
+                const minSwipeDistance = 50;
+                
+                // Swipe right from left edge to open sidebar
+                if (touchStartX < 50 && swipeDistance > minSwipeDistance) {
+                    if (sidebar && !sidebar.classList.contains('show')) {
+                        sidebar.classList.add('show');
+                        if (backdrop) backdrop.classList.add('show');
+                        document.body.classList.add('sidebar-open');
+                    }
+                }
+                
+                // Swipe left to close sidebar
+                if (sidebar && sidebar.classList.contains('show') && swipeDistance < -minSwipeDistance) {
+                    sidebar.classList.remove('show');
+                    if (backdrop) backdrop.classList.remove('show');
+                    document.body.classList.remove('sidebar-open');
+                }
             }
         }
         
@@ -456,10 +567,68 @@ if (!isLoggedIn()) {
                         } else if (badge) {
                             badge.remove();
                         }
+                    })
+                    .catch(error => {
+                        console.log('Error fetching notification count:', error);
                     });
             }
         }, 30000);
+        
+        // Improve dropdown behavior on mobile
+        const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        dropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                // Close other dropdowns when opening a new one
+                dropdownToggles.forEach(otherToggle => {
+                    if (otherToggle !== toggle) {
+                        const otherDropdown = bootstrap.Dropdown.getInstance(otherToggle);
+                        if (otherDropdown) {
+                            otherDropdown.hide();
+                        }
+                    }
+                });
+            });
+        });
     });
+    
+    // Mark all notifications as read
+    function markAllNotificationsRead() {
+        fetch('ajax/mark-all-notifications-read.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove notification badge
+                const badge = document.querySelector('.notification-badge');
+                if (badge) {
+                    badge.remove();
+                }
+                
+                // Update notification dropdown
+                const notificationItems = document.querySelectorAll('.notification-item');
+                notificationItems.forEach(item => {
+                    item.style.opacity = '0.6';
+                });
+                
+                // Show success message
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('All notifications marked as read');
+                }
+                
+                // Reload notifications dropdown after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notifications as read:', error);
+        });
+    }
     </script>
     <?php
 }

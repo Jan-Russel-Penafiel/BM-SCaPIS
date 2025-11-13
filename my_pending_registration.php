@@ -539,11 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // If there are more pending now than before, play the sound
     if (pendingCount > lastCount) {
         if (window.NotificationSound && window.NotificationSound.userInteracted) {
-            window.NotificationSound.play();
-        } else if (window.NotificationFallback && window.NotificationFallback.play) {
-            window.NotificationFallback.play();
-        } else if (window.playNotificationSound) {
-            window.playNotificationSound();
+            window.NotificationSound.playForNotifications(pendingCount, lastCount);
         }
     }
     // Update the stored count
@@ -561,11 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var prevCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
                     if (newCount > prevCount) {
                         if (window.NotificationSound && window.NotificationSound.userInteracted) {
-                            window.NotificationSound.play();
-                        } else if (window.NotificationFallback && window.NotificationFallback.play) {
-                            window.NotificationFallback.play();
-                        } else if (window.playNotificationSound) {
-                            window.playNotificationSound();
+                            window.NotificationSound.playForNotifications(newCount, prevCount);
                         }
                     }
                     sessionStorage.setItem(storageKey, newCount);

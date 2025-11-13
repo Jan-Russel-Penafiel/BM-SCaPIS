@@ -203,22 +203,11 @@
     let notificationSound = null;
     
     function playNotificationSound() {
-        // Use the new notification system if available
-        if (typeof NotificationSound !== 'undefined' && NotificationSound.play) {
-            NotificationSound.play();
-        } else if (typeof NotificationFallback !== 'undefined' && NotificationFallback.play) {
-            NotificationFallback.play();
-        } else {
-            // Fallback to old system
-            if (!notificationSound) {
-                notificationSound = new Audio('/muhai_malangit/assets/sounds/notification.mp3');
-                notificationSound.volume = 0.5;
-            }
-            
-            notificationSound.play().catch(e => {
-                console.log('Could not play notification sound:', e);
-            });
+        // Only play sound if user has interacted and it's explicitly called for new notifications
+        if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted) {
+            window.NotificationSound.play();
         }
+        // Don't use fallback systems that might play unwanted sounds
     }
     
     // Check for new notifications
@@ -228,7 +217,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.newNotifications && data.newNotifications.length > 0) {
-                        playNotificationSound();
+                        // Don't auto-play sound here - let the header notification system handle it
                         
                         // Show desktop notification if permission granted
                         if (Notification.permission === 'granted') {
@@ -271,10 +260,8 @@
         // Request notification permission
         requestNotificationPermission();
         
-        // Check for notifications every 30 seconds
-        if (typeof isLoggedIn !== 'undefined' && isLoggedIn) {
-            setInterval(checkForNotifications, 30000);
-        }
+        // Don't auto-check for notifications - let header handle this
+        // The header notification system is sufficient and controlled
         
         // Initialize tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

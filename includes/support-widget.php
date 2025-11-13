@@ -1543,6 +1543,7 @@ let supportChat = {
     applicationId: <?php echo $applicationId ? $applicationId : 'null'; ?>,
     currentConversationId: null,
     isOpen: false,
+    userInteracted: false,
     isMinimized: false,
     typingTimeout: null,
     messageCheckInterval: null,
@@ -1782,18 +1783,25 @@ let supportChat = {
     
     // Handle new messages
     handleNewMessages: function(messages) {
+        // Only play sound and show notifications for new messages
+        let hasNewMessages = false;
         messages.forEach(message => {
             this.appendMessage(message);
             if (this.isAdmin || !this.isOpen) {
                 this.showNotification(message);
+                hasNewMessages = true;
             }
         });
         
-        // Play notification sound
-        this.playNotificationSound();
+        // Play notification sound only if there are new messages
+        if (hasNewMessages) {
+            this.playNotificationSound();
+        }
         
-        // Update chat pulse
-        this.showChatPulse();
+        // Update chat pulse only if there are new messages
+        if (hasNewMessages) {
+            this.showChatPulse();
+        }
     },
     
     // Update typing indicator
@@ -1872,12 +1880,12 @@ let supportChat = {
         }
     },
     
-    // Play notification sound
+    // Play notification sound only for new messages
     playNotificationSound: function() {
-        if (!this.isOpen) {
-            // Use existing notification sound system
-            if (typeof playNotificationSound === 'function') {
-                playNotificationSound();
+        if (!this.isOpen && this.userInteracted) {
+            // Use the unified notification sound system
+            if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted) {
+                window.NotificationSound.play();
             }
         }
     },
@@ -2132,6 +2140,19 @@ supportChat.closeSupportChat = function() {
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof supportChat !== 'undefined') {
         supportChat.init();
+        
+        // Add user interaction listeners for support chat
+        document.addEventListener('click', function() {
+            supportChat.userInteracted = true;
+        }, { once: true });
+        
+        document.addEventListener('keydown', function() {
+            supportChat.userInteracted = true;
+        }, { once: true });
+        
+        document.addEventListener('touchstart', function() {
+            supportChat.userInteracted = true;
+        }, { once: true });
     }
 });
 </script>

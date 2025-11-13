@@ -24,8 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Handle system settings update (admin only)
                 $settings->set('system_name', trim($_POST['system_name']));
                 $settings->set('barangay_name', trim($_POST['barangay_name']));
-                $settings->set('philsms_api_key', trim($_POST['philsms_api_key']));
-                $settings->set('philsms_sender_name', trim($_POST['philsms_sender_name']));
                 $settings->set('ringtone_enabled', isset($_POST['ringtone_enabled']) ? '1' : '0');
                 
                 // GCash Payment Settings
@@ -136,18 +134,6 @@ include 'sidebar.php';
                                     <label class="form-label">Barangay Name</label>
                                     <input type="text" class="form-control" name="barangay_name" 
                                            value="<?php echo htmlspecialchars($settings->get('barangay_name')); ?>" required>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label class="form-label">PhilSMS API Key</label>
-                                    <input type="text" class="form-control" name="philsms_api_key" 
-                                           value="<?php echo htmlspecialchars($settings->get('philsms_api_key')); ?>">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label class="form-label">SMS Sender Name</label>
-                                    <input type="text" class="form-control" name="philsms_sender_name" 
-                                           value="<?php echo htmlspecialchars($settings->get('philsms_sender_name')); ?>">
                                 </div>
                                 
                                 <div class="col-12">

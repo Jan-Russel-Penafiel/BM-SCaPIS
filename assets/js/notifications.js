@@ -6,8 +6,12 @@ if (typeof window.notificationAudioContext === 'undefined') {
     window.notificationUserInteracted = false;
 }
 
-// Initialize audio context on user interaction
-document.addEventListener('click', initNotificationAudio, { once: true });
+// Initialize audio context on user interaction (completely silent, no auto-init)
+document.addEventListener('click', function() {
+    if (!window.notificationUserInteracted) {
+        initNotificationAudio();
+    }
+}, { once: true });
 
 function initNotificationAudio() {
     try {
@@ -74,11 +78,13 @@ function playNotificationSound() {
     }
 }
 
-// Function to handle notifications with sound
+// Function to handle notifications with sound (only when explicitly called)
 if (typeof window.showNotificationWithSound === 'undefined') {
     window.showNotificationWithSound = function(message, type = 'info') {
-        // Play sound
-        playNotificationSound();
+        // Only play sound if user has interacted and it's explicitly requested
+        if (window.notificationUserInteracted) {
+            playNotificationSound();
+        }
         
         // Show notification
         const toast = document.createElement('div');
@@ -110,19 +116,25 @@ if (typeof window.showNotificationWithSound === 'undefined') {
     };
 }
 
-// Ensure audio context is resumed after being suspended
+// Ensure audio context is resumed after being suspended (completely silent)
 document.addEventListener('click', function() {
-    markUserInteracted();
-    if (window.notificationAudioContext && window.notificationAudioContext.state === 'suspended') {
-        window.notificationAudioContext.resume();
+    if (window.notificationUserInteracted) {
+        markUserInteracted();
+        if (window.notificationAudioContext && window.notificationAudioContext.state === 'suspended') {
+            window.notificationAudioContext.resume();
+        }
     }
 });
 
-// Also listen for other user interactions
+// Also listen for other user interactions (but don't auto-initialize)
 document.addEventListener('keydown', function() {
-    markUserInteracted();
+    if (!window.notificationUserInteracted) {
+        markUserInteracted();
+    }
 }, { once: true });
 
 document.addEventListener('touchstart', function() {
-    markUserInteracted();
+    if (!window.notificationUserInteracted) {
+        markUserInteracted();
+    }
 }, { once: true });

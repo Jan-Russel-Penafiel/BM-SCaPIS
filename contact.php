@@ -88,78 +88,6 @@ require_once 'header.php';
                             </div>
                         </div>
                     </div>
-
-                    <!-- Contact Form -->
-                    <div class="card shadow">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Send us a Message</h6>
-                        </div>
-                        <div class="card-body">
-                            <form id="contactForm" method="POST" action="contact.php">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="name" class="form-label">Full Name *</label>
-                                        <input type="text" class="form-control" id="name" name="name" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="email" class="form-label">Email Address *</label>
-                                        <input type="email" class="form-control" id="email" name="email" required>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="phone" class="form-label">Phone Number</label>
-                                        <input type="tel" class="form-control" id="phone" name="phone">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="subject" class="form-label">Subject *</label>
-                                        <select class="form-select" id="subject" name="subject" required>
-                                            <option value="">Select a subject</option>
-                                            <option value="general_inquiry">General Inquiry</option>
-                                            <option value="document_request">Document Request</option>
-                                            <option value="system_issue">System Issue</option>
-                                            <option value="complaint">Complaint</option>
-                                            <option value="suggestion">Suggestion</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="message" class="form-label">Message *</label>
-                                    <textarea class="form-control" id="message" name="message" rows="5" required placeholder="Please provide details about your inquiry or concern..."></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="agree" name="agree" required>
-                                        <label class="form-check-label" for="agree">
-                                            I agree to the collection and processing of my personal data for the purpose of responding to this inquiry.
-                                        </label>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-send me-2"></i>Send Message
-                                </button>
-                            </form>
-
-                            <?php
-                            // Handle form submission
-                            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
-                                $name = htmlspecialchars($_POST['name']);
-                                $email = htmlspecialchars($_POST['email']);
-                                $phone = htmlspecialchars($_POST['phone'] ?? '');
-                                $subject = htmlspecialchars($_POST['subject']);
-                                $message = htmlspecialchars($_POST['message']);
-                                
-                                // Here you would typically send an email or save to database
-                                // For now, we'll just show a success message
-                                echo '<div class="alert alert-success mt-3">';
-                                echo '<i class="bi bi-check-circle me-2"></i>';
-                                echo 'Thank you for your message! We will get back to you within 24-48 hours.';
-                                echo '</div>';
-                            }
-                            ?>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Quick Links & Officials -->
@@ -265,29 +193,5 @@ require_once 'header.php';
         </div>
     </div>
 </div>
-
-<script>
-document.getElementById('contactForm').addEventListener('submit', function(e) {
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const subject = document.getElementById('subject').value;
-    const message = document.getElementById('message').value.trim();
-    const agree = document.getElementById('agree').checked;
-    
-    if (!name || !email || !subject || !message || !agree) {
-        e.preventDefault();
-        alert('Please fill in all required fields and agree to the terms.');
-        return false;
-    }
-    
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        e.preventDefault();
-        alert('Please enter a valid email address.');
-        return false;
-    }
-});
-</script>
 
 <?php require_once 'footer.php'; ?>

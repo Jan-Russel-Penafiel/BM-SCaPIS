@@ -96,9 +96,9 @@ if (typeof window.NotificationFallback === 'undefined') {
         }
     };
 
-    // Initialize fallback on first user interaction
+    // Initialize fallback on first user interaction (completely silent, no auto-init)
     document.addEventListener('click', () => {
-        if (window.NotificationFallback) {
+        if (window.NotificationFallback && !window.NotificationFallback.userInteracted) {
             window.NotificationFallback.markUserInteracted();
             window.NotificationFallback.init();
         }
@@ -106,13 +106,13 @@ if (typeof window.NotificationFallback === 'undefined') {
 
     // Also listen for other user interactions
     document.addEventListener('keydown', () => {
-        if (window.NotificationFallback) {
+        if (window.NotificationFallback && !window.NotificationFallback.userInteracted) {
             window.NotificationFallback.markUserInteracted();
         }
     }, { once: true });
 
     document.addEventListener('touchstart', () => {
-        if (window.NotificationFallback) {
+        if (window.NotificationFallback && !window.NotificationFallback.userInteracted) {
             window.NotificationFallback.markUserInteracted();
         }
     }, { once: true });
