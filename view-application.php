@@ -105,10 +105,17 @@ include 'sidebar.php';
                                     Application #<?php echo htmlspecialchars($application['application_number']); ?>
                                 </p>
                             </div>
-                            <a href="<?php echo $_SESSION['role'] === 'resident' ? 'my-applications.php' : 'applications.php'; ?>" 
-                               class="btn btn-outline-primary">
-                                <i class="bi bi-arrow-left me-2"></i>Back to Applications
-                            </a>
+                            <div>
+                                <?php if ($application['status'] === 'completed'): ?>
+                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#printModal">
+                                    <i class="bi bi-printer me-2"></i>Print Document
+                                </button>
+                                <?php endif; ?>
+                                <a href="<?php echo $_SESSION['role'] === 'resident' ? 'my-applications.php' : 'applications.php'; ?>" 
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Applications
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -596,6 +603,130 @@ include 'sidebar.php';
     </div>
 </div>
 
+<?php if ($application['status'] === 'completed'): ?>
+<!-- Print Modal -->
+<div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="printModalLabel">Print Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="printableContent" style="padding: 20px; font-family: 'Times New Roman', serif; font-size: 12px; line-height: 1.5; color: black; background: white; min-height: 100vh; display: flex; flex-direction: column;">
+                    <!-- Print Content -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</div>
+                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">BARANGAY MALANGIT</div>
+                        <div style="font-size: 11px; margin-bottom: 4px;">Pandag, Maguindanao Del Sur</div>
+                        <div style="font-size: 10px; font-style: italic;">OFFICE OF THE PUNONG BARANGAY</div>
+                        <hr style="border: none; border-top: 2px solid black; margin: 12px auto; width: 80%;">
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="font-size: 14px; font-weight: bold; text-decoration: underline;"><?php echo strtoupper(htmlspecialchars($application['type_name'])); ?></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; flex-grow: 1;">
+                        <div style="font-weight: bold; margin-bottom: 15px; font-size: 13px;">TO WHOM IT MAY CONCERN:</div>
+                        
+                        <div style="margin-bottom: 15px; text-indent: 40px; text-align: justify; line-height: 1.6;">
+                            This is to certify that <strong><?php echo strtoupper(htmlspecialchars($application['applicant_name'])); ?></strong><?php if ($application['purok_name']): ?>, a resident of <?php echo htmlspecialchars($application['purok_name']); ?><?php endif; ?>, Barangay Malangit, Pandag, Maguindanao Del Sur, Philippines, has requested this document for the following purpose:
+                        </div>
+                        
+                        <div style="text-align: center; margin: 20px 0; font-weight: bold; font-style: italic; font-size: 13px; padding: 10px; border: 1px dashed black;">
+                            "<?php echo strtoupper(htmlspecialchars($application['purpose'])); ?>"
+                        </div>
+                        
+                        <div style="margin-bottom: 15px; text-indent: 40px; text-align: justify; line-height: 1.6;">
+                            This certification is issued upon the request of the above-mentioned person for whatever legal purpose it may serve him/her best.
+                        </div>
+                        
+                        <div style="margin-bottom: 15px; text-indent: 40px; line-height: 1.6;">
+                            This document is valid and issued with the authority vested in me as Punong Barangay of this community.
+                        </div>
+                        
+                        <div style="margin-bottom: 30px; text-indent: 40px; line-height: 1.6;">
+                            Given this <?php echo date('jS \d\a\y \o\f F, Y'); ?> at Barangay Malangit, Pandag, Maguindanao Del Sur, Philippines.
+                        </div>
+                    </div>
+                    
+                    <!-- Signatures section with more space -->
+                    <div style="margin-top: 40px;">
+                        <table style="width: 100%; margin-bottom: 30px;">
+                            <tr>
+                                <td style="width: 50%; vertical-align: top; padding-right: 15px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Conforme:</div>
+                                    <div style="margin-top: 30px; margin-bottom: 5px;">
+                                        <div style="border-bottom: 1px solid black; height: 25px; margin-bottom: 5px; text-align: center; line-height: 25px;">
+                                            <?php echo strtoupper(htmlspecialchars($application['applicant_name'])); ?>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 10px; text-align: center;">Applicant's Signature over Printed Name</div>
+                                    <div style="font-size: 10px; text-align: center; margin-top: 5px;">Date: ______________</div>
+                                </td>
+                                <td style="width: 50%; vertical-align: top; text-align: center; padding-left: 15px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Certified Correct:</div>
+                                    <div style="margin-top: 30px; margin-bottom: 5px;">
+                                        <div style="border-bottom: 1px solid black; height: 25px; margin-bottom: 5px;">
+                                            &nbsp;
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 10px; font-weight: bold;">HON. PUNONG BARANGAY</div>
+                                    <div style="font-size: 10px; margin-top: 5px;">Date: ______________</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Document details section -->
+                    <div style="border: 2px solid black; padding: 12px; margin-top: 20px;">
+                        <div style="text-align: center; font-weight: bold; margin-bottom: 8px; font-size: 11px;">DOCUMENT INFORMATION</div>
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="font-size: 10px; padding: 2px;"><strong>Application Number:</strong></td>
+                                <td style="font-size: 10px; padding: 2px;"><?php echo htmlspecialchars($application['application_number']); ?></td>
+                                <td style="font-size: 10px; padding: 2px;"><strong>Date Issued:</strong></td>
+                                <td style="font-size: 10px; padding: 2px;"><?php echo date('F j, Y'); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="font-size: 10px; padding: 2px;"><strong>Document Fee:</strong></td>
+                                <td style="font-size: 10px; padding: 2px;">₱<?php echo number_format($application['fee'], 2); ?></td>
+                                <td style="font-size: 10px; padding: 2px;"><strong>Payment Status:</strong></td>
+                                <td style="font-size: 10px; padding: 2px;"><?php echo ucfirst($application['payment_status']); ?></td>
+                            </tr>
+                            <?php if ($application['payment_reference']): ?>
+                            <tr>
+                                <td style="font-size: 10px; padding: 2px;"><strong>Reference No:</strong></td>
+                                <td style="font-size: 10px; padding: 2px;" colspan="3"><?php echo htmlspecialchars($application['payment_reference']); ?></td>
+                            </tr>
+                            <?php endif; ?>
+                        </table>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid black;">
+                        <div style="font-size: 10px; font-style: italic; margin-bottom: 3px;">
+                            "Serbisyong mabilis, tapat at mapagkakatiwalaan"
+                        </div>
+                        <div style="font-size: 9px; color: #666;">
+                            This document is computer-generated and not valid without official seal and signature
+                        </div>
+                        <div style="font-size: 8px; margin-top: 5px;">
+                            Generated on: <?php echo date('F j, Y g:i A'); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printDocument()">Print</button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <style>
 /* Application Timeline Styles */
 .application-timeline {
@@ -680,7 +811,191 @@ include 'sidebar.php';
 .timeline-item.completed .timeline-content h6 {
     color: #198754;
 }
+
+/* Print Styles */
+@media print {
+    @page {
+        size: A4;
+        margin: 0.3in;
+    }
+    
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    body {
+        font-family: 'Times New Roman', serif !important;
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Hide everything first */
+    body > * {
+        display: none !important;
+    }
+    
+    /* Show only the modal */
+    #printModal {
+        display: block !important;
+        position: static !important;
+        z-index: auto !important;
+        background: none !important;
+    }
+    
+    .modal-dialog {
+        margin: 0 !important;
+        max-width: none !important;
+        width: auto !important;
+    }
+    
+    .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        display: none !important;
+    }
+    
+    .modal-body {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    #printableContent {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 15px !important;
+        background: white !important;
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        color: black !important;
+        page-break-inside: avoid !important;
+    }
+    
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: black !important;
+        margin: 5px 0 !important;
+        padding: 0 !important;
+        page-break-after: avoid !important;
+    }
+    
+    p {
+        margin: 3px 0 !important;
+        padding: 0 !important;
+        orphans: 2 !important;
+        widows: 2 !important;
+    }
+    
+    /* Layout */
+    .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        margin: 0 !important;
+    }
+    
+    .col-6 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding: 0 5px !important;
+    }
+    
+    .col-12 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    /* Borders and lines */
+    hr {
+        border: none !important;
+        border-top: 2px solid black !important;
+        margin: 5px 0 !important;
+    }
+    
+    .border-bottom {
+        border-bottom: 1px solid black !important;
+        display: inline-block !important;
+        min-width: 150px !important;
+        min-height: 16px !important;
+        padding-bottom: 2px !important;
+    }
+    
+    .border {
+        border: 1px solid black !important;
+        padding: 5px !important;
+    }
+    
+    /* Text alignment */
+    .text-center {
+        text-align: center !important;
+    }
+    
+    .text-end {
+        text-align: right !important;
+    }
+    
+    /* Spacing */
+    .mb-1 { margin-bottom: 2px !important; }
+    .mb-2 { margin-bottom: 4px !important; }
+    .mb-3 { margin-bottom: 6px !important; }
+    .mb-4 { margin-bottom: 8px !important; }
+    
+    .mt-3 { margin-top: 6px !important; }
+    .mt-4 { margin-top: 8px !important; }
+    
+    .small {
+        font-size: 10px !important;
+    }
+    
+    /* Font weights */
+    strong, b {
+        font-weight: bold !important;
+        color: black !important;
+    }
+    
+    em, i {
+        font-style: italic !important;
+    }
+}
 </style>
+
+<script>
+function printDocument() {
+    // Ensure modal is visible for printing
+    const modal = document.getElementById('printModal');
+    if (modal) {
+        modal.style.display = 'block';
+        modal.classList.add('show');
+    }
+    
+    // Small delay to ensure content is rendered
+    setTimeout(function() {
+        window.print();
+    }, 100);
+}
+
+// Handle after print to hide modal
+window.addEventListener('afterprint', function() {
+    // Optionally close modal after printing
+    // const modal = bootstrap.Modal.getInstance(document.getElementById('printModal'));
+    // if (modal) modal.hide();
+});
+</script>
 
 <?php include 'scripts.php'; ?>
 

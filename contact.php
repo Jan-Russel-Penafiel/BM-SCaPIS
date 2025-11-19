@@ -10,7 +10,7 @@ require_once 'header.php';
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0 text-gray-800">Contact Us</h1>
-                    <p class="mb-0 text-muted">Get in touch with Barangay Malangit</p>
+                    <p class="mb-0 text-muted">Get in touch with Barangay Malangit - Pandag, Maguindanao Del Sur</p>
                 </div>
             </div>
 
@@ -32,6 +32,7 @@ require_once 'header.php';
                                             <h6 class="mb-1">Office Address</h6>
                                             <p class="text-muted mb-0">
                                                 Barangay Malangit Hall<br>
+                                                Pandag, Maguindanao Del Sur<br>
                                                 Malangit, [Municipality]<br>
                                                 [Province], Philippines
                                             </p>

@@ -10,7 +10,7 @@ require_once 'header.php';
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0 text-gray-800">About BM-SCaPIS</h1>
-                    <p class="mb-0 text-muted">Barangay Malangit Smart Clearance and Permit Issuance System</p>
+                    <p class="mb-0 text-muted">Barangay Malangit Smart Clearance and Permit Issuance System - Pandag, Maguindanao Del Sur</p>
                 </div>
             </div>
 
@@ -24,7 +24,7 @@ require_once 'header.php';
                         <div class="col-lg-8">
                             <h5>Mission</h5>
                             <p class="text-justify">
-                                To provide efficient, transparent, and accessible government services to the residents of Barangay Malangit through digital transformation and smart technology solutions.
+                                To provide efficient, transparent, and accessible government services to the residents of Barangay Malangit, Pandag, Maguindanao Del Sur through digital transformation and smart technology solutions.
                             </p>
 
                             <h5>Vision</h5>
@@ -120,6 +120,7 @@ require_once 'header.php';
                             <p>
                                 <i class="bi bi-geo-alt text-primary me-2"></i>
                                 Barangay Malangit Hall<br>
+                                Pandag, Maguindanao Del Sur<br>
                                 <span class="ms-4">Malangit, [Municipality], [Province]</span>
                             </p>
                             <p>

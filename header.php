@@ -7,7 +7,7 @@ require_once 'config.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Barangay Malangit Smart Clearance and Permit Issuance System">
+    <meta name="description" content="Barangay Malangit Smart Clearance and Permit Issuance System - Pandag, Maguindanao Del Sur">
     <meta name="author" content="BM-SCaPIS Development Team">
     
     <title><?php echo isset($pageTitle) ? $pageTitle . ' - ' . SYSTEM_NAME : SYSTEM_NAME; ?></title>

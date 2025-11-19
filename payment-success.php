@@ -356,6 +356,7 @@ function downloadReceipt() {
     // Create receipt content
     const receiptContent = `
         BARANGAY MALANGIT
+        Pandag, Maguindanao Del Sur
         Payment Receipt
         
         Application Number: <?php echo $application['application_number']; ?>
