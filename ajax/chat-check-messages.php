@@ -108,6 +108,10 @@ try {
     
 } catch (Exception $e) {
     error_log("Chat check messages error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Server error']);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Server error', 
+        'debug' => $e->getMessage()
+    ]);
 }
 ?>

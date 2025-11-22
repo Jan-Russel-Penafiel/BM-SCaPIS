@@ -210,42 +210,15 @@
         // Don't use fallback systems that might play unwanted sounds
     }
     
-    // Check for new notifications
+    // Check for new notifications - this function is handled by header.php notification system
     function checkForNotifications() {
-        if (document.visibilityState === 'visible') {
-            fetch('ajax/get-notifications.php')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.newNotifications && data.newNotifications.length > 0) {
-                        // Don't auto-play sound here - let the header notification system handle it
-                        
-                        // Show desktop notification if permission granted
-                        if (Notification.permission === 'granted') {
-                            data.newNotifications.forEach(notification => {
-                                new Notification(notification.title, {
-                                    body: notification.message,
-                                    icon: 'assets/images/logo-192.png?v=1.0.6'
-                                });
-                            });
-                        }
-                    }
-                    
-                    // Update notification badge
-                    updateNotificationBadge(data.unreadCount);
-                })
-                .catch(error => console.error('Error checking notifications:', error));
-        }
+        // This function is deprecated - notification checking is handled by header.php
+        console.log('checkForNotifications is deprecated - using header notification system');
     }
     
     function updateNotificationBadge(count) {
-        const badge = document.querySelector('.notification-badge');
-        if (count > 0) {
-            if (badge) {
-                badge.textContent = count > 99 ? '99+' : count;
-            }
-        } else if (badge) {
-            badge.remove();
-        }
+        // This function is deprecated - badge update is handled by header.php notification system
+        console.log('updateNotificationBadge is deprecated - using header notification system');
     }
     
     // Request notification permission

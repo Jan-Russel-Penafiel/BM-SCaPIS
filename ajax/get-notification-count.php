@@ -4,10 +4,8 @@ require_once '../config.php';
 // Set JSON header first
 header('Content-Type: application/json');
 
-// Require login
-try {
-    requireLogin();
-} catch (Exception $e) {
+// Check authentication manually for AJAX calls (don't redirect)
+if (!isLoggedIn()) {
     http_response_code(401);
     echo json_encode([
         'success' => false,

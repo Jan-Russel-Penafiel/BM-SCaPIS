@@ -8,8 +8,16 @@ require_once '../config.php';
 header('Content-Type: application/json');
 
 try {
-    // Require login and must be admin or purok leader
-    requireLogin();
+    // Check authentication for AJAX calls
+    if (!isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Authentication required'
+        ]);
+        exit;
+    }
+    
     if (!in_array($_SESSION['role'], ['admin', 'purok_leader'])) {
         throw new Exception('Unauthorized access');
     }

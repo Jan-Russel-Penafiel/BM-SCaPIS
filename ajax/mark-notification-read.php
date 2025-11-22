@@ -1,12 +1,21 @@
 <?php
 require_once '../config.php';
 
-// Require login
-requireLogin();
+// Set JSON header first
+header('Content-Type: application/json');
+
+// Check authentication for AJAX calls
+if (!isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Authentication required'
+    ]);
+    exit;
+}
 
 // Check if POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Content-Type: application/json');
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     exit;
