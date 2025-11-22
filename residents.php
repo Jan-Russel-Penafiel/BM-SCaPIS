@@ -89,16 +89,7 @@ include 'sidebar.php';
                                     <?php endif; ?>
                                 </p>
                             </div>
-                            <?php if ($_SESSION['role'] === 'admin'): ?>
-                                <div>
-                                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#assignPurokModal">
-                                        <i class="bi bi-people me-2"></i>Assign to Purok
-                                    </button>
-                                    <a href="export-residents.php" class="btn btn-success">
-                                        <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
-                                    </a>
-                                </div>
-                            <?php endif; ?>
+
                         </div>
                     </div>
                 </div>
@@ -664,44 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize Select2 for purok select
-    $('#assignPurokSelect').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        dropdownParent: $('#assignPurokModal'),
-        placeholder: 'Choose a purok...',
-        allowClear: true
-    });
-
-    // Initialize Select2 for residents multiple select with custom templates
-    $('#assignResidentsSelect').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        dropdownParent: $('#assignPurokModal'),
-        placeholder: 'Select residents to assign...',
-        allowClear: true,
-        templateResult: function(data) {
-            if (data.loading) return data.text;
-            if (!data.id) return data.text;
-            
-            return $(`
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <img src="${data.profile_picture ? 'uploads/profiles/' + data.profile_picture : 'assets/images/default-avatar.png'}" 
-                             class="rounded-circle" width="32" height="32" alt="Profile">
-                    </div>
-                    <div class="flex-grow-1 ms-2">
-                        <div class="fw-bold">${data.text}</div>
-                        <small class="text-muted">${data.purok_name || 'No purok assigned'}</small>
-                    </div>
-                </div>
-            `);
-        },
-        templateSelection: function(data) {
-            if (!data.id) return data.text;
-            return data.text;
-        }
-    });
+    // Purok and residents selects are now simple HTML selects - no additional initialization needed
     
     // Phone number formatting
     document.getElementById('editContactNumber').addEventListener('input', function(e) {

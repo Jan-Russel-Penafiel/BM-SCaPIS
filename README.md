@@ -37,7 +37,7 @@ BM-SCaPIS is a modern, mobile-friendly Progressive Web Application (PWA) designe
 - **UI Framework**: Bootstrap 5.3.2
 - **Icons**: Bootstrap Icons
 - **Additional Libraries**:
-  - Select2 for searchable dropdowns
+
   - DataTables for data management
   - SweetAlert2 for user interactions
   - Chart.js for statistics visualization

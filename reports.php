@@ -55,23 +55,31 @@ switch ($reportType) {
         $reportData = $stmt->fetchAll();
 
         // Prepare chart data
-        $chartData = [
-            'labels' => [],
-            'datasets' => [
-                'pending' => [],
-                'processing' => [],
-                'ready_for_pickup' => [],
-                'completed' => [],
-                'rejected' => []
-            ]
-        ];
+        $statusData = [];
         foreach ($reportData as $row) {
             $date = date('M j', strtotime($row['date']));
-            if (!in_array($date, $chartData['labels'])) {
-                $chartData['labels'][] = $date;
+            if (!isset($statusData[$date])) {
+                $statusData[$date] = [
+                    'pending' => 0,
+                    'processing' => 0,
+                    'ready_for_pickup' => 0,
+                    'completed' => 0,
+                    'rejected' => 0
+                ];
             }
-            $chartData['datasets'][$row['status']][] = $row['count'];
+            $statusData[$date][$row['status']] += (int)$row['count'];
         }
+        
+        $chartData = [
+            'labels' => array_keys($statusData),
+            'datasets' => [
+                'pending' => array_values(array_column($statusData, 'pending')),
+                'processing' => array_values(array_column($statusData, 'processing')),
+                'ready_for_pickup' => array_values(array_column($statusData, 'ready_for_pickup')),
+                'completed' => array_values(array_column($statusData, 'completed')),
+                'rejected' => array_values(array_column($statusData, 'rejected'))
+            ]
+        ];
         break;
 
     case 'clearances_summary':
@@ -93,13 +101,22 @@ switch ($reportType) {
         $reportData = $stmt->fetchAll();
 
         // Prepare chart data
+        $typeData = [];
+        foreach ($reportData as $row) {
+            if (!isset($typeData[$row['type_name']])) {
+                $typeData[$row['type_name']] = ['issued' => 0, 'revenue' => 0];
+            }
+            if ($row['status'] === 'ready_for_pickup' || $row['status'] === 'completed') {
+                $typeData[$row['type_name']]['issued'] += (int)$row['total_count'];
+            }
+            $typeData[$row['type_name']]['revenue'] += (float)$row['total_revenue'];
+        }
+        
         $chartData = [
-            'labels' => array_unique(array_column($reportData, 'type_name')),
+            'labels' => array_keys($typeData),
             'datasets' => [
-                'issued' => array_column(array_filter($reportData, function($row) {
-                    return $row['status'] === 'ready_for_pickup' || $row['status'] === 'completed';
-                }), 'total_count'),
-                'revenue' => array_column($reportData, 'total_revenue')
+                'issued' => array_values(array_column($typeData, 'issued')),
+                'revenue' => array_values(array_column($typeData, 'revenue'))
             ]
         ];
         break;
@@ -128,10 +145,18 @@ switch ($reportType) {
         $reportData = $stmt->fetchAll();
 
         // Prepare chart data
+        $periodData = [];
+        foreach ($reportData as $row) {
+            if (!isset($periodData[$row['period']])) {
+                $periodData[$row['period']] = 0;
+            }
+            $periodData[$row['period']] += (int)$row['count'];
+        }
+        
         $chartData = [
-            'labels' => array_unique(array_column($reportData, 'period')),
+            'labels' => array_keys($periodData),
             'datasets' => [
-                'transactions' => array_column($reportData, 'count')
+                'transactions' => array_values($periodData)
             ]
         ];
         break;
@@ -157,12 +182,22 @@ switch ($reportType) {
         $reportData = $stmt->fetchAll();
 
         // Prepare chart data
+        $zoneData = [];
+        foreach ($reportData as $row) {
+            if (!isset($zoneData[$row['purok_name']])) {
+                $zoneData[$row['purok_name']] = ['total' => 0, 'completed' => 0, 'pending' => 0];
+            }
+            $zoneData[$row['purok_name']]['total'] += (int)$row['total_applications'];
+            $zoneData[$row['purok_name']]['completed'] += (int)$row['completed_applications'];
+            $zoneData[$row['purok_name']]['pending'] += (int)$row['pending_applications'];
+        }
+        
         $chartData = [
-            'labels' => array_unique(array_column($reportData, 'purok_name')),
+            'labels' => array_keys($zoneData),
             'datasets' => [
-                'total' => array_column($reportData, 'total_applications'),
-                'completed' => array_column($reportData, 'completed_applications'),
-                'pending' => array_column($reportData, 'pending_applications')
+                'total' => array_values(array_column($zoneData, 'total')),
+                'completed' => array_values(array_column($zoneData, 'completed')),
+                'pending' => array_values(array_column($zoneData, 'pending'))
             ]
         ];
         break;
@@ -241,11 +276,8 @@ include 'sidebar.php';
                                 <p class="text-muted mb-0">Generate and view system reports</p>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-success" onclick="exportToPDF()">
+                                <button type="button" class="btn btn-danger" onclick="exportToPDF()">
                                     <i class="bi bi-file-pdf me-2"></i>Export PDF
-                                </button>
-                                <button type="button" class="btn btn-success" onclick="exportToExcel()">
-                                    <i class="bi bi-file-excel me-2"></i>Export Excel
                                 </button>
                             </div>
                         </div>
@@ -663,8 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
         paging: false,
         info: false,
         responsive: true,
-        dom: 'Bfrtip',
-        buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+        dom: 'frtip', // Removed buttons from dom
         language: {
             search: '<i class="bi bi-search"></i>',
             searchPlaceholder: 'Search data...'
@@ -673,12 +704,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Chart
     const ctx = document.getElementById('reportChart').getContext('2d');
-    const chartData = <?php echo json_encode($chartData); ?>;
+    const chartData = <?php echo json_encode($chartData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> || {labels: [], datasets: {}};
+    
+    // Ensure chartData has required structure
+    if (!chartData.labels) chartData.labels = [];
+    if (!chartData.datasets) chartData.datasets = {};
     
     let chartConfig = {
         type: '<?php echo $reportType === "residents_demographics" ? "bar" : "line"; ?>',
         data: {
-            labels: chartData.labels,
+            labels: chartData.labels || [],
             datasets: []
         },
         options: {
@@ -687,6 +722,11 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
                 }
             }
         }
@@ -697,76 +737,87 @@ document.addEventListener('DOMContentLoaded', function() {
         chartConfig.data.datasets = [
             {
                 label: 'Pending',
-                data: chartData.datasets.pending,
+                data: chartData.datasets.pending || [],
                 borderColor: '#ffc107',
-                backgroundColor: '#ffc10733'
+                backgroundColor: '#ffc10733',
+                fill: false
             },
             {
-                label: 'Processing',
-                data: chartData.datasets.processing,
+                label: 'Processing', 
+                data: chartData.datasets.processing || [],
                 borderColor: '#17a2b8',
-                backgroundColor: '#17a2b833'
+                backgroundColor: '#17a2b833',
+                fill: false
             },
             {
                 label: 'Ready for Pickup',
-                data: chartData.datasets.ready_for_pickup,
+                data: chartData.datasets.ready_for_pickup || [],
                 borderColor: '#28a745',
-                backgroundColor: '#28a74533'
+                backgroundColor: '#28a74533',
+                fill: false
             },
             {
                 label: 'Completed',
-                data: chartData.datasets.completed,
+                data: chartData.datasets.completed || [],
                 borderColor: '#20c997',
-                backgroundColor: '#20c99733'
+                backgroundColor: '#20c99733',
+                fill: false
             },
             {
                 label: 'Rejected',
-                data: chartData.datasets.rejected,
+                data: chartData.datasets.rejected || [],
                 borderColor: '#dc3545',
-                backgroundColor: '#dc354533'
+                backgroundColor: '#dc354533',
+                fill: false
             }
         ];
     <?php elseif ($reportType === 'clearances_summary'): ?>
         chartConfig.data.datasets = [
             {
                 label: 'Issued',
-                data: chartData.datasets.issued,
+                data: chartData.datasets.issued || [],
                 borderColor: '#28a745',
-                backgroundColor: '#28a74533'
+                backgroundColor: '#28a74533',
+                fill: false
             },
             {
                 label: 'Revenue',
-                data: chartData.datasets.revenue,
+                data: chartData.datasets.revenue || [],
                 borderColor: '#007bff',
-                backgroundColor: '#007bff33'
+                backgroundColor: '#007bff33',
+                fill: false
             }
         ];
     <?php elseif ($reportType === 'transaction_logs'): ?>
         chartConfig.data.datasets = [{
             label: 'Transactions',
-            data: chartData.datasets.transactions,
+            data: chartData.datasets.transactions || [],
             borderColor: '#007bff',
-            backgroundColor: '#007bff33'
+            backgroundColor: '#007bff33',
+            fill: false
         }];
     <?php elseif ($reportType === 'applications_by_zone'): ?>
         chartConfig.data.datasets = [
             {
                 label: 'Total Applications',
-                data: chartData.datasets.total,
+                data: chartData.datasets.total || [],
                 borderColor: '#6c757d',
-                backgroundColor: '#6c757d33'
+                backgroundColor: '#6c757d33',
+                fill: false
             },
             {
                 label: 'Completed Applications',
-                data: chartData.datasets.completed,
+                data: chartData.datasets.completed || [],
                 borderColor: '#28a745',
-                backgroundColor: '#28a74533'
+                backgroundColor: '#28a74533',
+                fill: false
             },
             {
                 label: 'Pending Applications',
-                data: chartData.datasets.pending,
+                data: chartData.datasets.pending || [],
                 borderColor: '#ffc107',
-                backgroundColor: '#ffc10733'
+                backgroundColor: '#ffc10733',
+                fill: false
             }
         ];
     <?php elseif ($reportType === 'residents_demographics'): ?>
@@ -774,32 +825,32 @@ document.addEventListener('DOMContentLoaded', function() {
         chartConfig.data.datasets = [
             {
                 label: 'Male',
-                data: chartData.datasets.demographics.male,
+                data: (chartData.datasets.demographics && chartData.datasets.demographics.male) ? chartData.datasets.demographics.male : [],
                 backgroundColor: '#007bff'
             },
             {
                 label: 'Female',
-                data: chartData.datasets.demographics.female,
+                data: (chartData.datasets.demographics && chartData.datasets.demographics.female) ? chartData.datasets.demographics.female : [],
                 backgroundColor: '#dc3545'
             },
             {
                 label: 'Minors',
-                data: chartData.datasets.age_groups.minors,
+                data: (chartData.datasets.age_groups && chartData.datasets.age_groups.minors) ? chartData.datasets.age_groups.minors : [],
                 backgroundColor: '#28a745'
             },
             {
                 label: 'Young Adults',
-                data: chartData.datasets.age_groups.young_adults,
+                data: (chartData.datasets.age_groups && chartData.datasets.age_groups.young_adults) ? chartData.datasets.age_groups.young_adults : [],
                 backgroundColor: '#ffc107'
             },
             {
                 label: 'Adults',
-                data: chartData.datasets.age_groups.adults,
+                data: (chartData.datasets.age_groups && chartData.datasets.age_groups.adults) ? chartData.datasets.age_groups.adults : [],
                 backgroundColor: '#17a2b8'
             },
             {
                 label: 'Seniors',
-                data: chartData.datasets.age_groups.seniors,
+                data: (chartData.datasets.age_groups && chartData.datasets.age_groups.seniors) ? chartData.datasets.age_groups.seniors : [],
                 backgroundColor: '#6c757d'
             }
         ];
@@ -823,15 +874,206 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     <?php endif; ?>
 
-    new Chart(ctx, chartConfig);
+    // Initialize chart with error handling
+    try {
+        new Chart(ctx, chartConfig);
+    } catch (error) {
+        console.error('Chart initialization error:', error);
+        // Show fallback message if chart fails
+        const chartContainer = document.getElementById('reportChart').parentElement;
+        chartContainer.innerHTML = '<div class="text-center p-4"><i class="bi bi-exclamation-triangle text-warning"></i><br>Chart could not be loaded</div>';
+    }
 });
 
 function exportToPDF() {
-    window.print();
+    // Show loading indicator
+    Swal.fire({
+        title: 'Generating PDF...',
+        text: 'Please wait while we prepare your report',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Check if libraries are already loaded
+    if (window.jspdf && window.jspdf.jsPDF) {
+        generatePDF();
+        return;
+    }
+    
+    // Import jsPDF and autoTable plugin
+    const script1 = document.createElement('script');
+    script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    
+    const script2 = document.createElement('script');
+    script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+    
+    document.head.appendChild(script1);
+    
+    script1.onload = function() {
+        document.head.appendChild(script2);
+        
+        script2.onload = function() {
+            generatePDF();
+        };
+    };
+    
+    script1.onerror = function() {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load PDF library. Please check your internet connection.'
+        });
+    };
 }
 
-function exportToExcel() {
-    $('#reportTable').DataTable().button('2').trigger();
+function generatePDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    
+    // Get current report details
+    const reportType = '<?php echo $reportTypes[$reportType]; ?>';
+    const startDate = '<?php echo date("M j, Y", strtotime($startDate)); ?>';
+    const endDate = '<?php echo date("M j, Y", strtotime($endDate)); ?>';
+    
+    // Add header
+    doc.setFontSize(20);
+    doc.setTextColor(44, 90, 160);
+    doc.text('Barangay Malangit - Reports', 20, 20);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Report Type: ${reportType}`, 20, 35);
+    doc.text(`Period: ${startDate} to ${endDate}`, 20, 45);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    })}`, 20, 55);
+    
+    // Get table data
+    const table = document.getElementById('reportTable');
+    const headers = [];
+    const data = [];
+    
+    // Extract headers
+    const headerCells = table.querySelectorAll('thead tr th');
+    headerCells.forEach(cell => {
+        headers.push(cell.textContent.trim());
+    });
+    
+    // Extract data rows
+    const dataRows = table.querySelectorAll('tbody tr');
+    
+    if (dataRows.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Data',
+            text: 'There is no data to export in the current report.'
+        });
+        return;
+    }
+    
+    dataRows.forEach(row => {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            // Clean up cell content (remove HTML tags and extra spaces)
+            let text = cell.textContent.trim();
+            // Handle badge content specially
+            const badge = cell.querySelector('.badge');
+            if (badge) {
+                text = badge.textContent.trim();
+            }
+            rowData.push(text);
+        });
+        data.push(rowData);
+    });
+    
+    // Generate table
+    doc.autoTable({
+        startY: 65,
+        head: [headers],
+        body: data,
+        styles: {
+            fontSize: 8,
+            cellPadding: 3,
+        },
+        headStyles: {
+            fillColor: [44, 90, 160],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]
+        },
+        margin: { top: 65, left: 20, right: 20, bottom: 20 },
+        didDrawPage: function (data) {
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            const pageSize = doc.internal.pageSize;
+            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+            
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.text('Barangay Malangit Smart Clearance and Permit Issuance System', 
+                20, pageHeight - 10);
+            doc.text(`Page ${data.pageNumber} of ${pageCount}`, 
+                pageSize.width - 40, pageHeight - 10);
+        }
+    });
+    
+    // Add summary stats if available
+    let summaryY = doc.lastAutoTable.finalY + 20;
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Summary Statistics:', 20, summaryY);
+    
+    doc.setFontSize(10);
+    <?php if ($reportType === 'applications_status'): ?>
+        doc.text('Total Applications: <?php echo array_sum(array_column($reportData, "count")); ?>', 20, summaryY + 10);
+        doc.text('Pending: <?php echo array_sum(array_column(array_filter($reportData, function($row) { return $row["status"] === "pending"; }), "count")); ?>', 20, summaryY + 20);
+        doc.text('Completed: <?php echo array_sum(array_column(array_filter($reportData, function($row) { return $row["status"] === "ready_for_pickup" || $row["status"] === "completed"; }), "count")); ?>', 20, summaryY + 30);
+    <?php elseif ($reportType === 'clearances_summary'): ?>
+        doc.text('Total Issued: <?php echo array_sum(array_column($reportData, "total_count")); ?>', 20, summaryY + 10);
+        doc.text('Total Revenue: ₱<?php echo number_format(array_sum(array_column($reportData, "total_revenue")), 2); ?>', 20, summaryY + 20);
+    <?php elseif ($reportType === 'residents_demographics'): ?>
+        doc.text('Total Residents: <?php echo array_sum(array_column($reportData, "total_residents")); ?>', 20, summaryY + 10);
+        doc.text('Male: <?php echo array_sum(array_column($reportData, "male_count")); ?> | Female: <?php echo array_sum(array_column($reportData, "female_count")); ?>', 20, summaryY + 20);
+        doc.text('Employment Rate: <?php echo number_format((array_sum(array_column($reportData, "employed_count")) / array_sum(array_column($reportData, "total_residents"))) * 100, 1); ?>%', 20, summaryY + 30);
+    <?php elseif ($reportType === 'transaction_logs'): ?>
+        doc.text('Total Transactions: <?php echo array_sum(array_column($reportData, "count")); ?>', 20, summaryY + 10);
+    <?php elseif ($reportType === 'applications_by_zone'): ?>
+        doc.text('Total Applications: <?php echo array_sum(array_column($reportData, "total_applications")); ?>', 20, summaryY + 10);
+        doc.text('Completed: <?php echo array_sum(array_column($reportData, "completed_applications")); ?> | Pending: <?php echo array_sum(array_column($reportData, "pending_applications")); ?>', 20, summaryY + 20);
+    <?php endif; ?>
+    
+    // Save the PDF
+    const fileName = `${reportType.replace(/\s+/g, '_')}_${startDate.replace(/\s+/g, '_')}_to_${endDate.replace(/\s+/g, '_')}.pdf`;
+    doc.save(fileName);
+    
+        // Close loading indicator and show success message
+        Swal.fire({
+            icon: 'success',
+            title: 'PDF Generated!',
+            text: 'Your report has been downloaded successfully.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'PDF Generation Failed',
+            text: 'An error occurred while generating the PDF. Please try again.'
+        });
+    }
 }
 </script>
 
@@ -882,6 +1124,70 @@ function exportToExcel() {
 .table-container.residents-demographics th:nth-child(9) { width: 7%; }  /* Seniors */
 .table-container.residents-demographics th:nth-child(10) { width: 8%; } /* Employed */
 .table-container.residents-demographics th:nth-child(11) { width: 10%; } /* Avg Income */
+
+/* Print styles for PDF export fallback */
+@media print {
+    .no-print, .btn, .dropdown, .navbar, .sidebar {
+        display: none !important;
+    }
+    
+    body {
+        padding: 0;
+        margin: 0;
+        font-size: 12pt;
+    }
+    
+    .main-content {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+    }
+    
+    .card-header {
+        background: #f8f9fa !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .table {
+        font-size: 10pt;
+        border-collapse: collapse;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #ddd !important;
+        padding: 4px 6px;
+    }
+    
+    .table th {
+        background-color: #f8f9fa !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .badge {
+        border: 1px solid #000;
+        padding: 2px 4px;
+        font-weight: bold;
+    }
+    
+    h1, h2, h3, h4, h5 {
+        color: #000 !important;
+        page-break-after: avoid;
+    }
+    
+    .page-break {
+        page-break-before: always;
+    }
+}
 </style>
 
 <?php include 'scripts.php'; ?> 

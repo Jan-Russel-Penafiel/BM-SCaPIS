@@ -91,11 +91,6 @@ include 'sidebar.php';
                                 <h1 class="h3 mb-2">Activity Logs</h1>
                                 <p class="text-muted mb-0">View system activity and audit trail</p>
                             </div>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-success" onclick="exportToExcel()">
-                                    <i class="bi bi-file-excel me-2"></i>Export
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -283,11 +278,7 @@ include 'sidebar.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Select2
-    $('select[name="user_id"], select[name="action"]').select2({
-        theme: 'bootstrap-5',
-        width: '100%'
-    });
+    // Select filters are now simple HTML selects - no additional initialization needed
 });
 
 function showLogDetails(data) {
@@ -298,34 +289,7 @@ function showLogDetails(data) {
     new bootstrap.Modal(document.getElementById('logDetailsModal')).show();
 }
 
-function exportToExcel() {
-    // Create a form to submit all current filters
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'export-logs.php';
-    
-    // Add current filters as hidden inputs
-    const filters = {
-        start_date: '<?php echo $startDate; ?>',
-        end_date: '<?php echo $endDate; ?>',
-        user_id: '<?php echo $userFilter; ?>',
-        action: '<?php echo $actionFilter; ?>'
-    };
-    
-    for (const [key, value] of Object.entries(filters)) {
-        if (value) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = value;
-            form.appendChild(input);
-        }
-    }
-    
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-}
+
 </script>
 
 <?php include 'scripts.php'; ?> 

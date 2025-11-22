@@ -75,11 +75,6 @@ include 'sidebar.php';
                                 'View applications from residents in your purok'; ?>
                         </p>
                     </div>
-                    <?php if ($_SESSION['role'] === 'admin'): ?>
-                        <a href="export-applications.php" class="btn btn-success">
-                            <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>

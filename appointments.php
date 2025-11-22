@@ -472,12 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize Select2 for application select
-    $('select[name="application_id"]').select2({
-        theme: 'bootstrap-5',
-        placeholder: 'Select an application',
-        width: '100%'
-    });
+    // Application select is now a simple HTML select - no additional initialization needed
 
     // Initialize dropdowns with proper positioning
     document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggle) {

@@ -514,37 +514,7 @@ include 'sidebar.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Select2 for dropdowns
-    try {
-        // Initialize Select2 with setTimeout to ensure DOM is fully loaded
-        setTimeout(function() {
-            $('#purok_id').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Select Purok',
-                width: '100%',
-                dropdownParent: $('#purok_id').parent() // Attach dropdown to parent element
-            });
-            
-            $('#gender').select2({
-                theme: 'bootstrap-5',
-                minimumResultsForSearch: Infinity,
-                width: '100%',
-                dropdownParent: $('#gender').parent() // Attach dropdown to parent element
-            });
-            
-            $('#civil_status').select2({
-                theme: 'bootstrap-5',
-                minimumResultsForSearch: Infinity,
-                width: '100%',
-                dropdownParent: $('#civil_status').parent() // Attach dropdown to parent element
-            });
-        }, 100);
-    } catch (e) {
-        console.error('Error initializing Select2:', e);
-    }
-    
-    // Fix z-index issues for dropdowns
-    $('.select2-dropdown').css('z-index', 9999);
+    // Select dropdowns are now simple HTML selects - no additional initialization needed
     
     // Phone number formatting
     document.querySelector('input[name="contact_number"]').addEventListener('input', function(e) {

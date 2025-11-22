@@ -437,7 +437,7 @@ include 'header.php';
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="purok_id" class="form-label">Purok <span class="text-danger">*</span></label>
-                                    <select class="form-select select2" id="purok_id" name="purok_id" required>
+                                    <select class="form-select" id="purok_id" name="purok_id" required>
                                         <option value="">Select Purok</option>
                                         <?php foreach ($puroks as $purok): ?>
                                             <option value="<?php echo $purok['id']; ?>" 

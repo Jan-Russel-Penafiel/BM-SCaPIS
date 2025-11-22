@@ -8,8 +8,7 @@
 <!-- Bootstrap Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 
 <!-- DataTables -->
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -47,12 +46,8 @@
         document.getElementById('loadingSpinner')?.classList.add('d-none');
     }
     
-    // Initialize Select2 for all select elements
+    // Initialize components
     $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
         
         // Initialize DataTables with responsive design
         $('.data-table').DataTable({
