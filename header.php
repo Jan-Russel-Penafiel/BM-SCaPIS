@@ -597,22 +597,12 @@ require_once 'config.php';
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="about.php">
-                            <i class="bi bi-info-circle"></i> About
+                        <a class="nav-link" href="index.php">
+                            <!-- Home link or other nav items here -->
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="services.php">
-                            <i class="bi bi-list-ul"></i> Services
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="contact.php">
-                            <i class="bi bi-telephone"></i> Contact
-                        </a>
-                    </li>
-                    <?php if (!isset($_SESSION['user_id'])): ?>
-                        <li class="nav-item">
+                    <!-- Notification button removed -->
+                    <?php // Removed empty else block to fix parse error ?>
                             <a class="nav-link" href="login.php">
                                 <i class="bi bi-box-arrow-in-right"></i> Login
                             </a>
@@ -622,55 +612,13 @@ require_once 'config.php';
                                 <i class="bi bi-person-plus"></i> Register
                             </a>
                         </li>
-                    <?php else: ?>
-                        <!-- Notifications Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" 
-                               data-bs-toggle="dropdown" 
-                               data-bs-auto-close="true"
-                               data-bs-boundary="viewport"
-                               aria-expanded="false">
-                                <i class="bi bi-bell"></i>
-                                <span class="notification-badge d-none" id="notificationBadge">0</span>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-sm" 
-                                 aria-labelledby="notificationsDropdown"
-                                 style="width: 350px; max-height: 400px; overflow-y: auto;">
-                                <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                    <span>Notifications</span>
-                                    <a href="#" class="btn btn-sm btn-outline-primary" id="markAllRead">Mark all read</a>
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div id="notificationsList">
-                                    <div class="dropdown-item text-center py-3 text-muted">
-                                        <div class="spinner-border spinner-border-sm" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        Loading notifications...
-                                    </div>
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-item text-center">
-                                    <a href="notifications.php" class="btn btn-sm btn-primary">View All</a>
-                                </div>
-                            </div>
-                        </li>
-                    <?php endif; ?>
+                    <?php // Removed notification dropdown and orphaned endif to fix parse error and remove notification UI ?>
                 </ul>
             </div>
         </div>
     </nav>
     
-    <!-- Notification Sound -->
-    <audio id="notificationSound" preload="auto">
-        <!-- Fallback audio element for older browsers -->
-    </audio>
-    
-    <!-- Notification JavaScript Files -->
-    <script src="assets/js/notification-fallback.js"></script>
-    <script src="assets/js/notification-sound.js"></script>
-    <script src="assets/js/notification-manager.js"></script>
-    <script src="assets/js/notifications.js"></script>
+    <!-- Notification system scripts intentionally disabled -->
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -742,21 +690,11 @@ require_once 'config.php';
                 return 'just now';
             }
 
-            // Function to play notification sound
+            // Function to play notification sound - DISABLED: Using Howler.js only for pending registrations
             function playNotificationSound() {
-                // Try the main notification sound system (preferred method) - only if enabled
-                if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted && window.NotificationSound.enabled) {
-                    window.NotificationSound.play();
-                } 
-                // Try the fallback system only if main system is not available
-                else if (typeof window.NotificationFallback !== 'undefined' && window.NotificationFallback.userInteracted) {
-                    window.NotificationFallback.play();
-                } 
-                // Try the manager system only if main system is not available
-                else if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.userInteracted) {
-                    window.NotificationManager.playSound();
-                }
-                // Don't fall back to creating new audio contexts - this prevents unwanted sounds
+                // Old notification system disabled - only Howler.js system works on pending registration pages
+                // This function is kept for compatibility but does nothing
+                return;
             }
 
             // Function to update notifications
@@ -780,23 +718,10 @@ require_once 'config.php';
                             notificationBadge.textContent = currentCount > 99 ? '99+' : currentCount;
                             notificationBadge.classList.remove('d-none');
                             
-                            // Play sound for new notifications only (and only if we had a previous count)
-                            if (currentCount > lastNotificationCount && lastNotificationCount >= 0) {
-                                // Enable sound system only when we actually need to play a sound
-                                if (typeof window.NotificationSound !== 'undefined') {
-                                    window.NotificationSound.enable();
-                                    window.NotificationSound.playForNotifications(currentCount, lastNotificationCount);
-                                } else {
-                                    playNotificationSound();
-                                }
-                            }
+                            // Sound notifications are disabled globally - only pending registration pages play sounds
+                            // Visual notifications (badge) still work
                         } else {
                             notificationBadge.classList.add('d-none');
-                            // Reset sound flag when no notifications
-                            if (typeof window.NotificationSound !== 'undefined') {
-                                window.NotificationSound.resetSoundFlag();
-                                window.NotificationSound.disable(); // Disable sound when no notifications
-                            }
                         }
                         lastNotificationCount = currentCount;
 

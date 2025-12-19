@@ -508,6 +508,9 @@ include 'header.php';
                                     <h5 class="text-primary border-bottom pb-2">
                                         <i class="bi bi-cloud-upload me-2"></i>Document Uploads
                                     </h5>
+                                    <div class="alert alert-warning py-2 mt-2 mb-0">
+                                        <strong>File restrictions:</strong> Allowed types: JPG, PNG, PDF. Maximum size: 5MB per file. Valid ID front and back are required.
+                                    </div>
                                 </div>
                             </div>
                             
@@ -519,7 +522,7 @@ include 'header.php';
                                         <p class="mb-0">Click to upload photo</p>
                                         <small class="text-muted">JPG, PNG (Max 5MB)</small>
                                     </div>
-                                    <input type="file" class="form-control d-none" id="profile_picture" name="profile_picture" accept="image/*">
+                                    <input type="file" class="form-control visually-hidden" id="profile_picture" name="profile_picture" accept="image/*">
                                     <img id="profile_preview" class="img-thumbnail mt-2 d-none" style="max-width: 150px;">
                                 </div>
                                 
@@ -530,7 +533,7 @@ include 'header.php';
                                         <p class="mb-0">Click to upload ID front</p>
                                         <small class="text-muted">JPG, PNG, PDF (Max 5MB)</small>
                                     </div>
-                                    <input type="file" class="form-control d-none" id="valid_id_front" name="valid_id_front" accept="image/*,.pdf" required>
+                                    <input type="file" class="form-control visually-hidden" id="valid_id_front" name="valid_id_front" accept="image/*,.pdf" required>
                                     <img id="id_front_preview" class="img-thumbnail mt-2 d-none" style="max-width: 150px;">
                                 </div>
                                 
@@ -541,7 +544,7 @@ include 'header.php';
                                         <p class="mb-0">Click to upload ID back</p>
                                         <small class="text-muted">JPG, PNG, PDF (Max 5MB)</small>
                                     </div>
-                                    <input type="file" class="form-control d-none" id="valid_id_back" name="valid_id_back" accept="image/*,.pdf" required>
+                                    <input type="file" class="form-control visually-hidden" id="valid_id_back" name="valid_id_back" accept="image/*,.pdf" required>
                                     <img id="id_back_preview" class="img-thumbnail mt-2 d-none" style="max-width: 150px;">
                                 </div>
                             </div>
@@ -633,69 +636,112 @@ include 'header.php';
 </style>
 
 <script>
-    // File upload previews
-    document.getElementById('profile_picture').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('profile_preview');
-        
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
+    // File upload previews (guarded - only attach if elements exist)
+    (function() {
+        const profileInput = document.getElementById('profile_picture');
+        if (profileInput) {
+            profileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById('profile_preview');
+                if (file && file.type.startsWith('image/') && preview) {
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        preview.src = ev.target.result;
+                        preview.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         }
-    });
-    
-    document.getElementById('valid_id_front').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('id_front_preview');
-        
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
+
+        const frontInput = document.getElementById('valid_id_front');
+        if (frontInput) {
+            frontInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById('id_front_preview');
+                if (file && file.type.startsWith('image/') && preview) {
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        preview.src = ev.target.result;
+                        preview.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         }
-    });
-    
-    document.getElementById('valid_id_back').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('id_back_preview');
-        
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
+
+        const backInput = document.getElementById('valid_id_back');
+        if (backInput) {
+            backInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById('id_back_preview');
+                if (file && file.type.startsWith('image/') && preview) {
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        preview.src = ev.target.result;
+                        preview.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         }
-    });
+    })();
     
     // Phone number formatting
-    document.getElementById('contact_number').addEventListener('input', function(e) {
-        formatPhoneNumber(e.target);
-    });
+    const contactInput = document.getElementById('contact_number');
+    if (contactInput) contactInput.addEventListener('input', function(e) { formatPhoneNumber(e.target); });
+    const emergencyInput = document.getElementById('emergency_contact_number');
+    if (emergencyInput) emergencyInput.addEventListener('input', function(e) { formatPhoneNumber(e.target); });
     
-    document.getElementById('emergency_contact_number').addEventListener('input', function(e) {
-        formatPhoneNumber(e.target);
-    });
-    
-    // Auto-save form data
-    autoSaveForm('registrationForm', 'registration_draft');
-    
+    // Auto-save form data (only when form exists)
+    const registrationFormEl = document.getElementById('registrationForm');
+    if (registrationFormEl) {
+        autoSaveForm('registrationForm', 'registration_draft');
+    }
+
     // Form validation and submission protection
     let formSubmitted = false;
-    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    if (registrationFormEl) {
+        registrationFormEl.addEventListener('submit', function(e) {
         if (formSubmitted) {
             e.preventDefault();
             showToast('warning', 'Form Already Submitted', 'Please wait while we process your registration...');
             return false;
         }
+
+        // Client-side checks for required file inputs to provide a clear restriction message
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const frontInput = document.getElementById('valid_id_front');
+        const backInput = document.getElementById('valid_id_back');
+
+        function checkFile(input, label) {
+            if (!input || !input.files || input.files.length === 0) {
+                e.preventDefault();
+                showError('Please upload the ' + label + '. Allowed types: JPG, PNG, PDF. Max 5MB.');
+                return false;
+            }
+            const file = input.files[0];
+            if (file.size > maxSize) {
+                e.preventDefault();
+                showError(label + ' must be 5MB or smaller.');
+                return false;
+            }
+            const type = file.type;
+            if (!(type.startsWith('image/') || type === 'application/pdf')) {
+                // Fallback: check extension
+                const name = file.name.toLowerCase();
+                if (!name.endsWith('.pdf') && !name.endsWith('.jpg') && !name.endsWith('.jpeg') && !name.endsWith('.png')) {
+                    e.preventDefault();
+                    showError(label + ' must be JPG, PNG, or PDF.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        if (!checkFile(frontInput, 'Valid ID (front)')) return false;
+        if (!checkFile(backInput, 'Valid ID (back)')) return false;
+
         
         if (!validateForm('registrationForm')) {
             e.preventDefault();
@@ -712,7 +758,8 @@ include 'header.php';
         }
         
         showLoadingToast('Creating your account...');
-    });
+        });
+    }
 
     // Function to copy text to clipboard with better feedback
     function copyToClipboard(element) {
@@ -726,11 +773,7 @@ include 'header.php';
         button.classList.add('btn-success');
         button.classList.remove('btn-outline-primary');
         
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-primary');
-        }, 1500);
+        // Leave the copied state visible until user action (no automatic revert)
 
         // Show toast notification
         showToast('success', 'Copied!', 'Credentials copied to clipboard');
@@ -738,34 +781,37 @@ include 'header.php';
 
     function handlePrintCredentials() {
         window.print();
-        
-        // Show confirmation modal after print dialog closes
-        setTimeout(() => {
-            const modal = new bootstrap.Modal(document.getElementById('printConfirmationModal'));
-            modal.show();
-        }, 1000);
+        // Show confirmation modal immediately after print is triggered
+        const modal = new bootstrap.Modal(document.getElementById('printConfirmationModal'));
+        modal.show();
     }
 
-    // Enable/disable confirm button based on checkbox
-    document.getElementById('confirmCredentialsSaved').addEventListener('change', function() {
-        document.getElementById('confirmButton').disabled = !this.checked;
-    });
+    // Enable/disable confirm button based on checkbox (guarded)
+    const confirmCheckbox = document.getElementById('confirmCredentialsSaved');
+    if (confirmCheckbox) {
+        confirmCheckbox.addEventListener('change', function() {
+            const confirmBtn = document.getElementById('confirmButton');
+            if (confirmBtn) confirmBtn.disabled = !this.checked;
+        });
+    }
 
     function confirmAndProceed() {
         // Show success message
         showToast('success', 'Success', 'Credentials have been saved. Redirecting to login...');
         
         // Show navigation buttons
-        document.getElementById('navigationButtons').style.display = 'block';
-        
+        const navBtns = document.getElementById('navigationButtons');
+        if (navBtns) navBtns.style.display = 'block';
+
         // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('printConfirmationModal'));
-        modal.hide();
-        
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-            window.location.href = 'login.php';
-        }, 3000);
+        const modalEl = document.getElementById('printConfirmationModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        // Redirect to login page immediately
+        window.location.href = 'login.php';
     }
 
     // Function to show toast notifications
@@ -787,26 +833,44 @@ include 'header.php';
         `;
         
         document.body.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        // Do not auto-hide toasts; let the user dismiss them manually
+        const bsToast = new bootstrap.Toast(toast, { autohide: false });
         bsToast.show();
         
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
+        // Remove toast from DOM when user closes it
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
     }
 
-    // Save credentials to localStorage
+    // Save credentials to localStorage (safe: uses server-side values as fallback)
     function saveCredentialsToLocal() {
-        const username = document.querySelector('input[value="' + <?php echo json_encode($credentials['username'] ?? ''); ?> + '"]').value;
-        const password = document.querySelector('input[value="' + <?php echo json_encode($credentials['password'] ?? ''); ?> + '"]').value;
-        
+        const phpUsername = <?php echo json_encode($credentials['username'] ?? ''); ?>;
+        const phpPassword = <?php echo json_encode($credentials['password'] ?? ''); ?>;
+
+        // Try to read visible inputs first (if present), otherwise use PHP-provided values
+        let username = phpUsername;
+        let password = phpPassword;
+
+        try {
+            const usernameInput = document.querySelector('input[readonly][value="' + phpUsername + '"]') || document.getElementById('display_username');
+            const passwordInput = document.querySelector('input[readonly][value="' + phpPassword + '"]') || document.getElementById('display_password');
+            if (usernameInput && usernameInput.value) username = usernameInput.value;
+            if (passwordInput && passwordInput.value) password = passwordInput.value;
+        } catch (err) {
+            // ignore and fall back to PHP values
+        }
+
+        if (!username || !password) {
+            showError('No credentials available to save.');
+            return;
+        }
+
         // Save to localStorage
         localStorage.setItem('bmscapis_credentials', JSON.stringify({
             username: username,
             password: password,
             savedAt: new Date().toISOString()
         }));
-        
+
         // Show success message
         showToast('success', 'Saved!', 'Credentials have been saved locally.');
     }
@@ -818,10 +882,11 @@ include 'header.php';
             const credentials = JSON.parse(savedCreds);
             const savedDate = new Date(credentials.savedAt);
             const now = new Date();
-            
+
             // Keep credentials for 24 hours
             if ((now - savedDate) < (24 * 60 * 60 * 1000)) {
-                document.getElementById('navigationButtons').style.display = 'block';
+                const navBtns = document.getElementById('navigationButtons');
+                if (navBtns) navBtns.style.display = 'block';
             } else {
                 // Clear old credentials
                 localStorage.removeItem('bmscapis_credentials');
@@ -862,20 +927,33 @@ include 'header.php';
     // Function to confirm navigation and ensure credentials are saved
     function confirmNavigation() {
         const savedCreds = localStorage.getItem('bmscapis_credentials');
-        const username = document.querySelector('input[value="' + <?php echo json_encode($credentials['username'] ?? ''); ?> + '"]');
-        const password = document.querySelector('input[value="' + <?php echo json_encode($credentials['password'] ?? ''); ?> + '"]');
-        
-        if (!savedCreds && username && password) {
-            // Auto-save credentials before navigation
-            localStorage.setItem('bmscapis_credentials', JSON.stringify({
-                username: username.value,
-                password: password.value,
-                savedAt: new Date().toISOString()
-            }));
-            
-            showToast('success', 'Credentials Saved', 'Your credentials have been automatically saved before navigation.');
+        const phpUsername = <?php echo json_encode($credentials['username'] ?? ''); ?>;
+        const phpPassword = <?php echo json_encode($credentials['password'] ?? ''); ?>;
+
+        if (!savedCreds) {
+            // Try to find displayed credential inputs
+            let usernameVal = phpUsername;
+            let passwordVal = phpPassword;
+            try {
+                const usernameInput = document.querySelector('input[readonly][value="' + phpUsername + '"]') || document.getElementById('display_username');
+                const passwordInput = document.querySelector('input[readonly][value="' + phpPassword + '"]') || document.getElementById('display_password');
+                if (usernameInput && usernameInput.value) usernameVal = usernameInput.value;
+                if (passwordInput && passwordInput.value) passwordVal = passwordInput.value;
+            } catch (err) {
+                // ignore
+            }
+
+            if (usernameVal && passwordVal) {
+                localStorage.setItem('bmscapis_credentials', JSON.stringify({
+                    username: usernameVal,
+                    password: passwordVal,
+                    savedAt: new Date().toISOString()
+                }));
+
+                showToast('success', 'Credentials Saved', 'Your credentials have been automatically saved before navigation.');
+            }
         }
-        
+
         return true; // Allow navigation to proceed
     }
 

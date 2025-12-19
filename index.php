@@ -385,6 +385,9 @@ include 'header.php';
     </div>
 </div>
 
+<!-- Persistent notifier status pill (server-side fallback visible immediately) -->
+<div id="pending-notif-status" aria-hidden="true" style="position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
+
 <?php include 'footer.php'; ?>
 
 <script>
@@ -453,6 +456,89 @@ include 'header.php';
 </script>
 
 <?php include 'scripts.php'; ?>
+
+<script>
+// Pending registrations notifier on the public index page
+(function(){
+    try {
+        if (typeof window.PendingRegistrationNotifications !== 'undefined') {
+            // Create a persistent status pill so reviewers can see notifier state
+            function createNotifierStatusPill() {
+                const id = 'pending-notif-status';
+                if (document.getElementById(id)) return document.getElementById(id);
+                const el = document.createElement('div');
+                el.id = id;
+                el.setAttribute('aria-hidden','true');
+                el.textContent = 'Ringtone: Initializing';
+                Object.assign(el.style, {
+                    position: 'fixed',
+                    right: '1rem',
+                    top: '1rem',
+                    background: 'rgba(0,0,0,0.7)',
+                    color: '#fff',
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '0.35rem',
+                    zIndex: 2147483647,
+                    fontSize: '0.85rem',
+                    boxShadow: '0 6px 18px rgba(0,0,0,0.2)'
+                });
+                document.body.appendChild(el);
+                return el;
+            }
+
+            function setNotifierStatus(text, bg) {
+                try {
+                    const el = createNotifierStatusPill();
+                    el.textContent = text;
+                    if (bg) el.style.background = bg;
+                } catch (e) { console.warn('setNotifierStatus failed', e); }
+            }
+
+            // Enable the notifier (asks permission/non-blocking)
+            try {
+                window.PendingRegistrationNotifications.enable();
+                setNotifierStatus('Ringtone: Enabled', 'linear-gradient(90deg,#198754,#1fa07a)');
+                if (typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+                    window.PendingRegistrationNotifications.tryUnlock().then(function(ok){
+                        if (ok) console.log('PendingRegistrationNotifications: audio unlocked automatically');
+                        else console.log('PendingRegistrationNotifications: auto-unlock not allowed (requires user gesture)');
+                    }).catch(function(e){ console.debug('tryUnlock error', e); });
+                }
+            } catch(e) {
+                console.warn('Notifier enable failed', e);
+                setNotifierStatus('Ringtone: Disabled', 'linear-gradient(90deg,#6c757d,#495057)');
+            }
+
+            // Reflect Notification.permission as secondary info
+            try {
+                const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unknown';
+                setNotifierStatus((perm === 'granted' ? 'Ringtone: Enabled · Notifications: Granted' : 'Ringtone: Enabled · Notifications: ' + perm), null);
+                document.addEventListener('visibilitychange', () => {
+                    const p = (typeof Notification !== 'undefined') ? Notification.permission : 'unknown';
+                    setNotifierStatus((p === 'granted' ? 'Ringtone: Enabled · Notifications: Granted' : 'Ringtone: Enabled · Notifications: ' + p), null);
+                });
+            } catch(e) { /* ignore */ }
+
+            let lastPendingCount = null;
+
+            async function fetchPendingCount() {
+                try {
+                    const res = await fetch('pending-registrations.php?ajax=1', {cache: 'no-store'});
+                    const text = await res.text();
+                    // attempt to extract numeric badge like "<span class=...>3 Pending</span>"
+                    const m = text.match(/>(\d+)\s*Pending/i);
+                    if (m) return parseInt(m[1], 10);
+                } catch (err) {
+                    console.warn('Failed to fetch pending count', err);
+                }
+                return null;
+            }
+
+            // SSE handled centrally in scripts.php
+        }
+    } catch (err) { console.error(err); }
+})();
+</script>
 
 <style>
 /* Add these styles to enhance the UI */

@@ -14,6 +14,9 @@ define('TIMEZONE', 'Asia/Manila');
 // Set timezone
 date_default_timezone_set(TIMEZONE);
 
+// Session lifetime in seconds (idle timeout). Adjust as needed.
+define('SESSION_LIFETIME', 1800); // 1800s = 30 minutes
+
 // Database Connection
 try {
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USERNAME, DB_PASSWORD);
@@ -29,7 +32,32 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+
+    // Ensure session garbage collection respects our lifetime
+    ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+
+    // Set session cookie params (lifetime, path, domain, secure, httponly)
+    // domain left empty so it defaults to current host
+    session_set_cookie_params(SESSION_LIFETIME, '/', '', ini_get('session.cookie_secure'), true);
+
     session_start();
+
+    // Enforce idle session timeout: destroy session if inactive too long
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > SESSION_LIFETIME) {
+        session_unset();
+        session_destroy();
+        // Remove session cookie from client
+        setcookie(session_name(), '', time() - 3600, '/');
+    }
+    $_SESSION['last_activity'] = time();
+
+    // Regenerate session ID periodically to mitigate fixation (every 5 minutes)
+    if (!isset($_SESSION['created'])) {
+        $_SESSION['created'] = time();
+    } elseif (time() - $_SESSION['created'] > 300) {
+        session_regenerate_id(true);
+        $_SESSION['created'] = time();
+    }
 }
 
 // Helper Functions

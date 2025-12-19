@@ -119,71 +119,12 @@ if (!isLoggedIn()) {
             </div>
             
             <div class="d-flex align-items-center">
-                <!-- Notifications -->
-                <div class="dropdown me-2">
-                    <a class="nav-link position-relative text-white" href="#" data-bs-toggle="dropdown">
+                <!-- Notifications link: hidden for residents to remove ringtone/bell in resident views -->
+                <?php if ($currentUser['role'] !== 'resident'): ?>
+                    <a class="nav-link text-white me-3" href="notifications.php" title="Notifications">
                         <i class="bi bi-bell fs-5"></i>
-                        <?php if ($notificationCount > 0): ?>
-                            <span class="notification-badge"><?php echo min($notificationCount, 99); ?></span>
-                        <?php endif; ?>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end shadow" style="width: 320px; max-width: 90vw; max-height: 400px; overflow-y: auto;">
-                        <h6 class="dropdown-header">
-                            <i class="bi bi-bell me-2"></i>Notifications
-                            <?php if ($notificationCount > 0): ?>
-                                <span class="badge bg-primary float-end"><?php echo $notificationCount; ?></span>
-                            <?php endif; ?>
-                        </h6>
-                        
-                        <?php if (empty($unreadNotifications)): ?>
-                            <div class="dropdown-item text-center py-3 text-muted">
-                                <i class="bi bi-check-circle fs-4 d-block mb-2"></i>
-                                No new notifications
-                            </div>
-                        <?php else: ?>
-                            <?php foreach (array_slice($unreadNotifications, 0, 5) as $notification): ?>
-                                <div class="dropdown-item notification-item" data-notification-id="<?php echo $notification['id']; ?>">
-                                    <div class="d-flex">
-                                        <div class="flex-shrink-0 me-2">
-                                            <?php
-                                            $iconClass = 'bi-info-circle text-info';
-                                            switch ($notification['type']) {
-                                                case 'new_registration':
-                                                    $iconClass = 'bi-person-plus text-primary';
-                                                    break;
-                                                case 'application_submitted':
-                                                    $iconClass = 'bi-file-earmark-plus text-success';
-                                                    break;
-                                                case 'status_update':
-                                                    $iconClass = 'bi-arrow-repeat text-warning';
-                                                    break;
-                                            }
-                                            ?>
-                                            <i class="bi <?php echo $iconClass; ?>"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-1 fw-bold" style="font-size: 0.85rem;"><?php echo htmlspecialchars($notification['title']); ?></h6>
-                                            <p class="mb-1 text-muted" style="font-size: 0.75rem;"><?php echo htmlspecialchars($notification['message']); ?></p>
-                                            <small class="text-muted"><?php echo date('M j, Y g:i A', strtotime($notification['created_at'])); ?></small>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                            
-                            <?php if ($notificationCount > 5): ?>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-center text-primary" href="notifications.php">
-                                    View all notifications (<?php echo $notificationCount; ?>)
-                                </a>
-                            <?php endif; ?>
-                            
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-center" href="#" onclick="markAllNotificationsRead()">
-                                <i class="bi bi-check-all me-2"></i>Mark all as read
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- User profile dropdown - mobile: next to notifications, desktop: hidden here -->
                 <div class="dropdown d-lg-none">
@@ -556,8 +497,9 @@ if (!isLoggedIn()) {
                             if (badge) {
                                 badge.textContent = Math.min(data.count, 99);
                             } else {
-                                const bellIcon = document.querySelector('.bi-bell').parentElement;
-                                if (bellIcon) {
+                                const bellEl = document.querySelector('.bi-bell');
+                                const bellIcon = bellEl ? bellEl.parentElement : null;
+                                    if (bellIcon) {
                                     const newBadge = document.createElement('span');
                                     newBadge.className = 'notification-badge';
                                     newBadge.textContent = Math.min(data.count, 99);

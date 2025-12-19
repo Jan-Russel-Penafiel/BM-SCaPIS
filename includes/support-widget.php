@@ -1880,14 +1880,11 @@ let supportChat = {
         }
     },
     
-    // Play notification sound only for new messages
+    // Play notification sound only for new messages - DISABLED (only pending registration pages play sounds)
     playNotificationSound: function() {
-        if (!this.isOpen && this.userInteracted) {
-            // Use the unified notification sound system
-            if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted) {
-                window.NotificationSound.play();
-            }
-        }
+        // Sound notifications disabled globally - only pending registration pages play sounds
+        // Chat notifications will be visual only (badge, pulse)
+        return;
     },
     
     // Show desktop notification

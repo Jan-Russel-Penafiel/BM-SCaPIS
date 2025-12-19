@@ -22,8 +22,14 @@
 <!-- Moment.js for date formatting -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 
+<!-- Howler.js for audio notifications -->
+<script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
+
 <!-- Service Worker Manager for Auto-Updates -->
 <script src="assets/js/sw-manager.js"></script>
+
+<!-- Pending registration notifier (Howler + WebAudio fallback) -->
+<script src="assets/js/pending-registration-notifications.js"></script>
 
 <!-- Custom JavaScript -->
 <script>
@@ -194,15 +200,12 @@
         }
     }
     
-    // Real-time notifications
-    let notificationSound = null;
-    
+    // Real-time notifications - DISABLED: Using Howler.js only for pending registrations
+    // Old notification system removed to prevent unwanted sounds on clicks and all views
     function playNotificationSound() {
-        // Only play sound if user has interacted and it's explicitly called for new notifications
-        if (typeof window.NotificationSound !== 'undefined' && window.NotificationSound.userInteracted) {
-            window.NotificationSound.play();
-        }
-        // Don't use fallback systems that might play unwanted sounds
+        // Old notification system disabled - only Howler.js system works on pending registration pages
+        // This function is kept for compatibility but does nothing
+        return;
     }
     
     // Check for new notifications - this function is handled by header.php notification system
@@ -251,6 +254,149 @@
                 bsAlert.close();
             });
         }, 5000);
+
+        // Suppress notification sound briefly when user clicks navigation links
+        window.NotificationNavClickSuppressed = false;
+        function suppressNavNotification() {
+            window.NotificationNavClickSuppressed = true;
+            setTimeout(() => { window.NotificationNavClickSuppressed = false; }, 1200);
+        }
+        // Listen for clicks on common nav selectors
+        document.addEventListener('click', function(e) {
+            const el = e.target.closest('a');
+            if (!el) return;
+            // If link is inside sidebar or navbar or has nav-related classes, treat as nav click
+            if (el.closest('.sidebar') || el.closest('.navbar') || el.classList.contains('nav-link') || el.classList.contains('nav-item') || el.id === 'sidebar' || el.classList.contains('sidebar-link')) {
+                suppressNavNotification();
+            }
+        }, true);
+
+        // Centralized SSE for pending registration counts (site-wide)
+        try {
+            if (!window.PendingRegistrationGlobalSSE && typeof EventSource === 'function') {
+                window.PendingRegistrationGlobalSSE = true;
+
+                // Try an initial best-effort audio unlock on page load. Browsers often block autoplay
+                // until a user gesture; this attempt may succeed in some browsers/environments.
+                try {
+                    if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+                        window.PendingRegistrationNotifications.tryUnlock().then(unlocked => {
+                            if (unlocked) console.log('audio unlocked automatically (initial attempt)');
+                            else console.debug('audio unlock initial attempt failed');
+                        }).catch(()=>{});
+                        // Also ensure we attempt unlock on the first user click (fallback)
+                        const _ensureUnlockOnGesture = function(){
+                            if (window.PendingRegistrationNotifications && !window.PendingRegistrationNotifications.userInteracted) {
+                                window.PendingRegistrationNotifications.tryUnlock().then(u=>{ if (u) console.log('audio unlocked via gesture'); }).catch(()=>{});
+                            }
+                            window.removeEventListener('click', _ensureUnlockOnGesture);
+                        };
+                        window.addEventListener('click', _ensureUnlockOnGesture, { once: true });
+                    }
+                } catch (e) { console.debug('initial tryUnlock failed', e); }
+
+                (function(){
+                    let lastGlobalCount = parseInt(sessionStorage.getItem('pendingRegistrationsCount_global') || '0', 10);
+                    const es = new EventSource('ajax/pending-count-sse.php');
+                    const showIndicator = function(diff){
+                        try {
+                            const id = 'pending-notif-indicator';
+                            let el = document.getElementById(id);
+                            if (el) el.remove();
+                            el = document.createElement('div');
+                            el.id = id;
+                            el.textContent = `🔔 New pending registrations: ${diff}`;
+                            Object.assign(el.style, {
+                                position: 'fixed',
+                                right: '1rem',
+                                bottom: '1rem',
+                                background: 'rgba(0,0,0,0.8)',
+                                color: '#fff',
+                                padding: '0.6rem 1rem',
+                                borderRadius: '0.4rem',
+                                zIndex: 2147483647,
+                                boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+                                fontSize: '0.95rem'
+                            });
+                            document.body.appendChild(el);
+                            setTimeout(() => { el.style.transition = 'opacity 0.5s ease'; el.style.opacity = '0'; setTimeout(() => el.remove(), 600); }, 4000);
+                        } catch (ie) { console.debug('indicator failed', ie); }
+                    };
+
+                    const showEnableSoundButton = function(){
+                        try {
+                            const id = 'enable-sound-button';
+                            if (document.getElementById(id)) return;
+                            const btn = document.createElement('button');
+                            btn.id = id;
+                            btn.textContent = 'Enable Notification Sound';
+                            Object.assign(btn.style, {
+                                position: 'fixed',
+                                right: '1rem',
+                                bottom: '4.5rem',
+                                background: '#0d6efd',
+                                color: '#fff',
+                                padding: '0.5rem 0.9rem',
+                                border: 'none',
+                                borderRadius: '0.4rem',
+                                zIndex: 2147483647,
+                                cursor: 'pointer',
+                                boxShadow: '0 6px 18px rgba(0,0,0,0.2)'
+                            });
+                            btn.addEventListener('click', function(){
+                                if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+                                    window.PendingRegistrationNotifications.tryUnlock().then(u => {
+                                        if (u) {
+                                            try { window.PendingRegistrationNotifications.playForNewRegistrations(parseInt(sessionStorage.getItem('pendingRegistrationsCount_global')||'0',10), 0); } catch(e){}
+                                            btn.remove();
+                                        } else {
+                                            // keep the button so user can try again
+                                            console.debug('User click unlock failed');
+                                        }
+                                    }).catch(()=>{});
+                                }
+                            });
+                            document.body.appendChild(btn);
+                        } catch (e) { console.debug('enable sound button failed', e); }
+                    };
+
+                    es.addEventListener('message', function(e){
+                        try {
+                            const newCount = parseInt(e.data, 10);
+                            if (isNaN(lastGlobalCount)) lastGlobalCount = 0;
+                            if (isNaN(newCount)) return;
+                            if (newCount > lastGlobalCount) {
+                                const diff = newCount - lastGlobalCount;
+                                // attempt to play: if audio already unlocked, play immediately; otherwise try to unlock then play
+                                if (!window.NotificationNavClickSuppressed && window.PendingRegistrationNotifications) {
+                                    (async function(){
+                                        try {
+                                            if (window.PendingRegistrationNotifications.userInteracted) {
+                                                window.PendingRegistrationNotifications.playForNewRegistrations(newCount, lastGlobalCount);
+                                            } else if (typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+                                                const unlocked = await window.PendingRegistrationNotifications.tryUnlock();
+                                                if (unlocked) {
+                                                    window.PendingRegistrationNotifications.playForNewRegistrations(newCount, lastGlobalCount);
+                                                } else {
+                                                    showEnableSoundButton();
+                                                }
+                                            } else {
+                                                showEnableSoundButton();
+                                            }
+                                        } catch (playErr) { console.debug('play error', playErr); }
+                                    })();
+                                }
+                                showIndicator(diff);
+                            }
+                            lastGlobalCount = newCount;
+                            sessionStorage.setItem('pendingRegistrationsCount_global', String(newCount));
+                        } catch (err) { console.debug('SSE central handler error', err); }
+                    });
+                    es.addEventListener('open', function(){ console.log('Central SSE connected for pending registrations'); });
+                    es.addEventListener('error', function(ev){ console.debug('Central SSE error', ev); });
+                })();
+            }
+        } catch (e) { console.debug('Central SSE setup failed', e); }
     });
     
     // Utility functions

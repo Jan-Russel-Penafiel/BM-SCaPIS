@@ -13,7 +13,7 @@ $currentUser = getCurrentUser();
 
 // Get all applications for the current user with payment appointment info
 $stmt = $pdo->prepare("
-    SELECT a.*, dt.type_name, dt.fee,
+    SELECT a.*, dt.type_name, dt.fee, dt.processing_days,
            apt.id as payment_appointment_id,
            apt.appointment_date as payment_appointment_date,
            apt.status as payment_appointment_status
@@ -126,6 +126,7 @@ $applications = $stmt->fetchAll();
                                                 <th>Document Type</th>
                                                 <th>Purpose</th>
                                                 <th>Status</th>
+                                                <th>Processing Time</th>
                                                 <th>Payment</th>
                                                 <th>Date Applied</th>
                                                 <th>Actions</th>
@@ -191,6 +192,56 @@ $applications = $stmt->fetchAll();
                                                                 // Skip if date is invalid
                                                             }
                                                             ?>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted d-block"><i class="bi bi-clock-history me-1"></i>Processing Time</small>
+                                                        <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                            <?php
+                                                            try {
+                                                                $paymentDate = new DateTime($app['payment_date']);
+                                                                ?>
+                                                                <strong class="d-block processing-countdown-timer" data-payment-date="<?php echo $paymentDate->format('Y-m-d H:i:s'); ?>" data-status="<?php echo $app['status']; ?>" data-processing-hours="<?php echo $app['processing_days'] * 24; ?>">
+                                                                    <i class="bi bi-hourglass-split me-1"></i><span class="countdown-timer-text">00:00:00</span>
+                                                                </strong>
+                                                                <?php
+                                                                $today = new DateTime();
+                                                                $today->setTime(0, 0, 0);
+                                                                
+                                                                // Calculate expected date based on processing_days
+                                                                $expectedDate = clone $paymentDate;
+                                                                $daysAdded = 0;
+                                                                while ($daysAdded < $app['processing_days']) {
+                                                                    $expectedDate->modify('+1 day');
+                                                                    // Skip weekends
+                                                                    if ($expectedDate->format('N') < 6) {
+                                                                        $daysAdded++;
+                                                                    }
+                                                                }
+                                                                
+                                                                // If expected date is in the past, recalculate from today
+                                                                if ($expectedDate < $today) {
+                                                                    $expectedDate = clone $today;
+                                                                    $daysAdded = 0;
+                                                                    while ($daysAdded < $app['processing_days']) {
+                                                                        $expectedDate->modify('+1 day');
+                                                                        if ($expectedDate->format('N') < 6) {
+                                                                            $daysAdded++;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <br><small class="text-muted">
+                                                                    <i class="bi bi-calendar-check me-1"></i>
+                                                                    Ready by: <span class="processing-countdown" data-expected-date="<?php echo $expectedDate->format('Y-m-d H:i:s'); ?>"><?php echo $expectedDate->format('M j, Y'); ?></span>
+                                                                </small>
+                                                                <?php
+                                                            } catch (Exception $e) {
+                                                                // Skip if date is invalid
+                                                            }
+                                                            ?>
+                                                        <?php else: ?>
+                                                            <strong><?php echo $app['processing_days'] * 24; ?> hours</strong>
                                                         <?php endif; ?>
                                                     </td>
                                                     <td>
@@ -334,6 +385,52 @@ $applications = $stmt->fetchAll();
                                                     </div>
                                                     
                                                     <div class="mb-3">
+                                                        <small class="text-muted d-block"><i class="bi bi-clock-history me-1"></i>Processing Time</small>
+                                                        <?php if ($app['status'] === 'processing' && $app['payment_date'] && ($app['payment_status'] === 'paid' || $app['payment_status'] === 'waived')): ?>
+                                                            <?php
+                                                            try {
+                                                                $paymentDate = new DateTime($app['payment_date']);
+                                                                ?>
+                                                                <strong class="d-block processing-countdown-timer" data-payment-date="<?php echo $paymentDate->format('Y-m-d H:i:s'); ?>" data-status="<?php echo $app['status']; ?>" data-processing-hours="<?php echo $app['processing_days'] * 24; ?>">
+                                                                    <i class="bi bi-hourglass-split me-1"></i><span class="countdown-timer-text">00:00:00</span>
+                                                                </strong>
+                                                                <?php
+                                                                $today = new DateTime();
+                                                                $today->setTime(0, 0, 0);
+                                                                
+                                                                // Calculate expected date based on processing_days
+                                                                $expectedDate = clone $paymentDate;
+                                                                $daysAdded = 0;
+                                                                while ($daysAdded < $app['processing_days']) {
+                                                                    $expectedDate->modify('+1 day');
+                                                                    if ($expectedDate->format('N') < 6) {
+                                                                        $daysAdded++;
+                                                                    }
+                                                                }
+                                                                
+                                                                if ($expectedDate < $today) {
+                                                                    $expectedDate = clone $today;
+                                                                    $daysAdded = 0;
+                                                                    while ($daysAdded < $app['processing_days']) {
+                                                                        $expectedDate->modify('+1 day');
+                                                                        if ($expectedDate->format('N') < 6) {
+                                                                            $daysAdded++;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <br><small class="text-muted">Ready by: <span class="processing-countdown" data-expected-date="<?php echo $expectedDate->format('Y-m-d H:i:s'); ?>"><?php echo $expectedDate->format('M j, Y'); ?></span></small>
+                                                                <?php
+                                                            } catch (Exception $e) {
+                                                                // Skip if date is invalid
+                                                            }
+                                                            ?>
+                                                        <?php else: ?>
+                                                            <strong><?php echo $app['processing_days'] * 24; ?> hours</strong>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
                                                         <small class="text-muted d-block">Payment Status</small>
                                                         <span class="badge bg-<?php 
                                                             echo $app['payment_status'] === 'paid' ? 'success' : 
@@ -467,7 +564,116 @@ $applications = $stmt->fetchAll();
 </div>
 
 <script>
+// Real-time countdown timer for processing time (time remaining)
+function updateElapsedTime() {
+    const countdownTimers = document.querySelectorAll('.processing-countdown-timer');
+    
+    countdownTimers.forEach(timer => {
+        // Only run timer if status is 'processing'
+        const status = timer.getAttribute('data-status');
+        if (status !== 'processing') {
+            return; // Skip if status is not processing
+        }
+        
+        const paymentDateStr = timer.getAttribute('data-payment-date');
+        const processingHours = parseInt(timer.getAttribute('data-processing-hours')) || 0;
+        
+        if (!paymentDateStr || processingHours <= 0) return;
+        
+        const paymentDate = new Date(paymentDateStr);
+        const now = new Date();
+        const elapsedMs = now - paymentDate; // Time elapsed since payment/processing started
+        
+        if (elapsedMs < 0) {
+            // Processing hasn't started yet
+            const totalMs = processingHours * 60 * 60 * 1000;
+            const remainingMs = totalMs;
+            const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+            const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+            timer.querySelector('.countdown-timer-text').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            return;
+        }
+        
+        // Calculate total processing time in milliseconds
+        const totalMs = processingHours * 60 * 60 * 1000;
+        
+        // Calculate remaining time
+        const remainingMs = totalMs - elapsedMs;
+        
+        if (remainingMs <= 0) {
+            // Processing time is complete
+            timer.querySelector('.countdown-timer-text').textContent = '00:00:00';
+            timer.classList.add('text-danger');
+            return;
+        }
+        
+        // Calculate days, hours, minutes, seconds remaining
+        const days = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+        
+        // Format as countdown timer: HH:MM:SS or Dd HH:MM:SS
+        let countdownText = '';
+        if (days > 0) {
+            countdownText = `${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        } else {
+            countdownText = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        timer.querySelector('.countdown-timer-text').textContent = countdownText;
+    });
+}
+
+// Real-time countdown timer for expected completion
+function updateCountdowns() {
+    const timers = document.querySelectorAll('.processing-timer');
+    
+    timers.forEach(timer => {
+        const expectedDateStr = timer.getAttribute('data-expected-date');
+        if (!expectedDateStr) return;
+        
+        const expectedDate = new Date(expectedDateStr);
+        const now = new Date();
+        const diff = expectedDate - now;
+        
+        if (diff <= 0) {
+            timer.querySelector('.countdown-text').textContent = 'Processing complete!';
+            timer.classList.remove('text-success');
+            timer.classList.add('text-info');
+            return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        let countdownText = '';
+        if (days > 0) {
+            countdownText = `${days}d ${hours}h ${minutes}m remaining`;
+        } else if (hours > 0) {
+            countdownText = `${hours}h ${minutes}m ${seconds}s remaining`;
+        } else if (minutes > 0) {
+            countdownText = `${minutes}m ${seconds}s remaining`;
+        } else {
+            countdownText = `${seconds}s remaining`;
+        }
+        
+        timer.querySelector('.countdown-text').textContent = countdownText;
+    });
+}
+
+// Update all timers on page load and every second
 document.addEventListener('DOMContentLoaded', function() {
+    updateElapsedTime();
+    updateCountdowns();
+    setInterval(function() {
+        updateElapsedTime();
+        updateCountdowns();
+    }, 1000);
+    
     // Only initialize DataTable for desktop view
     if (window.innerWidth >= 992) {
         if (document.getElementById('applicationsTable')) {

@@ -65,6 +65,13 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $pendingRegistrations = $stmt->fetchAll();
 
+// Handle AJAX requests for polling
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    // Return just the count for AJAX requests
+    echo '<div class="badge bg-warning text-dark fs-5">' . count($pendingRegistrations) . ' Pending</div>';
+    exit;
+}
+
 include 'header.php';
 include 'sidebar.php';
 ?>
@@ -600,41 +607,69 @@ function showToast(type, title, message) {
 </script>
 
 <script>
-// --- Notification for new pending registrations ---
-document.addEventListener('DOMContentLoaded', function() {
-    var pendingCount = <?php echo count($pendingRegistrations); ?>;
-    var storageKey = 'pendingRegistrationsCount';
-    var lastCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+// --- Notification for new pending registrations using Howler.js ---
+// This page focuses ONLY on pending registration notifications
+// Set a flag to prevent global notification system from playing sounds
+window.pendingRegistrationsPage = true;
 
-    // If there are more pending now than before, play the sound
-    if (pendingCount > lastCount) {
-        if (window.NotificationSound && window.NotificationSound.userInteracted) {
-            window.NotificationSound.playForNotifications(pendingCount, lastCount);
+document.addEventListener('DOMContentLoaded', function() {
+    // Old notification system is disabled - only using Howler.js for pending registrations
+    
+    // Enable Howler.js notification system for pending registrations immediately
+    if (window.PendingRegistrationNotifications) {
+        window.PendingRegistrationNotifications.enable();
+        // best-effort: try to unlock audio without a user click (may fail due to autoplay policies)
+        if (typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+            window.PendingRegistrationNotifications.tryUnlock().then(function(ok){
+                if (ok) console.log('PendingRegistrationNotifications: audio unlocked automatically');
+                else console.log('PendingRegistrationNotifications: auto-unlock not allowed (requires user gesture)');
+            }).catch(function(e){ console.debug('tryUnlock error', e); });
         }
     }
-    // Update the stored count
-    sessionStorage.setItem(storageKey, pendingCount);
+        
+        var pendingCount = <?php echo count($pendingRegistrations); ?>;
+        var storageKey = 'pendingRegistrationsCount_' + window.location.pathname;
+        var initializedKey = 'pendingRegistrationsInitialized_' + window.location.pathname;
+        var lastCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+        var isInitialized = sessionStorage.getItem(initializedKey) === 'true';
 
-    // --- Polling for new pending registrations every 30 seconds ---
-    setInterval(function() {
-        fetch(window.location.pathname + '?ajax=1')
-            .then(response => response.text())
-            .then(html => {
-                // Extract the count from the returned HTML (look for the badge)
-                var match = html.match(/<div class="badge bg-warning text-dark fs-5">(\d+) Pending<\/div>/);
-                if (match) {
-                    var newCount = parseInt(match[1], 10);
-                    var prevCount = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
-                    if (newCount > prevCount) {
-                        if (window.NotificationSound && window.NotificationSound.userInteracted) {
-                            window.NotificationSound.playForNotifications(newCount, prevCount);
-                        }
-                    }
-                    sessionStorage.setItem(storageKey, newCount);
-                }
-            });
-    }, 30000);
+        // Only play sound if:
+        // 1. We've initialized before (not first page load)
+        // 2. The count has increased (new registrations)
+        // 3. User has interacted with the page
+        if (isInitialized && pendingCount > lastCount && lastCount >= 0) {
+            // Play immediately if notifier is available and user has interacted (autoplay policy)
+            if (window.PendingRegistrationNotifications && window.PendingRegistrationNotifications.userInteracted) {
+                window.PendingRegistrationNotifications.playForNewRegistrations(pendingCount, lastCount);
+                console.log('New pending registration detected! Count: ' + pendingCount + ' (was: ' + lastCount + ')');
+            }
+        }
+        
+        // Mark as initialized and store the current count (baseline for future comparisons)
+        sessionStorage.setItem(storageKey, pendingCount);
+        sessionStorage.setItem(initializedKey, 'true');
+
+        // SSE handled centrally in scripts.php
 });
 </script>
 
 <?php include 'scripts.php'; ?>
+
+<!-- Howler.js Notification System for Pending Registrations -->
+<script src="assets/js/pending-registration-notifications.js"></script>
+
+<!-- Test button: play ringtone immediately (visible to logged-in reviewers) -->
+<button id="playPendingTestBtn" style="position:fixed;left:1rem;bottom:1rem;z-index:2147483647;background:#0d6efd;color:#fff;border:0;padding:0.5rem 0.75rem;border-radius:0.35rem;box-shadow:0 6px 18px rgba(0,0,0,0.15);">🔔 Play Ringtone</button>
+<script>
+document.getElementById('playPendingTestBtn')?.addEventListener('click', function(){
+    try {
+        if (window.PendingRegistrationNotifications) {
+            window.PendingRegistrationNotifications.enable();
+            window.PendingRegistrationNotifications.playForNewRegistrations(1,0);
+            console.log('Test ringtone played via PendingRegistrationNotifications');
+        } else {
+            console.warn('PendingRegistrationNotifications not available');
+        }
+    } catch (e) { console.error(e); }
+});
+</script>

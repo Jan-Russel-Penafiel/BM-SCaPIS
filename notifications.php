@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$pageTitle = "Notifications";
+$pageTitle = "Newly Registered Residents";
 require_once 'header.php';
 require_once 'sidebar.php';
 
@@ -20,12 +20,10 @@ echo '
         padding: 20px;
         transition: margin-left 0.3s ease;
     }
-    
     @media (max-width: 768px) {
         .content-wrapper {
             margin-left: 0;
         }
-        
         .sidebar.show + .content-wrapper {
             margin-left: 250px;
         }
@@ -33,53 +31,10 @@ echo '
 </style>
 ';
 
-// Get user's role
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
-
-// Fetch notifications based on user's role
-$sql = "SELECT sn.*, u.first_name, u.last_name, DATE_FORMAT(sn.created_at, '%M %d, %Y %h:%i %p') as formatted_date
-        FROM system_notifications sn
-        LEFT JOIN users u ON u.id = sn.target_user_id
-        WHERE (sn.target_role = ? OR sn.target_role = 'all'";
-
-if ($role == 'resident') {
-    $sql .= " OR sn.target_user_id = ?)";
-    $params = [$role, $user_id];
-} else {
-    $sql .= ")";
-    $params = [$role];
-}
-
-$sql .= " ORDER BY sn.created_at DESC";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Play notification sound only if there are unread notifications
-// This will play the sound when user visits the notifications page and there are unread notifications
-$hasUnread = false;
-$unreadCount = 0;
-foreach ($notifications as $notification) {
-    if (!$notification['is_read']) {
-        $hasUnread = true;
-        $unreadCount++;
-    }
-}
-
-// Don't play sound automatically on notifications page
-// Users visit this page to see notifications, no need for sound
-if ($hasUnread) {
-    echo '<script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Don\'t auto-play sound on notifications page
-            // Users are already viewing their notifications
-            console.log("Notifications page loaded with ' . $unreadCount . ' unread notifications");
-        });
-        });
-    </script>';
-}
+// Fetch newly registered residents (assuming 'users' table and 'created_at' field)
+$stmt = $pdo->prepare("SELECT id, first_name, last_name, email, created_at FROM users WHERE status = 'pending' OR status = 'new' ORDER BY created_at DESC");
+$stmt->execute();
+$new_residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="content-wrapper">
@@ -89,89 +44,40 @@ if ($hasUnread) {
                 <div class="card fade-in">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <i class="bi bi-bell me-2"></i>Notifications
+                            <i class="bi bi-person-plus me-2"></i>Newly Registered Residents
                         </h5>
                     </div>
-                <div class="card-body">
-                    <?php if (empty($notifications)): ?>
-                        <div class="text-center py-5">
-                            <i class="bi bi-bell-slash text-muted" style="font-size: 3rem;"></i>
-                            <p class="mt-3 text-muted">No notifications found</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="timeline">
-                            <?php foreach ($notifications as $notification): ?>
-                                <div class="timeline-item <?php echo $notification['is_read'] ? 'text-muted' : 'fw-bold'; ?>">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1"><?php echo htmlspecialchars($notification['title']); ?></h6>
-                                            <p class="mb-1"><?php echo htmlspecialchars($notification['message']); ?></p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>
-                                                <?php echo $notification['formatted_date']; ?>
-                                            </small>
-                                        </div>
-                                        <?php if (!$notification['is_read']): ?>
-                                            <button class="btn btn-sm btn-outline-primary mark-read" 
-                                                    data-notification-id="<?php echo $notification['id']; ?>">
-                                                Mark as read
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                    <div class="card-body">
+                        <?php if (empty($new_residents)): ?>
+                            <div class="text-center py-5">
+                                <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                                <p class="mt-3 text-muted">No new registrations found</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Date Registered</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($new_residents as $resident): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($resident['first_name'] . ' ' . $resident['last_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($resident['email']); ?></td>
+                                                <td><?php echo htmlspecialchars(date('F d, Y h:i A', strtotime($resident['created_at']))); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Mark single notification as read
-    document.querySelectorAll('.mark-read').forEach(button => {
-        button.addEventListener('click', function() {
-            const notificationId = this.dataset.notificationId;
-            markNotificationRead(notificationId, this);
-        });
-    });
-
-    function markNotificationRead(notificationId, button) {
-        fetch('ajax/mark-notification-read.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'notification_id=' + notificationId
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update UI
-                button.closest('.timeline-item').classList.add('text-muted');
-                button.closest('.timeline-item').classList.remove('fw-bold');
-                button.remove();
-                
-                // Update notification count in header
-                const badge = document.getElementById('notificationBadge');
-                if (badge) {
-                    const currentCount = parseInt(badge.textContent) - 1;
-                    if (currentCount > 0) {
-                        badge.textContent = currentCount;
-                    } else {
-                        badge.classList.add('d-none');
-                        // Reset sound flag when all notifications are read
-                        if (typeof window.NotificationSound !== 'undefined') {
-                            window.NotificationSound.resetSoundFlag();
-                        }
-                    }
-                }
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-});
-</script>
-
