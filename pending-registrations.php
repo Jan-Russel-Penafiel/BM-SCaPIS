@@ -618,12 +618,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enable Howler.js notification system for pending registrations immediately
     if (window.PendingRegistrationNotifications) {
         window.PendingRegistrationNotifications.enable();
-        // best-effort: try to unlock audio without a user click (may fail due to autoplay policies)
-        if (typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
-            window.PendingRegistrationNotifications.tryUnlock().then(function(ok){
-                if (ok) console.log('PendingRegistrationNotifications: audio unlocked automatically');
-                else console.log('PendingRegistrationNotifications: auto-unlock not allowed (requires user gesture)');
-            }).catch(function(e){ console.debug('tryUnlock error', e); });
+        // Register auto-unlock listeners (will not create AudioContext until a gesture)
+        if (typeof window.PendingRegistrationNotifications.initAutoUnlock === 'function') {
+            window.PendingRegistrationNotifications.initAutoUnlock();
         }
     }
         
@@ -658,8 +655,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Howler.js Notification System for Pending Registrations -->
 <script src="assets/js/pending-registration-notifications.js"></script>
 
-<!-- Test button: play ringtone immediately (visible to logged-in reviewers) -->
-<button id="playPendingTestBtn" style="position:fixed;left:1rem;bottom:1rem;z-index:2147483647;background:#0d6efd;color:#fff;border:0;padding:0.5rem 0.75rem;border-radius:0.35rem;box-shadow:0 6px 18px rgba(0,0,0,0.15);">🔔 Play Ringtone</button>
+<!-- Test button: play ringtone immediately (hidden in UI) -->
+<button id="playPendingTestBtn" style="display:none;position:fixed;left:1rem;bottom:1rem;z-index:2147483647;background:#0d6efd;color:#fff;border:0;padding:0.5rem 0.75rem;border-radius:0.35rem;box-shadow:0 6px 18px rgba(0,0,0,0.15);">🔔 Play Ringtone</button>
 <script>
 document.getElementById('playPendingTestBtn')?.addEventListener('click', function(){
     try {

@@ -10,8 +10,14 @@ $purok_id = $_SESSION['purok_id'] ?? null;
 
 // Only allow admin and purok_leader
 if (!in_array($role, ['admin', 'purok_leader'])) {
-    header('HTTP/1.1 403 Forbidden');
-    echo "Forbidden\n";
+    // Don't return HTTP 403 (which surfaces in browser network logs for EventSource).
+    // Instead, return a short SSE stream with a zero count and close. This prevents
+    // noisy 403 errors in client consoles while keeping pending counts private.
+    header('Content-Type: text/event-stream');
+    header('Cache-Control: no-cache');
+    header('Connection: close');
+    echo "data: 0\n\n";
+    @ob_flush(); @flush();
     exit;
 }
 

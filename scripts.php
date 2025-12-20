@@ -230,6 +230,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Request notification permission
         requestNotificationPermission();
+
+        // Start best-effort automatic audio unlock attempts for pending registration ringtone
+        try {
+            if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.initAutoUnlock === 'function') {
+                window.PendingRegistrationNotifications.initAutoUnlock();
+            }
+        } catch (e) { console.debug('initAutoUnlock call failed', e); }
         
         // Don't auto-check for notifications - let header handle this
         // The header notification system is sufficient and controlled
@@ -276,24 +283,12 @@
             if (!window.PendingRegistrationGlobalSSE && typeof EventSource === 'function') {
                 window.PendingRegistrationGlobalSSE = true;
 
-                // Try an initial best-effort audio unlock on page load. Browsers often block autoplay
-                // until a user gesture; this attempt may succeed in some browsers/environments.
+                // Ensure the auto-unlock initializer is registered (does not create AudioContext)
                 try {
-                    if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
-                        window.PendingRegistrationNotifications.tryUnlock().then(unlocked => {
-                            if (unlocked) console.log('audio unlocked automatically (initial attempt)');
-                            else console.debug('audio unlock initial attempt failed');
-                        }).catch(()=>{});
-                        // Also ensure we attempt unlock on the first user click (fallback)
-                        const _ensureUnlockOnGesture = function(){
-                            if (window.PendingRegistrationNotifications && !window.PendingRegistrationNotifications.userInteracted) {
-                                window.PendingRegistrationNotifications.tryUnlock().then(u=>{ if (u) console.log('audio unlocked via gesture'); }).catch(()=>{});
-                            }
-                            window.removeEventListener('click', _ensureUnlockOnGesture);
-                        };
-                        window.addEventListener('click', _ensureUnlockOnGesture, { once: true });
+                    if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.initAutoUnlock === 'function') {
+                        window.PendingRegistrationNotifications.initAutoUnlock();
                     }
-                } catch (e) { console.debug('initial tryUnlock failed', e); }
+                } catch (e) { console.debug('initAutoUnlock in SSE failed', e); }
 
                 (function(){
                     let lastGlobalCount = parseInt(sessionStorage.getItem('pendingRegistrationsCount_global') || '0', 10);
@@ -345,7 +340,8 @@
                             });
                             btn.addEventListener('click', function(){
                                 if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
-                                    window.PendingRegistrationNotifications.tryUnlock().then(u => {
+                                    // This is a real user gesture — force creation/resume of AudioContext
+                                    window.PendingRegistrationNotifications.tryUnlock(true).then(u => {
                                         if (u) {
                                             try { window.PendingRegistrationNotifications.playForNewRegistrations(parseInt(sessionStorage.getItem('pendingRegistrationsCount_global')||'0',10), 0); } catch(e){}
                                             btn.remove();

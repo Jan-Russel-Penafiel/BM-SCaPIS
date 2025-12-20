@@ -386,7 +386,8 @@ include 'header.php';
 </div>
 
 <!-- Persistent notifier status pill (server-side fallback visible immediately) -->
-<div id="pending-notif-status" aria-hidden="true" style="position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
+<!-- Hidden by default: UI displays are suppressed; JS may update state but keep hidden -->
+<div id="pending-notif-status" aria-hidden="true" style="display:none;position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
 
 <?php include 'footer.php'; ?>
 
@@ -498,11 +499,8 @@ include 'header.php';
             try {
                 window.PendingRegistrationNotifications.enable();
                 setNotifierStatus('Ringtone: Enabled', 'linear-gradient(90deg,#198754,#1fa07a)');
-                if (typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
-                    window.PendingRegistrationNotifications.tryUnlock().then(function(ok){
-                        if (ok) console.log('PendingRegistrationNotifications: audio unlocked automatically');
-                        else console.log('PendingRegistrationNotifications: auto-unlock not allowed (requires user gesture)');
-                    }).catch(function(e){ console.debug('tryUnlock error', e); });
+                if (typeof window.PendingRegistrationNotifications.initAutoUnlock === 'function') {
+                    window.PendingRegistrationNotifications.initAutoUnlock();
                 }
             } catch(e) {
                 console.warn('Notifier enable failed', e);

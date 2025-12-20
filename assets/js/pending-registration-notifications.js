@@ -172,16 +172,28 @@
 
 	// Attempt to unlock/resume audio without an explicit user click.
 	// This is a best-effort; browsers may still block autoplay until a real user gesture.
-	MODULE.tryUnlock = async function(){
+	// Attempt to unlock/resume audio.
+	// `forceGesture` should be true when called directly from a user gesture.
+	MODULE.tryUnlock = async function(forceGesture = false){
 		try {
-			if (!MODULE._audioCtx) {
+			// If we already created an AudioContext, try to resume it.
+			if (MODULE._audioCtx) {
+				if (MODULE._audioCtx.state === 'suspended') {
+					await MODULE._audioCtx.resume();
+				}
+			} else {
+				// Only create AudioContext when we have a user gesture (or when caller forces it).
+				if (!forceGesture) {
+					// Avoid creating AudioContext now — browsers will reject it and log the error.
+					return false;
+				}
 				MODULE._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 				MODULE._gain = MODULE._audioCtx.createGain();
 				MODULE._gain.connect(MODULE._audioCtx.destination);
 				MODULE._gain.gain.value = 0.0001; // nearly silent for the unlock attempt
-			}
-			if (MODULE._audioCtx.state === 'suspended') {
-				await MODULE._audioCtx.resume();
+				if (MODULE._audioCtx.state === 'suspended') {
+					await MODULE._audioCtx.resume();
+				}
 			}
 
 			// Try a very short oscillator burst at near-zero gain to trigger playback permission
@@ -200,9 +212,64 @@
 			try { MODULE._gain.gain.value = 0.2; } catch (e){}
 			return true;
 		} catch (e) {
-			console.debug('PendingRegistrationNotifications.tryUnlock failed', e);
+			// Don't spam console with autoplay policy errors; return false silently
+			console.debug && console.debug('PendingRegistrationNotifications.tryUnlock failed', e);
 			return false;
 		}
+	};
+
+	// Register multiple gesture/visibility/focus events to repeatedly attempt unlock.
+	MODULE.initAutoUnlock = function(){
+		if (MODULE._autoUnlockInitialized) return;
+		MODULE._autoUnlockInitialized = true;
+
+		const tryOnce = async (force = false) => {
+			try {
+				const ok = await MODULE.tryUnlock(force);
+				if (ok) {
+					// successful unlock - remove listeners
+					removeListeners();
+				}
+			} catch (e) { /* ignore */ }
+		};
+
+		const events = ['click','keydown','pointerdown','pointermove','touchstart','visibilitychange','focus'];
+		const gestureEvents = new Set(['click','keydown','pointerdown','touchstart']);
+		const listener = function(ev){
+			// On visibilitychange, only attempt when visible
+			if (ev.type === 'visibilitychange' && document.visibilityState !== 'visible') return;
+			const isGesture = gestureEvents.has(ev.type);
+			tryOnce(isGesture);
+		};
+
+		const removeListeners = function(){
+			events.forEach(ev => {
+				window.removeEventListener(ev, listener, true);
+				document.removeEventListener(ev, listener, true);
+			});
+		};
+
+		// Attach listeners both on window and document to catch different platforms
+		events.forEach(ev => {
+			window.addEventListener(ev, listener, { passive: true, capture: true });
+			document.addEventListener(ev, listener, { passive: true, capture: true });
+		});
+
+		// Also attempt again after short intervals (best-effort). Do NOT create AudioContext immediately.
+		tryOnce(false);
+		let attempts = 0;
+		const intervalId = setInterval(async () => {
+			attempts++;
+			if (MODULE.userInteracted) {
+				clearInterval(intervalId);
+				removeListeners();
+				return;
+			}
+			await tryOnce(false);
+			if (attempts > 6) { // stop after ~6 attempts (~30s)
+				clearInterval(intervalId);
+			}
+		}, 5000);
 	};
 
 	MODULE.playForNewRegistrations = function(newCount, oldCount){
