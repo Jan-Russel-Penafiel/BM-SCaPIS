@@ -385,8 +385,10 @@ include 'header.php';
     </div>
 </div>
 
+<?php if (!isLoggedIn() || $_SESSION['role'] !== 'resident'): ?>
 <!-- Persistent notifier status pill (hidden by default) -->
 <div id="pending-notif-status" aria-hidden="true" style="display:none;position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
+<?php endif; ?>
 
 <?php include 'footer.php'; ?>
 
@@ -457,6 +459,7 @@ include 'header.php';
 
 <?php include 'scripts.php'; ?>
 
+<?php if (!isLoggedIn() || $_SESSION['role'] !== 'resident'): ?>
 <script>
 // Pending registrations notifier on the public index page
 (function(){
@@ -536,6 +539,7 @@ include 'header.php';
     } catch (err) { console.error(err); }
 })();
 </script>
+<?php endif; ?>
 
 <style>
 /* Add these styles to enhance the UI */

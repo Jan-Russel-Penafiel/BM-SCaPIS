@@ -9,12 +9,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
 <script src="assets/js/sw-manager.js"></script>
+<?php if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'resident'): ?>
 <script src="assets/js/pending-registration-notifications.js"></script>
+<?php endif; ?>
 
 <!-- Application scripts -->
 <script>
 // Server-side flag for audio unlock (do NOT rely on localStorage)
-<?php if (!empty($_SESSION['pending_audio_unlocked'])): ?>
+<?php if (!empty($_SESSION['pending_audio_unlocked']) && (!isset($_SESSION['role']) || $_SESSION['role'] !== 'resident')): ?>
 // Signal that this session previously performed a user gesture enabling audio.
 window.PENDING_AUDIO_UNLOCKED = true;
 <?php endif; ?>
@@ -55,6 +57,7 @@ window.PENDING_AUDIO_UNLOCKED = true;
         // Request Notification permission (non-blocking)
         if ('Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch(e){} }
 
+        <?php if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'resident'): ?>
         // Initialize pending registration notifier (best-effort)
         try {
             if (window.PendingRegistrationNotifications) {
@@ -65,8 +68,10 @@ window.PENDING_AUDIO_UNLOCKED = true;
                 }
             }
         } catch(e){ console.debug && console.debug('PendingRegistrationNotifications init failed', e); }
+        <?php endif; ?>
 
         // Suppress notification sounds briefly on navigation clicks
+        <?php if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'resident'): ?>
         window.NotificationNavClickSuppressed = false;
         const suppressNavNotification = ()=>{ window.NotificationNavClickSuppressed = true; setTimeout(()=> window.NotificationNavClickSuppressed = false, 1200); };
         document.addEventListener('click', function(e){ const el = e.target.closest && e.target.closest('a'); if (!el) return; if (el.closest('.sidebar') || el.closest('.navbar') || el.classList.contains('nav-link') || el.classList.contains('nav-item') || el.id === 'sidebar' || el.classList.contains('sidebar-link')) suppressNavNotification(); }, true);
@@ -104,6 +109,7 @@ window.PENDING_AUDIO_UNLOCKED = true;
                 es.addEventListener('error', ()=> console.debug && console.debug('Pending registrations SSE error'));
             })();
         }
+        <?php endif; ?>
     }); // end ready
 
     // Lightweight utilities exported globally
