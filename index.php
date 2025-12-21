@@ -386,8 +386,7 @@ include 'header.php';
 </div>
 
 <!-- Persistent notifier status pill (server-side fallback visible immediately) -->
-<!-- Hidden by default: UI displays are suppressed; JS may update state but keep hidden -->
-<div id="pending-notif-status" aria-hidden="true" style="display:none;position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
+<div id="pending-notif-status" aria-hidden="true" style="position:fixed;right:1rem;top:1rem;background:rgba(0,0,0,0.7);color:#fff;padding:0.35rem 0.6rem;border-radius:0.35rem;z-index:2147483647;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,0.2);">Ringtone: Initializing</div>
 
 <?php include 'footer.php'; ?>
 

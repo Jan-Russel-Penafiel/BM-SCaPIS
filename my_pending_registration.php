@@ -577,18 +577,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Howler.js Notification System for Pending Registrations -->
 <script src="assets/js/pending-registration-notifications.js"></script>
 
-<!-- Test button: play ringtone immediately (hidden in UI) -->
-<button id="playMyPendingTestBtn" style="display:none;position:fixed;left:1rem;bottom:1rem;z-index:2147483647;background:#0d6efd;color:#fff;border:0;padding:0.5rem 0.75rem;border-radius:0.35rem;box-shadow:0 6px 18px rgba(0,0,0,0.15);">🔔 Play Ringtone</button>
-<script>
-document.getElementById('playMyPendingTestBtn')?.addEventListener('click', function(){
-    try {
-        if (window.PendingRegistrationNotifications) {
-            window.PendingRegistrationNotifications.enable();
-            window.PendingRegistrationNotifications.playForNewRegistrations(1,0);
-            console.log('Test ringtone played via PendingRegistrationNotifications (my_pending_registration)');
-        } else {
-            console.warn('PendingRegistrationNotifications not available');
-        }
-    } catch (e) { console.error(e); }
-});
-</script>
+<!-- Test button removed: ringtone test UI removed for production -->

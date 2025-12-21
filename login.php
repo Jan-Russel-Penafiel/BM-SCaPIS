@@ -89,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if (empty($error)) {
                     // Login successful
+                    // Persist audio-unlock flag in session so subsequent pages
+                    // treat this session as having granted audio permission.
+                    $_SESSION['pending_audio_unlocked'] = 1;
+
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['role'] = $user['role'];
@@ -103,8 +107,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     logActivity($user['id'], 'User logged in', 'users', $user['id']);
                     
                     // Redirect to dashboard regardless of role
-                            header('Location: dashboard.php');
-                    exit();
+                        header('Location: dashboard.php');
+                        // If this was an AJAX request, return JSON instead of redirecting
+                        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => true, 'redirect' => 'dashboard.php']);
+                            exit();
+                        }
+                        exit();
                 }
             } else {
                 $error = 'Invalid username or password.';
@@ -175,7 +185,7 @@ include 'header.php';
                         </div>
                         
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button id="loginBtn" type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>
                                 Login
                             </button>
@@ -192,6 +202,8 @@ include 'header.php';
                         </a>
                     </div>
                     
+
+                                   
                     <div class="text-center mt-3">
                         <small class="text-muted">
                             Need help? <a href="contact.php">Contact support</a>
@@ -206,6 +218,61 @@ include 'header.php';
 <?php include 'footer.php'; ?>
 
 <script>
+
+            if (loginBtn) {
+                const setAudioFlag = function(){
+                    try {
+                        // Use a transient global rather than localStorage so clearing site data
+                        // doesn't remove the audio-unlock signal. The server also marks the
+                        // next load via PHP session so the flag will be available after redirect.
+                        window.PENDING_AUDIO_UNLOCKED = true;
+                        if (window.PendingRegistrationNotifications) {
+                            try { PendingRegistrationNotifications.userInteracted = true; } catch(e){}
+                            try { PendingRegistrationNotifications.enable(); } catch(e){}
+                            try { PendingRegistrationNotifications.tryUnlock(true).catch(()=>{}); } catch(e){}
+                        }
+                    } catch (e) { /* ignore */ }
+                };
+
+                loginBtn.addEventListener('mousedown', function clickEnableHandler(e) {
+                    setAudioFlag();
+                    // Play a short audible beep directly inside the user gesture to guarantee audible feedback
+                    try {
+                        const C = window.AudioContext || window.webkitAudioContext;
+                        if (C) {
+                            const ctx = new C();
+                            const g = ctx.createGain();
+                            g.gain.value = 0.2;
+                            g.connect(ctx.destination);
+                            const o = ctx.createOscillator();
+                            o.type = 'sine';
+                            o.frequency.setValueAtTime(880, ctx.currentTime);
+                            o.connect(g);
+                            o.start(ctx.currentTime);
+                            o.stop(ctx.currentTime + 0.12);
+                            // close context shortly after
+                            setTimeout(() => { try { ctx.close(); } catch (e) {} }, 500);
+                        }
+                    } catch (beepErr) {
+                        console.debug && console.debug('Login beep failed', beepErr);
+                    }
+
+                    try {
+                        if (typeof PendingRegistrationNotifications !== 'undefined' && PendingRegistrationNotifications && typeof PendingRegistrationNotifications.enable === 'function') {
+                            PendingRegistrationNotifications.enable();
+                        }
+                        if (window.PendingRegistrationNotifications && typeof window.PendingRegistrationNotifications.tryUnlock === 'function') {
+                            window.PendingRegistrationNotifications.tryUnlock(true).then((ok) => {
+                                if (ok && typeof showToast === 'function') showToast('Notification sound enabled.');
+                            }).catch(()=>{});
+                        }
+                    } catch (err) {
+                        console.error('Enable/unlock on click failed', err);
+                    }
+                });
+                // Also set flag on touchstart for mobile/touch devices
+                loginBtn.addEventListener('touchstart', function touchEnableHandler(e){ setAudioFlag(); }, { passive: true });
+                                    }
     // Toggle password visibility
     document.getElementById('togglePassword').addEventListener('click', function() {
         const passwordField = document.getElementById('password');
@@ -220,13 +287,14 @@ include 'header.php';
         }
     });
     
-    // Form validation
+    // AJAX login with in-gesture audio unlock
     document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
-        
+
         if (!username || !password) {
-            e.preventDefault();
             if (typeof showError === 'function') {
                 showError('Please enter both username and password.');
             } else {
@@ -234,11 +302,76 @@ include 'header.php';
             }
             return false;
         }
-        
+
+        // Run enable + tryUnlock within the user's gesture (submit click) to maximize chance audio will be allowed
+        try {
+            if (window.PendingRegistrationNotifications) {
+                try { window.PendingRegistrationNotifications.enable(); } catch(e){}
+                try {
+                    // Call tryUnlock but do NOT await it — creation of AudioContext happens synchronously inside tryUnlock when forceGesture=true.
+                    const p = window.PendingRegistrationNotifications.tryUnlock(true);
+                    if (p && typeof p.then === 'function') {
+                        p.then(function(unlocked){
+                            if (unlocked) {
+                                try {
+                                    if (typeof showToast === 'function') {
+                                        showToast('success', 'Notifications enabled', 'Notification sound enabled for new registrations.');
+                                    } else {
+                                        console.log('Notification sound enabled');
+                                    }
+                                } catch (toaste) { console.debug && console.debug('showToast failed', toaste); }
+                            }
+                        }).catch(function(){ /* ignore */ });
+                    }
+                } catch (e) { /* ignore */ }
+            }
+        } catch (e) { /* ignore */ }
+
         // Show loading if function exists
         if (typeof showLoadingToast === 'function') {
             showLoadingToast('Logging in...');
         }
+
+        // Submit via fetch (AJAX)
+        (async function(){
+            const data = new FormData(form);
+            try {
+                const resp = await fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const json = await resp.json().catch(()=>null);
+                if (json && json.success) {
+                    try {
+                        window.PENDING_AUDIO_UNLOCKED = true;
+                        if (window.PendingRegistrationNotifications) {
+                            try { PendingRegistrationNotifications.userInteracted = true; } catch(e){}
+                            try { PendingRegistrationNotifications.enable(); } catch(e){}
+                            try { PendingRegistrationNotifications.tryUnlock(true).catch(()=>{}); } catch(e){}
+                        }
+                    } catch(e){}
+                    window.location.href = json.redirect || 'dashboard.php';
+                    return;
+                }
+
+                // If server didn't return JSON success, fall back to full navigation
+                if (!json) {
+                    // try to follow redirect header if present
+                    if (resp.redirected) {
+                        window.location.href = resp.url;
+                        return;
+                    }
+                }
+
+                // Show error from JSON or generic
+                const message = (json && json.message) ? json.message : 'Invalid username or password.';
+                if (typeof showError === 'function') showError(message); else alert(message);
+            } catch (err) {
+                console.error('Login AJAX failed', err);
+                if (typeof showError === 'function') showError('Login failed; please try again.'); else alert('Login failed; please try again.');
+            }
+        })();
     });
     
     // Remember username if checked

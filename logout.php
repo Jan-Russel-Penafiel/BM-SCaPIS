@@ -6,20 +6,18 @@ if (isLoggedIn()) {
     logActivity($_SESSION['user_id'], 'User logged out', 'users', $_SESSION['user_id']);
 }
 
-// Destroy session
-session_destroy();
+// Clear audio unlock flag from session
+if (isset($_SESSION['pending_audio_unlocked'])) {
+    unset($_SESSION['pending_audio_unlocked']);
+}
 
 // Clear any remember me cookies
 if (isset($_COOKIE['remember_token'])) {
     setcookie('remember_token', '', time() - 3600, '/');
 }
 
-// Clear notification sound unlock flag from sessionStorage
-// This script will run before redirect
-// Output must be before header redirect
-echo '<script>try { sessionStorage.removeItem("notificationSoundUnlocked"); } catch(e) {}</script>';
-
-// Redirect to login page with success message
+// Destroy session and redirect to login
+session_destroy();
 header('Location: login.php?logged_out=1');
 exit();
 ?>
