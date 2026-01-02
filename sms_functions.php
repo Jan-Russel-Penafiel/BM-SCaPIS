@@ -3,6 +3,163 @@
 require_once "config.php";
 
 /**
+ * Convert technical class names and terms to plain text for SMS
+ * @param string $message Original message that may contain class names
+ * @return string Plain text message suitable for SMS
+ */
+function convertToPlainMessage($message) {
+    // Remove HTML tags if any
+    $message = strip_tags($message);
+    
+    // Replace common database attributes and technical terms with plain language
+    $replacements = array(
+        // User and resident related
+        'resident_id' => 'Resident ID',
+        'user_id' => 'User ID',
+        'first_name' => 'First Name',
+        'middle_name' => 'Middle Name',
+        'last_name' => 'Last Name',
+        'full_name' => 'Full Name',
+        'contact_number' => 'Contact Number',
+        'phone_number' => 'Phone Number',
+        'email_address' => 'Email Address',
+        'sms_notifications' => 'SMS Notifications',
+        
+        // Location related
+        'purok_name' => 'Purok',
+        'purok_id' => 'Purok ID',
+        'barangay_name' => 'Barangay',
+        'address_line' => 'Address',
+        
+        // Application related
+        'application_id' => 'Application ID',
+        'application_number' => 'Application Number',
+        'document_type_id' => 'Document Type ID',
+        'type_name' => 'Document Type',
+        'doc_type' => 'Document Type',
+        'processing_days' => 'Processing Days',
+        'application_status' => 'Application Status',
+        'app_status' => 'Status',
+        
+        // Payment related
+        'payment_status' => 'Payment Status',
+        'payment_type' => 'Payment Type',
+        'payment_amount' => 'Payment Amount',
+        'payment_date' => 'Payment Date',
+        'reference_number' => 'Reference Number',
+        'transaction_id' => 'Transaction ID',
+        'gcash_reference' => 'GCash Reference',
+        
+        // Appointment related
+        'appointment_id' => 'Appointment ID',
+        'appointment_date' => 'Appointment Date',
+        'appointment_time' => 'Appointment Time',
+        'pickup_date' => 'Pickup Date',
+        'scheduled_date' => 'Scheduled Date',
+        
+        // Program related
+        'program_name' => 'Program',
+        'program_id' => 'Program ID',
+        'distribution_date' => 'Distribution Date',
+        'distribution_type' => 'Distribution Type',
+        
+        // System related
+        'created_at' => 'Created',
+        'updated_at' => 'Updated',
+        'deleted_at' => 'Deleted',
+        'sent_at' => 'Sent',
+        'api_response' => 'Response',
+        'error_message' => 'Error',
+        'status_code' => 'Status Code',
+        'config_key' => 'Setting',
+        'config_value' => 'Value'
+    );
+    
+    // Apply replacements (case-insensitive)
+    foreach ($replacements as $technical => $plain) {
+        $message = str_ireplace($technical, $plain, $message);
+    }
+    
+    // Convert remaining camelCase to plain text (e.g., "ResidentName" -> "Resident Name")
+    $message = preg_replace('/([a-z])([A-Z])/', '$1 $2', $message);
+    
+    // Convert remaining snake_case to plain text
+    $message = preg_replace('/(\w+)_(\w+)/', '$1 $2', $message);
+    
+    // Preserve application numbers (APP-XXXXXXXX-XXXX format) before converting kebab-case
+    // Replace with placeholder to protect from dash removal
+    $appNumberPlaceholders = [];
+    $message = preg_replace_callback('/APP-\d{8}-\d{4}/', function($matches) use (&$appNumberPlaceholders) {
+        $placeholder = '##APPNUM' . count($appNumberPlaceholders) . '##';
+        $appNumberPlaceholders[$placeholder] = $matches[0];
+        return $placeholder;
+    }, $message);
+    
+    // Convert remaining kebab-case to plain text (but not application numbers)
+    $message = str_replace('-', ' ', $message);
+    
+    // Restore application numbers
+    foreach ($appNumberPlaceholders as $placeholder => $appNumber) {
+        $message = str_replace($placeholder, $appNumber, $message);
+    }
+    
+    // Remove excessive whitespace
+    $message = preg_replace('/\s+/', ' ', $message);
+    
+    // Trim and clean up
+    $message = trim($message);
+    
+    // Ensure first letter is capitalized
+    $message = ucfirst($message);
+    
+    return $message;
+}
+
+/**
+ * Format SMS message with header and footer template
+ * @param string $body Main message content
+ * @param string $header Optional header text (default: VMC)
+ * @param string $footer Optional footer text (default: Thank you. - Respective Personnel)
+ * @return string Formatted SMS message
+ */
+function formatSMSTemplate($body, $header = '', $footer = '') {
+    // IMPORTANT: IPROG SMS uses approved templates
+    // The template system automatically adds header and footer
+    // We only need to return the body message
+    
+    // Default header if not provided (used for preview only)
+    if (empty($header)) {
+        $header = 'VMC';
+    }
+    
+    // Default footer if not provided (used for preview only)
+    if (empty($footer)) {
+        $footer = 'Thank you. - Respective Personnel';
+    }
+    
+    // Convert body to plain text
+    $body = convertToPlainMessage($body);
+    
+    // Format message to match IPROG template pattern
+    // Template sample: "This is an important message from the Organization."
+    // This ensures all messages match the approved template pattern
+    $formatted_body = "This is an important message from the Organization. " . $body;
+    
+    // Return formatted body message
+    // The IPROG template will automatically add header and footer
+    return $formatted_body;
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @param string $message Original message content
+ * @return string Formatted message with prefix
+ */
+function formatSMSMessage($message) {
+    return formatSMSTemplate($message);
+}
+
+/**
  * Get SMS configuration from database
  * @param PDO $pdo Database connection
  * @return array SMS configuration
@@ -69,10 +226,28 @@ function formatPhoneNumber($phone_number) {
  * @return array Response with status and message
  */
 function sendSMSUsingIPROG($phone_number, $message, $api_key, $sender_name = 'BM-SCaPIS') {
+    // Check if message has the template format (Header\nBody\nFooter)
+    $lines = explode("\n", $message);
+    if (count($lines) >= 3) {
+        // Extract only the body (middle part)
+        // First line is header, last line is footer
+        $body_lines = array_slice($lines, 1, -1);
+        $message = implode(" ", $body_lines);
+    }
+    
+    // Clean up the message (remove extra whitespace)
+    $message = trim($message);
+    
     // Prepare the phone number (remove any spaces and ensure 63 format for IPROG)
-    $phone_number = str_replace([' ', '-'], '', $phone_number);
-    if (substr($phone_number, 0, 1) === '0') {
+    $phone_number = str_replace([' ', '-', '(', ')', '.'], '', $phone_number);
+    
+    // Convert to 63 format (Philippine format required by IPROG)
+    if (substr($phone_number, 0, 2) === '09') {
         $phone_number = '63' . substr($phone_number, 1);
+    } elseif (substr($phone_number, 0, 1) === '0') {
+        $phone_number = '63' . substr($phone_number, 1);
+    } elseif (substr($phone_number, 0, 3) === '+63') {
+        $phone_number = substr($phone_number, 1);
     } elseif (substr($phone_number, 0, 1) === '+') {
         $phone_number = substr($phone_number, 1);
     }
@@ -85,10 +260,19 @@ function sendSMSUsingIPROG($phone_number, $message, $api_key, $sender_name = 'BM
         );
     }
 
+    // Format message with universal prefix for IPROG template compatibility
+    // Check if message already has the prefix to avoid double-formatting
+    $prefix = 'This is an important message from the Organization. ';
+    if (strpos($message, $prefix) === 0) {
+        $formatted_message = $message; // Already formatted
+    } else {
+        $formatted_message = formatSMSTemplate($message); // Format it
+    }
+    
     // Prepare the request data for IPROG SMS API
     $data = array(
         'api_token' => $api_key,
-        'message' => $message,
+        'message' => $formatted_message,
         'phone_number' => $phone_number
     );
 
@@ -139,18 +323,24 @@ function sendSMSUsingIPROG($phone_number, $message, $api_key, $sender_name = 'BM
     $result = json_decode($response, true);
 
     // Handle API response for IPROG SMS
+    // IPROG returns: {"status":200,"message":"SMS successfully queued for delivery.","message_id":"xxx"}
     if ($http_code === 200 || $http_code === 201) {
-        // IPROG SMS typically returns success in different formats
-        // Check for common success indicators
-        if ((isset($result['status']) && $result['status'] === 'success') ||
+        // Check for IPROG specific success indicators
+        $isStatusSuccess = isset($result['status']) && ($result['status'] === 200 || $result['status'] === 'success' || $result['status'] === 201);
+        $hasMessageId = isset($result['message_id']) && !empty($result['message_id']);
+        $messageContainsSuccess = isset($result['message']) && is_string($result['message']) && 
+                                  (stripos($result['message'], 'queued') !== false || 
+                                   stripos($result['message'], 'sent') !== false ||
+                                   stripos($result['message'], 'success') !== false);
+        
+        if ($isStatusSuccess || $hasMessageId || $messageContainsSuccess ||
             (isset($result['success']) && $result['success'] === true) ||
-            (isset($result['message']) && stripos($result['message'], 'sent') !== false) ||
-            (!isset($result['error']) && !isset($result['errors']))) {
+            (!isset($result['error']) && !isset($result['errors']) && $http_code === 200)) {
             return array(
                 'success' => true,
-                'message' => 'SMS sent successfully',
+                'message' => $result['message'] ?? 'SMS sent successfully',
                 'reference_id' => $result['message_id'] ?? $result['id'] ?? $result['reference'] ?? null,
-                'delivery_status' => $result['status'] ?? 'Sent',
+                'delivery_status' => $result['message'] ?? 'Queued',
                 'timestamp' => $result['timestamp'] ?? date('Y-m-d g:i A')
             );
         }
@@ -204,12 +394,38 @@ function sendSMSNotification($phone_number, $message, $user_id = null, $notifica
 
         // Format phone number
         $formattedPhone = formatPhoneNumber($phone_number);
+        
+        // Format message with universal prefix (this is what will be sent)
+        $formattedMessage = formatSMSTemplate($message);
+        
+        // DEDUPLICATION: Check if same SMS was sent to this number in last 5 minutes
+        // This prevents double-sending from accidental double-clicks or page reloads
+        $stmt = $pdo->prepare("
+            SELECT id FROM sms_notifications 
+            WHERE phone_number = ? 
+            AND SUBSTRING(message, 1, 100) = SUBSTRING(?, 1, 100)
+            AND status = 'sent'
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+            LIMIT 1
+        ");
+        $stmt->execute([$formattedPhone, $formattedMessage]);
+        $existingSms = $stmt->fetch();
+        
+        if ($existingSms) {
+            // SMS already sent recently with same content - skip to save credits
+            return array(
+                'success' => true,
+                'message' => 'SMS already sent recently (duplicate prevention)',
+                'duplicate' => true,
+                'existing_id' => $existingSms['id']
+            );
+        }
 
-        // Insert into SMS notifications table
+        // Insert into SMS notifications table with formatted message
         $smsId = null;
         if ($user_id !== null) {
             $stmt = $pdo->prepare("INSERT INTO sms_notifications (user_id, phone_number, message, status) VALUES (?, ?, ?, 'pending')");
-            $stmt->execute([$user_id, $formattedPhone, $message]);
+            $stmt->execute([$user_id, $formattedPhone, $formattedMessage]);
             $smsId = $pdo->lastInsertId();
         }
 
@@ -322,10 +538,14 @@ function generateApplicationStatusMessage($application, $status, $appointmentDat
     $docType = $application['type_name'];
     $residentName = $application['first_name'] . ' ' . $application['last_name'];
 
+    // All messages must follow the approved IPROG template pattern
+    // The template prefix "This is an important message from the Organization." is added by formatSMSTemplate()
+    // Keep messages simple and consistent to match approved template
+    // IMPORTANT: Avoid phrases like "barangay office on [date]" - use simpler wording
     switch ($status) {
         case 'processing':
             $estimatedDate = date('M j, Y', strtotime('+' . $application['processing_days'] . ' weekdays'));
-            return "Your application #{$appNumber} is now being processed. Estimated completion: {$estimatedDate}";
+            return "Your application {$appNumber} is now being processed. Estimated completion date is {$estimatedDate}.";
 
         case 'ready_for_pickup':
             if ($appointmentDate) {
@@ -333,34 +553,38 @@ function generateApplicationStatusMessage($application, $status, $appointmentDat
             } else {
                 $pickupDate = date('M j, Y', strtotime('next weekday'));
             }
-            return "Your {$docType} (#{$appNumber}) is ready for pickup. Please visit the barangay office on {$pickupDate}.";
+            return "Your application {$appNumber} is now ready for pickup on {$pickupDate}.";
 
         case 'completed':
-            return "Your {$docType} (#{$appNumber}) has been completed and delivered. Thank you for using our services!";
+            return "Your application {$appNumber} is now completed. Thank you for using our services.";
 
         case 'payment_waived':
-            return "Your application #{$appNumber} payment has been waived. Your {$docType} application is now being processed.";
+            return "Your application {$appNumber} payment is now waived. Processing will begin shortly.";
 
         case 'payment_received':
-            return "Payment received for application #{$appNumber}. Your {$docType} is now being processed. You will be notified when it's ready for pickup.";
+            return "Your application {$appNumber} payment is now confirmed. Processing will begin shortly.";
 
         case 'appointment_scheduled':
-            return "Your appointment for application #{$appNumber} has been scheduled. Please check your email for details.";
+            if ($appointmentDate) {
+                $apptDate = date('M j, Y', strtotime($appointmentDate));
+                return "Your application {$appNumber} appointment is now scheduled on {$apptDate}.";
+            }
+            return "Your application {$appNumber} appointment is now scheduled. Check your account for details.";
 
         case 'appointment_rescheduled':
-            return "Your appointment for application #{$appNumber} has been rescheduled. Please check your email for new details.";
+            return "Your application {$appNumber} appointment is now rescheduled. Check your account for details.";
 
         case 'appointment_cancelled':
-            return "Your appointment for application #{$appNumber} has been cancelled. Please contact the barangay office for rescheduling.";
+            return "Your application {$appNumber} appointment is now cancelled. Please contact us for assistance.";
 
         case 'appointment_completed':
-            return "Your appointment for application #{$appNumber} has been completed. Thank you for visiting the barangay office.";
+            return "Your application {$appNumber} appointment is now completed. Thank you for visiting us.";
 
         case 'document_ready':
-            return "Your {$docType} (#{$appNumber}) is ready for pickup. Please visit the barangay office on the scheduled date.";
+            return "Your application {$appNumber} document is now ready for pickup.";
 
         default:
-            return "Your application #{$appNumber} status has been updated to {$status}.";
+            return "Your application {$appNumber} is now updated to {$status}.";
     }
 }
 
@@ -434,21 +658,20 @@ function generatePaymentMessage($application, $payment_type, $amount = null, $re
     $appNumber = $application['application_number'];
     $docType = $application['type_name'];
 
+    // All messages must follow the approved IPROG template pattern
+    // Use consistent "Your application {number} is now..." pattern
     switch ($payment_type) {
         case 'gcash':
-            $amountText = $amount ? '₱' . number_format($amount, 2) : '';
-            $refText = $reference ? " Reference: {$reference}" : '';
-            return "GCash payment received for application #{$appNumber}. Amount: {$amountText}.{$refText} Your {$docType} is now being processed.";
+            return "Your application {$appNumber} payment is now confirmed via GCash. Processing will begin shortly.";
 
         case 'waived':
-            return "Your application #{$appNumber} payment has been waived. Your {$docType} application is now being processed.";
+            return "Your application {$appNumber} payment is now waived. Processing will begin shortly.";
 
         case 'cash':
-            $amountText = $amount ? '₱' . number_format($amount, 2) : '';
-            return "Cash payment received for application #{$appNumber}. Amount: {$amountText}. Your {$docType} is now being processed.";
+            return "Your application {$appNumber} payment is now confirmed. Processing will begin shortly.";
 
         default:
-            return "Payment received for application #{$appNumber}. Your {$docType} is now being processed.";
+            return "Your application {$appNumber} payment is now received. Processing will begin shortly.";
     }
 }
 

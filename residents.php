@@ -582,7 +582,18 @@ include 'sidebar.php';
                                     <label class="form-label">Email Address</label>
                                     <input type="email" name="email" id="editEmail" class="form-control">
                                 </div>
-                                <div class="col-12">
+                                <div class="col-md-6">
+                                    <label class="form-label">Purok</label>
+                                    <select name="purok_id" id="editPurokId" class="form-select">
+                                        <option value="">Select Purok</option>
+                                        <?php foreach ($puroks as $purok): ?>
+                                            <option value="<?php echo $purok['id']; ?>">
+                                                <?php echo htmlspecialchars($purok['purok_name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label">Address</label>
                                     <textarea name="address" id="editAddress" class="form-control" rows="2"></textarea>
                                 </div>
@@ -642,6 +653,8 @@ include 'sidebar.php';
     </div>
 </div>
 
+<?php include 'scripts.php'; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTables
@@ -688,6 +701,27 @@ function formatResidentOption(resident) {
 function formatResidentSelection(resident) {
     if (!resident.id) return resident.text;
     return resident.text.split('(Current:')[0].trim();
+}
+
+// Format phone number to Philippine format (09XXXXXXXXX)
+function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    
+    // Ensure it starts with 09
+    if (value.length > 0 && !value.startsWith('09')) {
+        if (value.startsWith('9')) {
+            value = '0' + value;
+        } else if (value.startsWith('639')) {
+            value = '0' + value.substring(2);
+        }
+    }
+    
+    // Limit to 11 digits
+    if (value.length > 11) {
+        value = value.substring(0, 11);
+    }
+    
+    input.value = value;
 }
 
 function confirmDelete(residentId) {
@@ -815,6 +849,12 @@ function editResident(residentId) {
             document.getElementById('editMonthlyIncome').value = resident.monthly_income || '';
             document.getElementById('editEmergencyName').value = resident.emergency_contact_name || '';
             document.getElementById('editEmergencyNumber').value = resident.emergency_contact_number || '';
+            
+            // Set purok selection
+            const purokSelect = document.getElementById('editPurokId');
+            if (purokSelect) {
+                purokSelect.value = resident.purok_id || '';
+            }
 
             // Show the modal
             new bootstrap.Modal(document.getElementById('editResidentModal')).show();
@@ -963,5 +1003,3 @@ function showToast(type, title, message) {
     white-space: normal;
 }
 </style>
-
-<?php include 'scripts.php'; ?> 

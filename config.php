@@ -26,6 +26,9 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+// Include SMS functions
+require_once __DIR__ . '/sms_functions.php';
+
 // Session Configuration
 if (session_status() === PHP_SESSION_NONE) {
     // Set secure session parameters

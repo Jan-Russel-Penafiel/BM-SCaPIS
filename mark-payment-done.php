@@ -93,13 +93,11 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $message = "Hi {$application['first_name']}, your payment for {$application['type_name']} application #{$application['application_number']} has been confirmed. Your document is now being processed (3-5 working days).";
-        
-        $stmt = $pdo->prepare("
-            INSERT INTO sms_notifications (user_id, phone_number, message, status)
-            VALUES (?, ?, ?, 'pending')
-        ");
-        $stmt->execute([$application['user_id'], $application['contact_number'], $message]);
+        require_once 'sms_functions.php';
+        $result = sendPaymentNotificationSMS($applicationId, 'cash', $application['fee'], null);
+        if (!$result['success']) {
+            error_log('SMS notification failed for payment done: ' . $result['message']);
+        }
     }
     
     // Send email notification if enabled
