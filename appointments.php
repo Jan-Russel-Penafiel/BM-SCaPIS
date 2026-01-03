@@ -43,7 +43,7 @@ foreach ($appointments as $apt) {
     $groupedAppointments[$userId]['appointments'][] = $apt;
 }
 
-// Get applications eligible for appointment scheduling (pending, processing, ready_for_pickup, and not already scheduled)
+// Get applications eligible for appointment scheduling (processing and not already scheduled)
 $stmt = $pdo->prepare("
     SELECT a.*, 
            u.first_name, u.last_name,
@@ -51,7 +51,7 @@ $stmt = $pdo->prepare("
     FROM applications a
     JOIN users u ON a.user_id = u.id
     JOIN document_types dt ON a.document_type_id = dt.id
-    WHERE a.status IN ('pending', 'processing', 'ready_for_pickup')
+    WHERE a.status IN ('processing')
     AND NOT EXISTS (
         SELECT 1 FROM appointments apt 
         WHERE apt.application_id = a.id 
@@ -390,9 +390,10 @@ include 'sidebar.php';
                             <?php foreach ($readyApplications as $app): ?>
                                 <option value="<?php echo $app['id']; ?>">
                                     <?php 
+                                    $statusLabel = ucwords(str_replace('_', ' ', $app['status']));
                                     echo htmlspecialchars($app['document_type'] . ' - ' . 
                                         $app['first_name'] . ' ' . $app['last_name'] . 
-                                        ' (#' . $app['application_number'] . ')'); 
+                                        ' (#' . $app['application_number'] . ') [' . $statusLabel . ']'); 
                                     ?>
                                 </option>
                             <?php endforeach; ?>
@@ -401,10 +402,7 @@ include 'sidebar.php';
                     <div class="mb-3">
                         <label class="form-label">Appointment Type <span class="text-danger">*</span></label>
                         <select name="appointment_type" class="form-select" required>
-                            <option value="pickup">Document Pickup</option>
                             <option value="verification">Document Verification</option>
-                            <option value="interview">Interview</option>
-                            <option value="payment">Payment</option>
                         </select>
                     </div>
                     <div class="mb-3">

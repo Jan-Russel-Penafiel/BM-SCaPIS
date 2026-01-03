@@ -104,16 +104,8 @@ try {
     
     // Send SMS notification if enabled
     if ($application['sms_notifications'] && $application['contact_number']) {
-        $appointmentTypeText = ucfirst($appointmentType);
-        $message = "Hi {$application['first_name']}, your {$appointmentTypeText} appointment for {$application['type_name']} application #{$application['application_number']} has been scheduled for " . date('M j, Y g:i A', strtotime($appointmentDate)) . ".";
-        
-        if ($appointmentType === 'payment' && $application['fee'] > 0) {
-            $message .= " Please bring ₱" . number_format($application['fee'], 2) . " for payment.";
-        }
-        
-        if (!empty($notes)) {
-            $message .= " Note: " . $notes;
-        }
+        $appointmentDateFormatted = date('M j, Y g:i A', strtotime($appointmentDate));
+        $message = "Your application {$application['application_number']} appointment is now scheduled on {$appointmentDateFormatted}.";
         
         // Use the proper SMS function
         require_once 'sms_functions.php';
