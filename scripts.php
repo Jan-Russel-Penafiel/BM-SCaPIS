@@ -147,3 +147,10 @@ window.PENDING_AUDIO_UNLOCKED = true;
 
 })(window, document, jQuery);
 </script>
+
+<?php
+// Include Admin Contact Widget for admin users (on all admin pages)
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    require_once __DIR__ . '/includes/admin-contact-widget.php';
+}
+?>

@@ -161,5 +161,12 @@
     // Show cookie consent on page load
     document.addEventListener('DOMContentLoaded', showCookieConsent);
 </script>
+
+<?php
+// Include Admin Contact Widget for admin users (on all admin pages)
+if (isLoggedIn() && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    require_once __DIR__ . '/includes/admin-contact-widget.php';
+}
+?>
 </body>
 </html>

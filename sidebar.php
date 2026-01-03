@@ -119,6 +119,36 @@ if (!isLoggedIn()) {
             </div>
             
             <div class="d-flex align-items-center">
+                <!-- Contact Messages Icon (Admin only) -->
+                <?php if ($currentUser['role'] === 'admin'): ?>
+                    <?php
+                    // Get unread contact messages count
+                    $contactUnreadCount = 0;
+                    $chatDir = __DIR__ . '/storage/contact_chats';
+                    $indexFile = $chatDir . '/index.json';
+                    if (file_exists($indexFile)) {
+                        $index = json_decode(file_get_contents($indexFile), true) ?: [];
+                        foreach ($index as $conv) {
+                            if (isset($conv['status']) && $conv['status'] === 'active') {
+                                $contactUnreadCount += (int)($conv['unread_count'] ?? 0);
+                            }
+                        }
+                    }
+                    ?>
+                    <div class="position-relative me-3" id="contactWidgetContainer">
+                        <a class="nav-link text-white p-0" href="javascript:void(0)" onclick="toggleAdminContactWidget()" title="Contact Messages from Visitors">
+                            <i class="bi bi-people fs-5"></i>
+                            <?php if ($contactUnreadCount > 0): ?>
+                            <span id="adminContactBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">
+                                <?php echo $contactUnreadCount > 99 ? '99+' : $contactUnreadCount; ?>
+                            </span>
+                            <?php else: ?>
+                            <span id="adminContactBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; display: none;">0</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Notifications link: hidden for residents to remove ringtone/bell in resident views -->
                 <?php if ($currentUser['role'] !== 'resident'): ?>
                     <a class="nav-link text-white me-3" href="notifications.php" title="Notifications">

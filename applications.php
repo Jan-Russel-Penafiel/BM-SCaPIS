@@ -376,8 +376,8 @@ include 'sidebar.php';
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-success process-btn"
                                                                     onclick="processApplication(<?php echo $mainApp['id']; ?>)"
-                                                                    title="Process">
-                                                                <i class="bi bi-check"></i>
+                                                                    title="Start Processing (Payment Received)">
+                                                                <i class="bi bi-play-circle"></i>
                                                             </button>
                                                         <?php endif; ?>
                                                         <?php if ($mainApp['status'] === 'processing'): ?>
@@ -396,69 +396,9 @@ include 'sidebar.php';
                                                                 <i class="bi bi-check-all"></i>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'unpaid'): ?>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-warning waive-btn"
-                                                                    onclick="waivePayment(<?php echo $mainApp['id']; ?>)"
-                                                                    title="Waive Payment">
-                                                                <i class="bi bi-cash-stack"></i>
-                                                            </button>
-                                                            <?php if (!$mainApp['payment_appointment_id'] || $mainApp['payment_appointment_status'] !== 'scheduled'): ?>
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-info schedule-payment-btn"
-                                                                        onclick="schedulePaymentAppointment(<?php echo $mainApp['id']; ?>)"
-                                                                        title="Schedule Payment Appointment">
-                                                                    <i class="bi bi-calendar-plus"></i>
-                                                                </button>
-                                                            <?php else: ?>
-                                                                <?php 
-                                                                // Check if today is on or after the payment appointment date
-                                                                $appointmentDate = new DateTime($mainApp['payment_appointment_date']);
-                                                                $appointmentDate->setTime(0, 0, 0);
-                                                                $today = new DateTime();
-                                                                $today->setTime(0, 0, 0);
-                                                                $isAppointmentDue = $today >= $appointmentDate;
-                                                                ?>
-                                                                <?php if ($isAppointmentDue): ?>
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-outline-success allow-payment-btn"
-                                                                            onclick="allowPayment(<?php echo $mainApp['id']; ?>)"
-                                                                            title="Allow Payment - Appointment date has arrived (<?php echo date('M j, Y', strtotime($mainApp['payment_appointment_date'])); ?>)">
-                                                                        <i class="bi bi-check-circle"></i>
-                                                                    </button>
-                                                                <?php else: ?>
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-outline-secondary"
-                                                                            disabled
-                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($mainApp['payment_appointment_date'])); ?>. Payment can be allowed starting on that date.">
-                                                                        <i class="bi bi-calendar-x"></i>
-                                                                    </button>
-                                                                <?php endif; ?>
-                                                                <!-- Appointment Done button for advance payment scenarios -->
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-primary appointment-done-btn"
-                                                                        onclick="markAppointmentDone(<?php echo $mainApp['id']; ?>)"
-                                                                        title="Mark Appointment as Done - For advance payment scenarios">
-                                                                    <i class="bi bi-calendar-check"></i>
-                                                                </button>
-                                                            <?php endif; ?>
-                                                        <?php endif; ?>
-                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'paid'): ?>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success auto-process-btn"
-                                                                    onclick="autoProcessApplication(<?php echo $mainApp['id']; ?>)"
-                                                                    title="Start Processing (Payment Received)">
-                                                                <i class="bi bi-play-circle"></i>
-                                                            </button>
-                                                        <?php endif; ?>
-                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'unpaid'): ?>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success mark-payment-btn"
-                                                                    onclick="markPaymentDone(<?php echo $mainApp['id']; ?>)"
-                                                                    title="Mark Payment as Done - For manual payments (cash, bank transfer, etc.)">
-                                                                <i class="bi bi-cash-coin"></i>
-                                                            </button>
-                                                        <?php endif; ?>
+
+
+
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -532,36 +472,6 @@ include 'sidebar.php';
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-info">Mark as Ready & Schedule</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Payment Appointment Modal -->
-<div class="modal fade" id="paymentAppointmentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Schedule Payment Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="schedule-payment-appointment.php" method="POST">
-                <input type="hidden" name="application_id" id="paymentAppointmentApplicationId">
-                <input type="hidden" name="appointment_type" value="payment">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Date & Time <span class="text-danger">*</span></label>
-                        <input type="datetime-local" name="appointment_date" class="form-control" required min="<?php echo date('Y-m-d\TH:i'); ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Payment Instructions</label>
-                        <textarea name="notes" class="form-control" rows="3" placeholder="Enter payment instructions or requirements"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-info">Schedule Payment Appointment</button>
                 </div>
             </form>
         </div>
@@ -744,8 +654,8 @@ function generateActionsColumnContent(app) {
         html += `<button type="button" 
                         class="btn btn-sm btn-outline-success process-btn"
                         onclick="processApplication(${app.id})"
-                        title="Process">
-                    <i class="bi bi-check"></i>
+                        title="Start Processing (Payment Received)">
+                    <i class="bi bi-play-circle"></i>
                 </button>`;
     }
     
@@ -764,72 +674,6 @@ function generateActionsColumnContent(app) {
                         onclick="completeApplication(${app.id})"
                         title="Complete">
                     <i class="bi bi-check-all"></i>
-                </button>`;
-    }
-    
-    if (app.status === 'pending' && app.payment_status === 'unpaid') {
-        html += `<button type="button" 
-                        class="btn btn-sm btn-outline-warning waive-btn"
-                        onclick="waivePayment(${app.id})"
-                        title="Waive Payment">
-                    <i class="bi bi-cash-stack"></i>
-                </button>`;
-        
-        if (!app.payment_appointment_id || app.payment_appointment_status !== 'scheduled') {
-            html += `<button type="button" 
-                            class="btn btn-sm btn-outline-info schedule-payment-btn"
-                            onclick="schedulePaymentAppointment(${app.id})"
-                            title="Schedule Payment Appointment">
-                        <i class="bi bi-calendar-plus"></i>
-                    </button>`;
-        } else {
-            // Check if appointment date has arrived
-            const appointmentDate = new Date(app.payment_appointment_date);
-            appointmentDate.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const isAppointmentDue = today >= appointmentDate;
-            
-            if (isAppointmentDue) {
-                html += `<button type="button" 
-                                class="btn btn-sm btn-outline-success allow-payment-btn"
-                                onclick="allowPayment(${app.id})"
-                                title="Allow Payment - Appointment date has arrived">
-                            <i class="bi bi-check-circle"></i>
-                        </button>`;
-            } else {
-                html += `<button type="button" 
-                                class="btn btn-sm btn-outline-secondary"
-                                disabled
-                                title="Payment appointment scheduled. Payment can be allowed starting on appointment date.">
-                            <i class="bi bi-calendar-x"></i>
-                        </button>`;
-            }
-            
-            html += `<button type="button" 
-                            class="btn btn-sm btn-outline-primary appointment-done-btn"
-                            onclick="markAppointmentDone(${app.id})"
-                            title="Mark Appointment as Done - For advance payment scenarios">
-                        <i class="bi bi-calendar-check"></i>
-                    </button>`;
-        }
-    }
-    
-    if (app.status === 'pending' && app.payment_status === 'paid') {
-        html += `<button type="button" 
-                        class="btn btn-sm btn-outline-success auto-process-btn"
-                        onclick="autoProcessApplication(${app.id})"
-                        title="Start Processing (Payment Received)">
-                    <i class="bi bi-play-circle"></i>
-                </button>`;
-    }
-    
-    if (app.status === 'pending' && app.payment_status === 'unpaid') {
-        html += `<button type="button" 
-                        class="btn btn-sm btn-outline-success mark-payment-btn"
-                        onclick="markPaymentDone(${app.id})"
-                        title="Mark Payment as Done - For manual payments">
-                    <i class="bi bi-cash-coin"></i>
                 </button>`;
     }
     <?php endif; ?>
@@ -859,47 +703,9 @@ function completeApplication(id) {
     }
 }
 
-function waivePayment(id) {
-    if (confirm('Are you sure you want to waive the payment for this application?')) {
-        window.location.href = `waive-payment.php?id=${id}`;
-    }
-}
-
-// Auto-process applications when payment is made
-function autoProcessApplication(id) {
-    if (confirm('Payment received. Start processing this application?')) {
-        // Submit the process form automatically
-        document.getElementById('processApplicationId').value = id;
-        document.querySelector('#processModal form').submit();
-    }
-}
-
 function openReadyAppointmentModal(appId) {
     document.getElementById('readyAppointmentApplicationId').value = appId;
     new bootstrap.Modal(document.getElementById('readyAppointmentModal')).show();
-}
-
-function schedulePaymentAppointment(appId) {
-    document.getElementById('paymentAppointmentApplicationId').value = appId;
-    new bootstrap.Modal(document.getElementById('paymentAppointmentModal')).show();
-}
-
-function allowPayment(appId) {
-    if (confirm('Are you sure you want to allow payment for this application? The resident will be able to make payment through the system.')) {
-        window.location.href = `allow-payment.php?id=${appId}`;
-    }
-}
-
-function markAppointmentDone(appId) {
-    if (confirm('Mark this payment appointment as done? This will enable the Pay Now button for advance payment scenarios.')) {
-        window.location.href = `allow-payment.php?id=${appId}&appointment_done=true`;
-    }
-}
-
-function markPaymentDone(appId) {
-    if (confirm('Mark payment as completed? This should only be used when payment was received through other means (cash, bank transfer, etc.). This action will automatically start processing the application.')) {
-        window.location.href = `mark-payment-done.php?id=${appId}`;
-    }
 }
 </script>
 

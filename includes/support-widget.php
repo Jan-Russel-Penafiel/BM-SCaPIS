@@ -198,6 +198,7 @@ $applicationId = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['applicati
                         <input type="file" id="adminFileInput" style="display: none;" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" />
                     </div>
                 </div>
+
             <?php else: ?>
                 <!-- Resident Chat View -->
                 <div id="residentChatView" class="resident-chat-view">
@@ -2130,8 +2131,6 @@ supportChat.closeSupportChat = function() {
     
     this.hideTypingIndicator();
 };
-
-// Additional functions will be added in the next file...
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {

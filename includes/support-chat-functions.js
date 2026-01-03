@@ -86,6 +86,12 @@ supportChat.displayAdminConversations = function(conversations) {
     const container = document.getElementById('conversationList');
     if (!container) return;
     
+    // Don't render if we're on the contact tab (contact tab uses different data source)
+    if (this.currentTab === 'contact') {
+        console.log('Skipping displayAdminConversations - on contact tab');
+        return;
+    }
+    
     if (conversations.length === 0) {
         container.innerHTML = `
             <div class="empty-conversations">
@@ -144,11 +150,27 @@ supportChat.updateAdminStats = function(stats) {
 
 // Show admin tab
 function showAdminTab(tabName) {
+    console.log('showAdminTab called with:', tabName);
+    
     // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tabName + 'Tab').classList.add('active');
     
-    // Reload conversations with filter
+    // Set current tab
+    supportChat.currentTab = tabName;
+    
+    // Handle contact tab differently (outsiders from file storage)
+    if (tabName === 'contact') {
+        if (typeof contactChatAdmin !== 'undefined') {
+            console.log('Loading contact conversations from file storage...');
+            contactChatAdmin.loadConversations('contact');
+        } else {
+            console.error('contactChatAdmin not defined');
+        }
+        return;
+    }
+    
+    // Reload resident conversations with filter (from database)
     supportChat.loadAdminConversations(tabName);
 }
 
