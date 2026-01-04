@@ -51,9 +51,6 @@ window.PENDING_AUDIO_UNLOCKED = true;
         document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el=> new bootstrap.Tooltip(el));
         document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el=> new bootstrap.Popover(el));
 
-        // Auto-hide non-permanent alerts
-        setTimeout(()=>{ document.querySelectorAll('.alert:not(.alert-permanent)').forEach(a=> new bootstrap.Alert(a).close()); }, 5000);
-
         // Request Notification permission (non-blocking)
         if ('Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch(e){} }
 
@@ -73,7 +70,7 @@ window.PENDING_AUDIO_UNLOCKED = true;
         // Suppress notification sounds briefly on navigation clicks
         <?php if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'resident'): ?>
         window.NotificationNavClickSuppressed = false;
-        const suppressNavNotification = ()=>{ window.NotificationNavClickSuppressed = true; setTimeout(()=> window.NotificationNavClickSuppressed = false, 1200); };
+        const suppressNavNotification = ()=>{ window.NotificationNavClickSuppressed = true; };
         document.addEventListener('click', function(e){ const el = e.target.closest && e.target.closest('a'); if (!el) return; if (el.closest('.sidebar') || el.closest('.navbar') || el.classList.contains('nav-link') || el.classList.contains('nav-item') || el.id === 'sidebar' || el.classList.contains('sidebar-link')) suppressNavNotification(); }, true);
 
         // Central SSE for pending registrations
@@ -100,7 +97,7 @@ window.PENDING_AUDIO_UNLOCKED = true;
                                 } catch(err){ console.debug && console.debug('Play attempt failed', err); }
                             }
                             // simple toast-like indicator
-                            try { const id='pending-notif-indicator'; document.getElementById(id)?.remove(); const el=document.createElement('div'); el.id=id; el.textContent=`🔔 New pending registrations: ${diff}`; Object.assign(el.style,{position:'fixed',right:'1rem',bottom:'1rem',background:'rgba(0,0,0,0.8)',color:'#fff',padding:'0.6rem 1rem',borderRadius:'0.4rem',zIndex:2147483647,boxShadow:'0 6px 18px rgba(0,0,0,0.2)',fontSize:'0.95rem'}); document.body.appendChild(el); setTimeout(()=>{ el.style.transition='opacity 0.5s'; el.style.opacity='0'; setTimeout(()=>el.remove(),600); },4000);}catch(e){}
+                            try { const id='pending-notif-indicator'; document.getElementById(id)?.remove(); const el=document.createElement('div'); el.id=id; el.textContent=`🔔 New pending registrations: ${diff}`; Object.assign(el.style,{position:'fixed',right:'1rem',bottom:'1rem',background:'rgba(0,0,0,0.8)',color:'#fff',padding:'0.6rem 1rem',borderRadius:'0.4rem',zIndex:2147483647,boxShadow:'0 6px 18px rgba(0,0,0,0.2)',fontSize:'0.95rem'}); document.body.appendChild(el); }catch(e){}
                         }
                         lastCount = newCount; sessionStorage.setItem('pendingRegistrationsCount_global', String(newCount));
                     } catch(e){ console.debug && console.debug('SSE handler error', e); }

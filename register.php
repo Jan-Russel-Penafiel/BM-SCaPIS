@@ -19,10 +19,17 @@ $sessionToken = $_SESSION['registration_token'] ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_SESSION['registration_success'])) {
     $success = true;
     $credentials = $_SESSION['registration_credentials'] ?? [];
-    // Clear the session data to prevent showing on subsequent page loads
+    // Keep session data so page remains on success screen even after reload
+    // Session will be cleared when user explicitly navigates away
+}
+
+// Clear registration session if user explicitly requests it
+if (isset($_GET['clear_session']) && $_GET['clear_session'] === '1') {
     unset($_SESSION['registration_success']);
     unset($_SESSION['registration_credentials']);
     unset($_SESSION['registration_token']);
+    header('Location: ' . ($_GET['redirect'] ?? 'login.php'));
+    exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -123,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle valid ID front upload
         if (isset($_FILES['valid_id_front']) && $_FILES['valid_id_front']['error'] === 0) {
-            $upload = uploadFile($_FILES['valid_id_front'], $idUploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
+            $upload = uploadFile($_FILES['valid_id_front'], $idUploadDir, ['jpg', 'jpeg', 'png']);
             if ($upload['success']) {
                 $validIdFront = $upload['filename'];
             } else {
@@ -135,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle valid ID back upload
         if (isset($_FILES['valid_id_back']) && $_FILES['valid_id_back']['error'] === 0) {
-            $upload = uploadFile($_FILES['valid_id_back'], $idUploadDir, ['jpg', 'jpeg', 'png', 'pdf']);
+            $upload = uploadFile($_FILES['valid_id_back'], $idUploadDir, ['jpg', 'jpeg', 'png']);
             if ($upload['success']) {
                 $validIdBack = $upload['filename'];
             } else {
@@ -249,7 +256,7 @@ include 'header.php';
                         </p>
                         
                         <!-- Display Credentials -->
-                        <div class="alert alert-success mb-4">
+                        <div class="alert alert-success alert-permanent mb-4" id="credentialsToPrint">
                             <h5 class="mb-3"><i class="bi bi-key me-2"></i>Your Login Credentials</h5>
                             <div class="row justify-content-center">
                                 <div class="col-md-8">
@@ -273,7 +280,7 @@ include 'header.php';
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="alert alert-warning mt-3 mb-0 text-start" id="credentialsWarning">
+                                    <div class="alert alert-warning alert-permanent mt-3 mb-0 text-start" id="credentialsWarning">
                                         <i class="bi bi-exclamation-triangle me-2"></i>
                                         <strong>IMPORTANT:</strong> Please save or write down these credentials now. 
                                         You will need them to log in once your registration is approved. 
@@ -283,7 +290,7 @@ include 'header.php';
                             </div>
                         </div>
 
-                        <div class="alert alert-info">
+                        <div class="alert alert-info alert-permanent">
                             <h6><i class="bi bi-info-circle me-2"></i>What happens next?</h6>
                             <ol class="mb-0 text-start">
                                 <li>Your Purok Leader will verify if you are a resident of <?php echo BARANGAY_NAME; ?></li>
@@ -298,18 +305,13 @@ include 'header.php';
                             <button type="button" class="btn btn-primary btn-lg" onclick="handlePrintCredentials()">
                                 <i class="bi bi-printer me-2"></i>Print Credentials
                             </button>
-                            
-                            <!-- Save to Local Storage Button -->
-                            <button type="button" class="btn btn-success btn-lg ms-2" onclick="saveCredentialsToLocal()">
-                                <i class="bi bi-save me-2"></i>Save Credentials
-                            </button>
                         </div>
 
                         <div class="mt-4" id="navigationButtons">
-                            <a href="login.php" class="btn btn-primary" onclick="return confirmNavigation()">
+                            <a href="register.php?clear_session=1&redirect=login.php" class="btn btn-primary">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>Go to Login
                             </a>
-                            <a href="index.php" class="btn btn-outline-secondary ms-2" onclick="return confirmNavigation()">
+                            <a href="register.php?clear_session=1&redirect=index.php" class="btn btn-outline-secondary ms-2">
                                 <i class="bi bi-house me-2"></i>Back to Home
                             </a>
                         </div>
@@ -508,9 +510,6 @@ include 'header.php';
                                     <h5 class="text-primary border-bottom pb-2">
                                         <i class="bi bi-cloud-upload me-2"></i>Document Uploads
                                     </h5>
-                                    <div class="alert alert-warning py-2 mt-2 mb-0">
-                                        <strong>File restrictions:</strong> Allowed types: JPG, PNG, PDF. Maximum size: 5MB per file. Valid ID front and back are required.
-                                    </div>
                                 </div>
                             </div>
                             
@@ -531,9 +530,9 @@ include 'header.php';
                                     <div class="file-upload-area" onclick="document.getElementById('valid_id_front').click()">
                                         <i class="bi bi-card-image fs-1 text-muted"></i>
                                         <p class="mb-0">Click to upload ID front</p>
-                                        <small class="text-muted">JPG, PNG, PDF (Max 5MB)</small>
+                                        <small class="text-muted">JPG, PNG only (Max 5MB)</small>
                                     </div>
-                                    <input type="file" class="form-control visually-hidden" id="valid_id_front" name="valid_id_front" accept="image/*,.pdf" required>
+                                    <input type="file" class="form-control visually-hidden" id="valid_id_front" name="valid_id_front" accept=".jpg,.jpeg,.png" required>
                                     <img id="id_front_preview" class="img-thumbnail mt-2 d-none" style="max-width: 150px;">
                                 </div>
                                 
@@ -542,9 +541,9 @@ include 'header.php';
                                     <div class="file-upload-area" onclick="document.getElementById('valid_id_back').click()">
                                         <i class="bi bi-card-image fs-1 text-muted"></i>
                                         <p class="mb-0">Click to upload ID back</p>
-                                        <small class="text-muted">JPG, PNG, PDF (Max 5MB)</small>
+                                        <small class="text-muted">JPG, PNG only (Max 5MB)</small>
                                     </div>
-                                    <input type="file" class="form-control visually-hidden" id="valid_id_back" name="valid_id_back" accept="image/*,.pdf" required>
+                                    <input type="file" class="form-control visually-hidden" id="valid_id_back" name="valid_id_back" accept=".jpg,.jpeg,.png" required>
                                     <img id="id_back_preview" class="img-thumbnail mt-2 d-none" style="max-width: 150px;">
                                 </div>
                             </div>
@@ -618,18 +617,74 @@ include 'header.php';
 <style>
 /* Print styles */
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 15mm 10mm;
+    }
+    
     body * {
         visibility: hidden;
     }
-    .card, .card * {
+    
+    #credentialsToPrint, #credentialsToPrint * {
         visibility: visible;
     }
-    .card {
-        position: absolute;
-        left: 0;
-        top: 0;
+    
+    #credentialsToPrint {
+        position: fixed !important;
+        left: 50% !important;
+        top: 80px !important;
+        transform: translate(-50%, 0) !important;
+        width: 300px !important;
+        padding: 10px !important;
+        margin: 0 !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
     }
-    .btn, .modal, #navigationButtons {
+    
+    #credentialsToPrint .btn {
+        display: none !important;
+    }
+    
+    #credentialsToPrint h5 {
+        font-size: 16px !important;
+        margin-bottom: 10px !important;
+        margin-top: 0 !important;
+    }
+    
+    #credentialsToPrint .form-label {
+        font-size: 12px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    #credentialsToPrint .form-control {
+        font-size: 13px !important;
+        padding: 5px 8px !important;
+        border: 1px solid #000 !important;
+        height: auto !important;
+    }
+    
+    #credentialsToPrint .bg-white {
+        padding: 10px !important;
+    }
+    
+    #credentialsToPrint .mb-3 {
+        margin-bottom: 8px !important;
+    }
+    
+    #credentialsToPrint .mb-4 {
+        margin-bottom: 0 !important;
+    }
+    
+    #credentialsToPrint .row {
+        margin: 0 !important;
+    }
+    
+    #credentialsToPrint .col-md-8 {
+        padding: 0 !important;
+    }
+    
+    #credentialsWarning {
         display: none !important;
     }
 }
@@ -717,7 +772,7 @@ include 'header.php';
         function checkFile(input, label) {
             if (!input || !input.files || input.files.length === 0) {
                 e.preventDefault();
-                showError('Please upload the ' + label + '. Allowed types: JPG, PNG, PDF. Max 5MB.');
+                showError('Please upload the ' + label + '. Allowed types: JPG, PNG only. Max 5MB.');
                 return false;
             }
             const file = input.files[0];
@@ -727,12 +782,13 @@ include 'header.php';
                 return false;
             }
             const type = file.type;
-            if (!(type.startsWith('image/') || type === 'application/pdf')) {
+            // Only allow JPG and PNG images
+            if (!(type === 'image/jpeg' || type === 'image/png')) {
                 // Fallback: check extension
                 const name = file.name.toLowerCase();
-                if (!name.endsWith('.pdf') && !name.endsWith('.jpg') && !name.endsWith('.jpeg') && !name.endsWith('.png')) {
+                if (!name.endsWith('.jpg') && !name.endsWith('.jpeg') && !name.endsWith('.png')) {
                     e.preventDefault();
-                    showError(label + ' must be JPG, PNG, or PDF.');
+                    showError(label + ' must be JPG or PNG only.');
                     return false;
                 }
             }
@@ -780,6 +836,7 @@ include 'header.php';
     }
 
     function handlePrintCredentials() {
+        // Print only the credentials section
         window.print();
         // Show confirmation modal immediately after print is triggered
         const modal = new bootstrap.Modal(document.getElementById('printConfirmationModal'));
@@ -810,8 +867,8 @@ include 'header.php';
             if (modal) modal.hide();
         }
 
-        // Redirect to login page immediately
-        window.location.href = 'login.php';
+        // Redirect to login page with clear_session parameter
+        window.location.href = 'register.php?clear_session=1&redirect=login.php';
     }
 
     // Function to show toast notifications

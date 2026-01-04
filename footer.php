@@ -70,29 +70,10 @@
         <hr class="my-4">
         
         <div class="row align-items-center">
-            <div class="col-md-6">
+            <div class="col-md-12 text-center">
                 <p class="mb-0 text-light">
                     &copy; <?php echo date('Y'); ?> <?php echo SYSTEM_NAME; ?>. All rights reserved.
                 </p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <ul class="list-inline mb-0">
-                    <li class="list-inline-item">
-                        <a href="privacy-policy.php" class="text-light text-decoration-none small">Privacy Policy</a>
-                    </li>
-                    <li class="list-inline-item">
-                        <span class="text-muted">|</span>
-                    </li>
-                    <li class="list-inline-item">
-                        <a href="terms-of-service.php" class="text-light text-decoration-none small">Terms of Service</a>
-                    </li>
-                    <li class="list-inline-item">
-                        <span class="text-muted">|</span>
-                    </li>
-                    <li class="list-inline-item">
-                        <a href="help.php" class="text-light text-decoration-none small">Help</a>
-                    </li>
-                </ul>
             </div>
         </div>
     </div>
