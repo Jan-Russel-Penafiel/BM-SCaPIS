@@ -56,6 +56,15 @@ $applications = $stmt->fetchAll();
         .status-ready_for_pickup { background-color: #28a745; color: #fff; }
         .status-completed { background-color: #6c757d; color: #fff; }
         .status-rejected { background-color: #dc3545; color: #fff; }
+        
+        /* Ready for pickup badge animation */
+        .ready-pickup-badge {
+            animation: pickupPulse 1.2s infinite alternate;
+        }
+        @keyframes pickupPulse {
+            0% { box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
+            100% { box-shadow: 0 0 10px 4px rgba(13,110,253,0.3); }
+        }
     </style>
 </head>
 <body>
@@ -128,6 +137,7 @@ $applications = $stmt->fetchAll();
                                                 <th>Status</th>
                                                 <th>Processing Time</th>
                                                 <th>Payment</th>
+                                                <th>Receipt</th>
                                                 <th>Date Applied</th>
                                                 <th>Actions</th>
                                             </tr>
@@ -252,6 +262,16 @@ $applications = $stmt->fetchAll();
                                                             <?php echo ucfirst($app['payment_status']); ?>
                                                         </span>
                                                     </td>
+                                                    <td>
+                                                        <?php if (!empty($app['payment_receipt'])): ?>
+                                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                                    onclick="viewReceipt('<?php echo htmlspecialchars($app['payment_receipt']); ?>')">
+                                                                <i class="bi bi-image"></i> View
+                                                            </button>
+                                                        <?php else: ?>
+                                                            <span class="text-muted">-</span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                     <td><?php echo date('M j, Y g:i A', strtotime($app['created_at'])); ?></td>
                                                     <td>
                                                         <div class="btn-group">
@@ -260,34 +280,11 @@ $applications = $stmt->fetchAll();
                                                                 <i class="bi bi-eye"></i>
                                                             </a>
                                                             <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
-                                                                <?php 
-                                                                // Allow payment only if:
-                                                                // 1. Payment appointment is scheduled AND
-                                                                // 2. Appointment is allowed by admin (status = 'payment_allowed')
-                                                                $canPay = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed';
-                                                                $hasScheduledAppointment = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled';
-                                                                ?>
-                                                                <?php if ($canPay): ?>
-                                                                    <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
-                                                                       class="btn btn-sm btn-outline-success"
-                                                                       title="Click to proceed with payment">
-                                                                        <i class="bi bi-credit-card"></i>
-                                                                    </a>
-                                                                <?php elseif ($hasScheduledAppointment): ?>
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-outline-secondary"
-                                                                            disabled
-                                                                            title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
-                                                                        <i class="bi bi-credit-card"></i>
-                                                                    </button>
-                                                                <?php else: ?>
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-outline-secondary"
-                                                                            disabled
-                                                                            title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
-                                                                        <i class="bi bi-credit-card"></i>
-                                                                    </button>
-                                                                <?php endif; ?>
+                                                                <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
+                                                                   class="btn btn-sm btn-outline-success"
+                                                                   title="Click to proceed with payment">
+                                                                    <i class="bi bi-credit-card"></i>
+                                                                </a>
                                                             <?php endif; ?>
                                                             <?php if ($app['status'] === 'ready_for_pickup'): ?>
                                                                 <a href="schedule-pickup.php?id=<?php echo $app['id']; ?>" 
@@ -438,6 +435,12 @@ $applications = $stmt->fetchAll();
                                                         ?>">
                                                             <?php echo ucfirst($app['payment_status']); ?>
                                                         </span>
+                                                        <?php if (!empty($app['payment_receipt'])): ?>
+                                                            <button type="button" class="btn btn-sm btn-outline-info ms-2" 
+                                                                    onclick="viewReceipt('<?php echo htmlspecialchars($app['payment_receipt']); ?>')">
+                                                                <i class="bi bi-image"></i> View Receipt
+                                                            </button>
+                                                        <?php endif; ?>
                                                     </div>
                                                     
                                                     <div class="d-flex gap-2">
@@ -446,34 +449,11 @@ $applications = $stmt->fetchAll();
                                                             <i class="bi bi-eye me-1"></i>View
                                                         </a>
                                                         <?php if ($app['status'] === 'pending' && $app['payment_status'] === 'unpaid'): ?>
-                                                            <?php 
-                                                            // Allow payment only if:
-                                                            // 1. Payment appointment is scheduled AND
-                                                            // 2. Appointment is allowed by admin (status = 'payment_allowed')
-                                                            $canPay = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'payment_allowed';
-                                                            $hasScheduledAppointment = $app['payment_appointment_id'] && $app['payment_appointment_status'] === 'scheduled';
-                                                            ?>
-                                                            <?php if ($canPay): ?>
-                                                                <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
-                                                                   class="btn btn-sm btn-outline-success flex-fill"
-                                                                   title="Click to proceed with payment">
-                                                                    <i class="bi bi-credit-card me-1"></i>Pay
-                                                                </a>
-                                                            <?php elseif ($hasScheduledAppointment): ?>
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-secondary flex-fill"
-                                                                        disabled
-                                                                        title="Payment appointment scheduled for <?php echo date('M j, Y g:i A', strtotime($app['payment_appointment_date'])); ?>. Waiting for admin to allow payment.">
-                                                                    <i class="bi bi-credit-card me-1"></i>Pay
-                                                                </button>
-                                                            <?php else: ?>
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-secondary flex-fill"
-                                                                        disabled
-                                                                        title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
-                                                                    <i class="bi bi-credit-card me-1"></i>Pay
-                                                                </button>
-                                                            <?php endif; ?>
+                                                            <a href="pay-application.php?id=<?php echo $app['id']; ?>" 
+                                                               class="btn btn-sm btn-outline-success flex-fill"
+                                                               title="Click to proceed with payment">
+                                                                <i class="bi bi-credit-card me-1"></i>Pay
+                                                            </a>
                                                         <?php endif; ?>
                                                         <?php if ($app['status'] === 'ready_for_pickup'): ?>
                                                             <a href="schedule-pickup.php?id=<?php echo $app['id']; ?>" 
@@ -509,9 +489,12 @@ $applications = $stmt->fetchAll();
                             <p class="mb-2">
                                 <strong>Processing Time:</strong> All document applications take <strong>3 to 5 working days (except holidays)</strong> to process.
                             </p>
+                            <p class="mb-2">
+                                <strong>When does processing start?</strong> Processing begins after the admin confirms your payment and starts the processing. 
+                                The countdown starts from when processing begins, not the application submission date.
+                            </p>
                             <p class="mb-0">
-                                <strong>When does processing start?</strong> Processing begins automatically after your payment is confirmed. 
-                                The countdown starts from the payment date, not the application submission date.
+                                <strong>Workflow:</strong> Submit Application → Pay at Barangay → Payment Confirmed → Processing Starts → Ready for Pickup → Completed
                             </p>
                         </div>
                     </div>
@@ -526,18 +509,20 @@ $applications = $stmt->fetchAll();
                     <div class="card-body">
                         <div class="row g-4">
                             <div class="col-md-4">
+                                <h6 class="text-muted mb-3"><i class="bi bi-file-earmark-text me-1"></i>Application Status</h6>
                                 <div class="d-flex align-items-center mb-3">
                                     <span class="badge status-pending me-2">Pending</span>
-                                    <span>Waiting for payment</span>
+                                    <span>Waiting for payment confirmation</span>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="badge status-processing me-2">Processing</span>
-                                    <span>Document is being processed (3-5 days)</span>
+                                    <span>Document is being processed (3-5 working days)</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
+                                <h6 class="text-muted mb-3"><i class="bi bi-check-circle me-1"></i>Completion Status</h6>
                                 <div class="d-flex align-items-center mb-3">
-                                    <span class="badge status-ready_for_pickup me-2">Ready</span>
+                                    <span class="badge bg-primary text-white fw-bold ready-pickup-badge me-2">Ready</span>
                                     <span>Document is ready for pickup</span>
                                 </div>
                                 <div class="d-flex align-items-center">
@@ -546,13 +531,14 @@ $applications = $stmt->fetchAll();
                                 </div>
                             </div>
                             <div class="col-md-4">
+                                <h6 class="text-muted mb-3"><i class="bi bi-cash-coin me-1"></i>Payment Status</h6>
                                 <div class="d-flex align-items-center mb-3">
                                     <span class="badge bg-success me-2">Paid</span>
-                                    <span>Payment received - Processing started</span>
+                                    <span>Payment confirmed - Processing will start</span>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-warning me-2">Unpaid</span>
-                                    <span>Payment pending - Processing not yet started</span>
+                                    <span>Awaiting payment - Processing on hold</span>
                                 </div>
                             </div>
                         </div>
@@ -691,6 +677,45 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Receipt Preview Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Payment Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="receiptImage" src="" alt="Payment Receipt" class="img-fluid" style="max-height: 75vh; width: auto; max-width: 100%;">
+                <div id="receiptPdf" style="display: none;">
+                    <iframe id="pdfFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewReceipt(receiptPath) {
+    const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    const img = document.getElementById('receiptImage');
+    const pdfDiv = document.getElementById('receiptPdf');
+    const pdfFrame = document.getElementById('pdfFrame');
+    
+    if (receiptPath.toLowerCase().endsWith('.pdf')) {
+        img.style.display = 'none';
+        pdfDiv.style.display = 'block';
+        pdfFrame.src = receiptPath;
+    } else {
+        pdfDiv.style.display = 'none';
+        img.style.display = 'block';
+        img.src = receiptPath;
+    }
+    
+    modal.show();
+}
+</script>
+
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <!-- Bootstrap JS -->
@@ -698,10 +723,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-
-<!-- Support Chat Widget -->
-<?php include 'includes/support-widget.php'; ?>
-<script src="includes/support-chat-functions.js"></script>
 
 </body>
 </html> 

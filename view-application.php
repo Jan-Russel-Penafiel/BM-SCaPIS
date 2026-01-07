@@ -264,112 +264,13 @@ include 'sidebar.php';
                             </div>
                             <?php endif; ?>
                             
-                            <!-- Payment Appointment Information -->
-                            <?php if ($application['payment_appointment_id']): ?>
-                            <div class="col-12">
-                                <hr class="my-3">
-                                <h6 class="text-muted mb-3">
-                                    <i class="bi bi-calendar-check me-2"></i>Payment Appointment
-                                </h6>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6 class="text-muted mb-1">Appointment Date</h6>
-                                        <p class="mb-0">
-                                            <?php echo date('F j, Y g:i A', strtotime($application['payment_appointment_date'])); ?>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6 class="text-muted mb-1">Appointment Status</h6>
-                                        <span class="badge bg-<?php 
-                                            echo $application['payment_appointment_status'] === 'payment_allowed' ? 'success' : 
-                                                ($application['payment_appointment_status'] === 'scheduled' ? 'warning' : 'secondary');
-                                        ?>">
-                                            <?php 
-                                            switch($application['payment_appointment_status']) {
-                                                case 'payment_allowed':
-                                                    echo 'Payment Allowed';
-                                                    break;
-                                                case 'scheduled':
-                                                    echo 'Waiting for Approval';
-                                                    break;
-                                                case 'completed':
-                                                    echo 'Completed';
-                                                    break;
-                                                default:
-                                                    echo ucfirst($application['payment_appointment_status']);
-                                            }
-                                            ?>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <?php if ($application['payment_status'] === 'unpaid'): ?>
-                            <div class="col-12">
-                                <hr class="my-3">
-                                <?php 
-                                // Allow payment only if:
-                                // 1. Payment appointment is scheduled AND
-                                // 2. Appointment is allowed by admin (status = 'payment_allowed')
-                                $canPay = $application['payment_appointment_id'] && $application['payment_appointment_status'] === 'payment_allowed';
-                                $hasScheduledAppointment = $application['payment_appointment_id'] && $application['payment_appointment_status'] === 'scheduled';
-                                ?>
-                                
-                                <?php if ($canPay): ?>
-                                    <a href="pay-application.php?id=<?php echo $application['id']; ?>" 
-                                       class="btn btn-success">
-                                        <i class="bi bi-credit-card me-2"></i>Pay Now
-                                    </a>
-                                    <p class="text-success mt-2 mb-0">
-                                        <i class="bi bi-check-circle me-1"></i>
-                                        Payment has been approved and is now available for processing.
-                                    </p>
-                                    
-                                <?php elseif ($hasScheduledAppointment): ?>
-                                    <button type="button" 
-                                            class="btn btn-secondary" 
-                                            disabled
-                                            title="Payment is scheduled for <?php echo date('M j, Y g:i A', strtotime($application['payment_appointment_date'])); ?>. Waiting for admin approval.">
-                                        <i class="bi bi-lock me-2"></i>Payment Pending Approval
-                                    </button>
-                                    
-                                    <div class="alert alert-info mt-3 mb-0">
-                                        <h6 class="alert-heading">
-                                            <i class="bi bi-info-circle me-2"></i>Payment Appointment Scheduled
-                                        </h6>
-                                        <p class="mb-2">
-                                            Your payment appointment is scheduled for <strong><?php echo date('F j, Y \a\t g:i A', strtotime($application['payment_appointment_date'])); ?></strong>.
-                                        </p>
-                                        <p class="mb-0">
-                                            <small class="text-muted">
-                                                The "Pay Now" button will be enabled once the administrator approves your payment after the scheduled appointment time.
-                                            </small>
-                                        </p>
-                                    </div>
-                                    
-                                <?php else: ?>
-                                    <button type="button" 
-                                            class="btn btn-secondary" 
-                                            disabled
-                                            title="Payment appointment not scheduled yet. Please wait for admin to schedule your payment appointment.">
-                                        <i class="bi bi-lock me-2"></i>Payment Not Available
-                                    </button>
-                                    
-                                    <div class="alert alert-warning mt-3 mb-0">
-                                        <h6 class="alert-heading">
-                                            <i class="bi bi-exclamation-triangle me-2"></i>Payment Appointment Required
-                                        </h6>
-                                        <p class="mb-2">
-                                            A payment appointment must be scheduled before you can make payment.
-                                        </p>
-                                        <p class="mb-0">
-                                            <small class="text-muted">
-                                                Please wait for the administrator to schedule your payment appointment. You will be notified once it's available.
-                                            </small>
-                                        </p>
-                                    </div>
-                                <?php endif; ?>
+                            <?php if (!empty($application['payment_receipt'])): ?>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1">Payment Receipt</h6>
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        onclick="viewReceipt('<?php echo htmlspecialchars($application['payment_receipt']); ?>')">
+                                    <i class="bi bi-image"></i> View Receipt
+                                </button>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -974,7 +875,44 @@ include 'sidebar.php';
 }
 </style>
 
+<!-- Receipt Preview Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Payment Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="receiptImage" src="" alt="Payment Receipt" class="img-fluid" style="max-height: 75vh; width: auto; max-width: 100%;">
+                <div id="receiptPdf" style="display: none;">
+                    <iframe id="pdfFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+function viewReceipt(receiptPath) {
+    const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    const img = document.getElementById('receiptImage');
+    const pdfDiv = document.getElementById('receiptPdf');
+    const pdfFrame = document.getElementById('pdfFrame');
+    
+    if (receiptPath.toLowerCase().endsWith('.pdf')) {
+        img.style.display = 'none';
+        pdfDiv.style.display = 'block';
+        pdfFrame.src = receiptPath;
+    } else {
+        pdfDiv.style.display = 'none';
+        img.style.display = 'block';
+        img.src = receiptPath;
+    }
+    
+    modal.show();
+}
+
 function printDocument() {
     // Ensure modal is visible for printing
     const modal = document.getElementById('printModal');
@@ -997,8 +935,4 @@ window.addEventListener('afterprint', function() {
 });
 </script>
 
-<?php include 'scripts.php'; ?>
-
-<!-- Support Chat Widget -->
-<?php include 'includes/support-widget.php'; ?>
-<script src="includes/support-chat-functions.js"></script> 
+<?php include 'scripts.php'; ?> 

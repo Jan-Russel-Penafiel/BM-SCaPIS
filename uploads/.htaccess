@@ -1,0 +1,10 @@
+# Prevent PHP execution in uploads directory
+# This is a security measure to prevent uploaded files from being executed
+
+php_flag engine off
+
+# Deny access to all files except images and PDFs
+<FilesMatch "\.(jpg|jpeg|png|gif|pdf)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>

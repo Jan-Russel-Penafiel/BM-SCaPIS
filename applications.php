@@ -357,6 +357,12 @@ include 'sidebar.php';
                                                         Payment appt: <?php echo date('M j, g:i A', strtotime($mainApp['payment_appointment_date'])); ?>
                                                     </small>
                                                 <?php endif; ?>
+                                                <?php if (!empty($mainApp['payment_receipt'])): ?>
+                                                    <button type="button" class="btn btn-sm btn-outline-info mt-1 w-100" 
+                                                            onclick="viewReceipt('<?php echo htmlspecialchars($mainApp['payment_receipt']); ?>')">
+                                                        <i class="bi bi-image"></i> View Receipt
+                                                    </button>
+                                                <?php endif; ?>
                                                 <small class="text-muted d-block mt-1">
                                                     <i class="bi bi-clock me-1"></i>Applied: <?php echo date('M j, Y', strtotime($mainApp['created_at'])); ?>
                                                 </small>
@@ -372,11 +378,19 @@ include 'sidebar.php';
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                     <?php if ($_SESSION['role'] === 'admin'): ?>
-                                                        <?php if ($mainApp['status'] === 'pending'): ?>
+                                                        <?php if ($mainApp['status'] === 'pending' && $mainApp['payment_status'] === 'unpaid'): ?>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-warning payment-btn"
+                                                                    onclick="markPaymentReceived(<?php echo $mainApp['id']; ?>)"
+                                                                    title="Mark Payment as Received">
+                                                                <i class="bi bi-cash-coin"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if ($mainApp['status'] === 'pending' && ($mainApp['payment_status'] === 'paid' || $mainApp['payment_status'] === 'waived')): ?>
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-success process-btn"
                                                                     onclick="processApplication(<?php echo $mainApp['id']; ?>)"
-                                                                    title="Start Processing (Payment Received)">
+                                                                    title="Start Processing">
                                                                 <i class="bi bi-play-circle"></i>
                                                             </button>
                                                         <?php endif; ?>
@@ -422,26 +436,60 @@ include 'sidebar.php';
     </div>
 </div>
 
+<!-- Payment Received Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cash-coin me-2"></i>Mark Payment as Received</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="mark-payment-received.php" method="POST">
+                <input type="hidden" name="application_id" id="paymentApplicationId">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This will mark the payment status as <strong>Paid</strong>. The application status will remain as <strong>Pending</strong> until you start processing.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Remarks (Optional)</label>
+                        <textarea name="remarks" class="form-control" rows="3" 
+                                placeholder="Enter payment details or remarks (e.g., receipt number, payment method)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-check-circle me-1"></i>Confirm Payment Received</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Process Application Modal -->
 <div class="modal fade" id="processModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Process Application</h5>
+                <h5 class="modal-title"><i class="bi bi-play-circle me-2"></i>Start Processing Application</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="process-application.php" method="POST">
                 <input type="hidden" name="application_id" id="processApplicationId">
                 <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Payment has been confirmed. You can now start processing this application.
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label">Remarks</label>
+                        <label class="form-label">Processing Remarks (Optional)</label>
                         <textarea name="remarks" class="form-control" rows="3" 
                                 placeholder="Enter processing remarks or instructions"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Start Processing</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-play-circle me-1"></i>Start Processing</button>
                 </div>
             </form>
         </div>
@@ -650,11 +698,20 @@ function generateActionsColumnContent(app) {
     // Add admin-specific buttons based on application status
     // This would need to check the user's role from PHP session
     <?php if ($_SESSION['role'] === 'admin'): ?>
-    if (app.status === 'pending') {
+    if (app.status === 'pending' && app.payment_status === 'unpaid') {
+        html += `<button type="button" 
+                        class="btn btn-sm btn-outline-warning payment-btn"
+                        onclick="markPaymentReceived(${app.id})"
+                        title="Mark Payment as Received">
+                    <i class="bi bi-cash-coin"></i>
+                </button>`;
+    }
+    
+    if (app.status === 'pending' && (app.payment_status === 'paid' || app.payment_status === 'waived')) {
         html += `<button type="button" 
                         class="btn btn-sm btn-outline-success process-btn"
                         onclick="processApplication(${app.id})"
-                        title="Start Processing (Payment Received)">
+                        title="Start Processing">
                     <i class="bi bi-play-circle"></i>
                 </button>`;
     }
@@ -706,6 +763,11 @@ function completeApplication(id) {
 function openReadyAppointmentModal(appId) {
     document.getElementById('readyAppointmentApplicationId').value = appId;
     new bootstrap.Modal(document.getElementById('readyAppointmentModal')).show();
+}
+
+function markPaymentReceived(id) {
+    document.getElementById('paymentApplicationId').value = id;
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
 }
 </script>
 
@@ -962,8 +1024,44 @@ function openReadyAppointmentModal(appId) {
 }
 </style>
 
-<?php include 'scripts.php'; ?>
+<!-- Receipt Preview Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Payment Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="receiptImage" src="" alt="Payment Receipt" class="img-fluid" style="max-height: 75vh; width: auto; max-width: 100%;">
+                <div id="receiptPdf" style="display: none;">
+                    <iframe id="pdfFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- Support Chat Widget -->
-<?php include 'includes/support-widget.php'; ?>
-<script src="includes/support-chat-functions.js"></script> 
+<script>
+function viewReceipt(receiptPath) {
+    const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    const img = document.getElementById('receiptImage');
+    const pdfDiv = document.getElementById('receiptPdf');
+    const pdfFrame = document.getElementById('pdfFrame');
+    
+    if (receiptPath.toLowerCase().endsWith('.pdf')) {
+        img.style.display = 'none';
+        pdfDiv.style.display = 'block';
+        pdfFrame.src = receiptPath;
+    } else {
+        pdfDiv.style.display = 'none';
+        img.style.display = 'block';
+        img.src = receiptPath;
+    }
+    
+    modal.show();
+}
+</script>
+
+<?php include 'scripts.php'; ?>
+ 

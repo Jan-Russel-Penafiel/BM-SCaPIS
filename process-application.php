@@ -44,9 +44,9 @@ try {
         throw new Exception('Application not found or already being processed.');
     }
     
-    // Check payment status
+    // Check payment status - must be paid or waived before processing
     if ($application['payment_status'] === 'unpaid') {
-        throw new Exception('Cannot process application. Payment is still pending.');
+        throw new Exception('Cannot process application. Please mark payment as received first.');
     }
     
     // Start transaction
