@@ -295,9 +295,12 @@ include 'sidebar.php';
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Remarks <span class="text-danger">*</span></label>
-                        <textarea name="remarks" class="form-control" rows="3" required
-                                placeholder="Enter any additional remarks or reasons (minimum 3 characters)"></textarea>
-                        <small class="text-muted">Required: Please provide at least 3 characters</small>
+                        <select name="remarks" class="form-select" required>
+                            <option value="">-- Select remark --</option>
+                            <option value="Resident">Resident</option>
+                            <option value="Not Resident">Not Resident</option>
+                        </select>
+                        <small class="text-muted">Select whether the applicant is a resident of the purok</small>
                     </div>
                 </div>
                 <div class="modal-footer">

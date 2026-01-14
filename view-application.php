@@ -42,10 +42,11 @@ if ($_SESSION['role'] === 'resident' && $applicationAccess['user_id'] !== $_SESS
 
 // Get application details
 $stmt = $pdo->prepare("
-    SELECT a.*, dt.type_name, dt.fee, dt.processing_days,
-           CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name,
-           CONCAT(u.first_name, ' ', u.last_name) as applicant_name,
-           u.contact_number, u.email, p.purok_name,
+        SELECT a.*, dt.type_name, dt.fee, dt.processing_days,
+            CONCAT(pb.first_name, ' ', pb.last_name) as processed_by_name,
+            CONCAT(u.first_name, ' ', u.last_name) as applicant_name,
+            u.contact_number, u.email, p.purok_name,
+            u.birthdate as applicant_birthdate, u.gender as applicant_gender, u.civil_status as applicant_civil_status, u.address as applicant_address,
            apt.id as payment_appointment_id,
            apt.appointment_date as payment_appointment_date,
            apt.status as payment_appointment_status
@@ -514,107 +515,121 @@ include 'sidebar.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
-                <div id="printableContent" style="padding: 20px; font-family: 'Times New Roman', serif; font-size: 12px; line-height: 1.5; color: black; background: white; min-height: 100vh; display: flex; flex-direction: column;">
-                    <!-- Print Content -->
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">REPUBLIC OF THE PHILIPPINES</div>
-                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">BARANGAY MALANGIT</div>
-                        <div style="font-size: 11px; margin-bottom: 4px;">Pandag, Maguindanao Del Sur</div>
-                        <div style="font-size: 10px; font-style: italic;">OFFICE OF THE PUNONG BARANGAY</div>
-                        <hr style="border: none; border-top: 2px solid black; margin: 12px auto; width: 80%;">
+                <div id="printableContent" class="docu-page">
+                    <?php
+                        $seriesYear = date('Y');
+                        $issuedLong = date('jS \d\a\y \o\f F Y');
+                        $issuedShort = date('F j, Y');
+                        $issuedDay = date('jS');
+                        $issuedMonthYear = date('F Y');
+                        $captainName = strtoupper(htmlspecialchars($application['processed_by_name'] ?? 'HON. MOHAMAD S. ABDULKASAN'));
+
+                        $civil = trim((string)($application['applicant_civil_status'] ?? ''));
+                        $civilText = $civil !== '' ? strtolower($civil) : '';
+                        $purokText = trim((string)($application['purok_name'] ?? ''));
+                        $residentOf = $purokText !== '' ? ('of ' . htmlspecialchars($purokText)) : '';
+
+                        $applicantUpper = strtoupper(htmlspecialchars($application['applicant_name']));
+                    ?>
+
+                    <!-- Header (match docu-format.jpg) -->
+                    <div class="docu-header">
+                        <div class="docu-header-row">
+                            <div class="docu-logo">
+                                <img src="assets/images/logo-512x512.png" alt="Barangay Malangit Seal">
+                            </div>
+                            <div class="docu-header-text">
+                                <div class="docu-rp">Republic of the Philippines</div>
+                                <div class="docu-region">BANGSAMORO AUTONOMOUS REGION IN MUSLIM MINDANAO</div>
+                                <div class="docu-province">Province of Maguindanao Del Sur</div>
+                                <div class="docu-muni">Municipality of Pandag</div>
+                                <div class="docu-brgy">Barangay Government of Malangit</div>
+                                <div class="docu-email">Email address: pandagmalangit@gmail.com / 09569610560</div>
+                            </div>
+                            <div class="docu-logo docu-logo-right">
+                                <img src="panadg.jpg" alt="Municipality Seal">
+                            </div>
+                        </div>
+
+                        <div class="docu-office">OFFICE OF THE PUNONG BARANGAY</div>
+                        <div class="docu-title-row">
+                            <div class="docu-title">BARANGAY CLEARANCE</div>
+                            <div class="docu-series">Series of <?php echo htmlspecialchars($seriesYear); ?></div>
+                        </div>
                     </div>
-                    
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <div style="font-size: 14px; font-weight: bold; text-decoration: underline;"><?php echo strtoupper(htmlspecialchars($application['type_name'])); ?></div>
-                    </div>
-                    
-                    <div style="margin-bottom: 25px; flex-grow: 1;">
-                        <div style="font-weight: bold; margin-bottom: 15px; font-size: 13px;">TO WHOM IT MAY CONCERN:</div>
-                        
-                        <div style="margin-bottom: 15px; text-indent: 40px; text-align: justify; line-height: 1.6;">
-                            This is to certify that <strong><?php echo strtoupper(htmlspecialchars($application['applicant_name'])); ?></strong><?php if ($application['purok_name']): ?>, a resident of <?php echo htmlspecialchars($application['purok_name']); ?><?php endif; ?>, Barangay Malangit, Pandag, Maguindanao Del Sur, Philippines, has requested this document for the following purpose:
-                        </div>
-                        
-                        <div style="text-align: center; margin: 20px 0; font-weight: bold; font-style: italic; font-size: 13px; padding: 10px; border: 1px dashed black;">
-                            "<?php echo strtoupper(htmlspecialchars($application['purpose'])); ?>"
-                        </div>
-                        
-                        <div style="margin-bottom: 15px; text-indent: 40px; text-align: justify; line-height: 1.6;">
-                            This certification is issued upon the request of the above-mentioned person for whatever legal purpose it may serve him/her best.
-                        </div>
-                        
-                        <div style="margin-bottom: 15px; text-indent: 40px; line-height: 1.6;">
-                            This document is valid and issued with the authority vested in me as Punong Barangay of this community.
-                        </div>
-                        
-                        <div style="margin-bottom: 30px; text-indent: 40px; line-height: 1.6;">
-                            Given this <?php echo date('jS \d\a\y \o\f F, Y'); ?> at Barangay Malangit, Pandag, Maguindanao Del Sur, Philippines.
-                        </div>
-                    </div>
-                    
-                    <!-- Signatures section with more space -->
-                    <div style="margin-top: 40px;">
-                        <table style="width: 100%; margin-bottom: 30px;">
-                            <tr>
-                                <td style="width: 50%; vertical-align: top; padding-right: 15px;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Conforme:</div>
-                                    <div style="margin-top: 30px; margin-bottom: 5px;">
-                                        <div style="border-bottom: 1px solid black; height: 25px; margin-bottom: 5px; text-align: center; line-height: 25px;">
-                                            <?php echo strtoupper(htmlspecialchars($application['applicant_name'])); ?>
-                                        </div>
+
+                    <!-- Body -->
+                    <div class="docu-body">
+                        <!-- Left officials panel -->
+                        <div class="docu-left">
+                            <div class="docu-officials-head">BRGY. OFFICIALS</div>
+
+                            <div class="docu-officials-captain">
+                                <div class="docu-officials-captain-name"><?php echo $captainName; ?></div>
+                                <div class="docu-officials-captain-role">Barangay Captain</div>
+                            </div>
+
+                            <div class="docu-officials-list">
+                                <div class="docu-officials-section">KAGAWAD</div>
+                                <div class="docu-official">HON. SURATO B. SABANG</div>
+                                <div class="docu-official">HON. MANSOR B. ABDULKARIM</div>
+                                <div class="docu-official">HON. NORMAN S. ABDULKASAN</div>
+                                <div class="docu-official">HON. SAMSUDIN U. ALAMANSA</div>
+                                <div class="docu-official">HON. ZAHABUDIN L. ABDULRADZAK</div>
+                                <div class="docu-official">HON. ROHOLLAH K. USOP</div>
+                                <div class="docu-official">HON. RAMSAN A. SALENDAB</div>
+
+                                <div class="docu-officials-bottom">
+                                    <div class="docu-official docu-official-bottom">
+                                        ALMAIRA A. BUALAN<br><span>BRGY. Secretary</span>
                                     </div>
-                                    <div style="font-size: 10px; text-align: center;">Applicant's Signature over Printed Name</div>
-                                    <div style="font-size: 10px; text-align: center; margin-top: 5px;">Date: ______________</div>
-                                </td>
-                                <td style="width: 50%; vertical-align: top; text-align: center; padding-left: 15px;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Certified Correct:</div>
-                                    <div style="margin-top: 30px; margin-bottom: 5px;">
-                                        <div style="border-bottom: 1px solid black; height: 25px; margin-bottom: 5px;">
-                                            &nbsp;
-                                        </div>
+                                    <div class="docu-official docu-official-bottom">
+                                        MOHAMAD P. GUIAPAL<br><span>BRGY. Treasurer</span>
                                     </div>
-                                    <div style="font-size: 10px; font-weight: bold;">HON. PUNONG BARANGAY</div>
-                                    <div style="font-size: 10px; margin-top: 5px;">Date: ______________</div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <!-- Document details section -->
-                    <div style="border: 2px solid black; padding: 12px; margin-top: 20px;">
-                        <div style="text-align: center; font-weight: bold; margin-bottom: 8px; font-size: 11px;">DOCUMENT INFORMATION</div>
-                        <table style="width: 100%;">
-                            <tr>
-                                <td style="font-size: 10px; padding: 2px;"><strong>Application Number:</strong></td>
-                                <td style="font-size: 10px; padding: 2px;"><?php echo htmlspecialchars($application['application_number']); ?></td>
-                                <td style="font-size: 10px; padding: 2px;"><strong>Date Issued:</strong></td>
-                                <td style="font-size: 10px; padding: 2px;"><?php echo date('F j, Y'); ?></td>
-                            </tr>
-                            <tr>
-                                <td style="font-size: 10px; padding: 2px;"><strong>Document Fee:</strong></td>
-                                <td style="font-size: 10px; padding: 2px;">₱<?php echo number_format($application['fee'], 2); ?></td>
-                                <td style="font-size: 10px; padding: 2px;"><strong>Payment Status:</strong></td>
-                                <td style="font-size: 10px; padding: 2px;"><?php echo ucfirst($application['payment_status']); ?></td>
-                            </tr>
-                            <?php if ($application['payment_reference']): ?>
-                            <tr>
-                                <td style="font-size: 10px; padding: 2px;"><strong>Reference No:</strong></td>
-                                <td style="font-size: 10px; padding: 2px;" colspan="3"><?php echo htmlspecialchars($application['payment_reference']); ?></td>
-                            </tr>
-                            <?php endif; ?>
-                        </table>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid black;">
-                        <div style="font-size: 10px; font-style: italic; margin-bottom: 3px;">
-                            "Serbisyong mabilis, tapat at mapagkakatiwalaan"
+                                </div>
+                            </div>
                         </div>
-                        <div style="font-size: 9px; color: #666;">
-                            This document is computer-generated and not valid without official seal and signature
-                        </div>
-                        <div style="font-size: 8px; margin-top: 5px;">
-                            Generated on: <?php echo date('F j, Y g:i A'); ?>
+
+                        <!-- Right content -->
+                        <div class="docu-right">
+                            <p class="docu-paragraph">
+                                This is to certify that according to records available in this Barangay that
+                                <strong><?php echo $applicantUpper; ?></strong>
+                                of legal age<?php echo $civilText !== '' ? (', ' . htmlspecialchars($civilText) . ',') : ','; ?>
+                                is a Bonafide resident <?php echo $residentOf !== '' ? $residentOf : ''; ?>
+                                <?php if ($residentOf !== ''): ?>,<?php endif; ?>
+                                Barangay Malangit, Pandag Maguindanao del Sur.
+                            </p>
+
+                            <p class="docu-paragraph">
+                                This clearance is being issued upon the request of the above-named person as per requesting for whatever legal
+                                purposes it may serve him/her best.
+                            </p>
+
+                            <p class="docu-paragraph">
+                                Issued this <strong><?php echo htmlspecialchars($issuedDay); ?></strong> day of
+                                <strong><?php echo htmlspecialchars($issuedMonthYear); ?></strong> at the office of the Punong Barangay,
+                                Barangay Malangit, Pandag Maguindanao del Sur, Philippines.
+                            </p>
+
+                            <div class="docu-signatures">
+                                <div class="docu-signature-right">
+                                    <div class="docu-sig-line"></div>
+                                    <div class="docu-sig-name"><strong><?php echo $captainName; ?></strong></div>
+                                    <div class="docu-sig-role">Punong Barangay</div>
+                                </div>
+
+                                <div class="docu-signature-left">
+                                    <div class="docu-app-line"></div>
+                                    <div class="docu-app-label">Applicant's signature</div>
+                                </div>
+                            </div>
+
+                            <div class="docu-notes">
+                                <div class="docu-note-label">Note:</div>
+                                <div class="docu-note-red">Not valid without the official dry seal</div>
+                                <div class="docu-note-gray">Valid until Dec. <?php echo htmlspecialchars($seriesYear); ?></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -629,6 +644,215 @@ include 'sidebar.php';
 <?php endif; ?>
 
 <style>
+/* =========================================================
+   Print Document - Barangay Clearance (docu-format.jpg)
+   ========================================================= */
+.docu-page{
+    padding: 18px 18px;
+    font-family: "Times New Roman", serif;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #000;
+    background: #fff;
+    min-height: 100vh;
+}
+.docu-header{
+    border: 2px solid #1f3f66;
+    border-bottom: none;
+}
+.docu-header-row{
+    background: linear-gradient(180deg, #2f5f91 0%, #2a5786 55%, #234a73 100%);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.docu-logo{
+    width: 86px;
+    flex: 0 0 86px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.docu-logo img{
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+}
+.docu-logo-right{
+    justify-content: flex-end;
+}
+.docu-header-text{
+    flex: 1 1 auto;
+    text-align: center;
+    color: #fff;
+}
+.docu-rp{ font-size: 12px; font-weight: 700; }
+.docu-region{ font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.docu-province{ font-size: 12px; margin-top: 1px; }
+.docu-muni{ font-size: 13px; font-weight: 700; margin-top: 4px; }
+.docu-brgy{ font-size: 15px; font-weight: 700; margin-top: 2px; }
+.docu-email{ font-size: 11px; margin-top: 3px; }
+.docu-office{
+    background: #2e6aa1;
+    color: #fff;
+    text-align: center;
+    font-weight: 700;
+    padding: 6px 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.docu-title-row{
+    border-left: 2px solid #1f3f66;
+    border-right: 2px solid #1f3f66;
+    border-bottom: 2px solid #1f3f66;
+    padding: 10px 12px 12px 12px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.docu-title{
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 5px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.docu-series{
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    color: #b11a1a;
+    font-weight: 700;
+    font-size: 12px;
+}
+.docu-body{
+    border: 2px solid #1f3f66;
+    border-top: none;
+    padding: 14px 12px 14px 12px;
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    gap: 16px;
+    min-height: 660px;
+}
+.docu-left{
+    background: #5d7fa0;
+    color: #0b1a28;
+    padding: 0;
+}
+.docu-officials-head{
+    background: #caa64f;
+    color: #000;
+    font-weight: 800;
+    text-align: center;
+    padding: 10px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.docu-officials-captain{
+    background: #caa64f;
+    margin: 0 10px 10px 10px;
+    padding: 10px 10px;
+    border-radius: 2px;
+}
+.docu-officials-captain-name{ font-weight: 800; text-transform: uppercase; font-size: 12px; }
+.docu-officials-captain-role{ font-size: 11px; margin-top: 2px; font-weight: 700; }
+.docu-officials-list{
+    margin: 0 10px 12px 10px;
+    background: rgba(255,255,255,0.15);
+    padding: 10px 10px 12px 10px;
+}
+.docu-officials-section{
+    text-align: center;
+    font-weight: 800;
+    color: #e8f0f8;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+.docu-official{
+    font-size: 11px;
+    padding: 6px 0;
+    border-top: 1px solid rgba(255,255,255,0.25);
+    color: #0b1a28;
+    font-weight: 700;
+}
+.docu-official:first-of-type{
+    border-top: none;
+}
+.docu-officials-bottom{
+    margin-top: 10px;
+}
+.docu-official-bottom{
+    font-size: 11px;
+    font-weight: 800;
+}
+.docu-official-bottom span{
+    font-weight: 700;
+    font-size: 10px;
+}
+.docu-right{
+    padding-top: 2px;
+    font-size: 14px;
+}
+.docu-paragraph{
+    margin: 0 0 18px 0;
+    text-align: left;
+}
+.docu-signatures{
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 18px;
+}
+.docu-signature-right{
+    text-align: center;
+}
+.docu-sig-line{
+    height: 34px;
+    border-bottom: 2px solid #000;
+    margin: 0 24px 6px 24px;
+}
+.docu-sig-name{
+    text-transform: uppercase;
+}
+.docu-sig-role{
+    margin-top: 2px;
+}
+.docu-signature-left{
+    text-align: left;
+    padding-left: 10px;
+}
+.docu-app-line{
+    height: 34px;
+    border-bottom: 2px solid #000;
+    width: 220px;
+    margin-bottom: 6px;
+}
+.docu-app-label{
+    font-size: 12px;
+}
+.docu-notes{
+    margin-top: 46px;
+    font-size: 12px;
+}
+.docu-note-label{
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.docu-note-red{
+    color: #b11a1a;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+.docu-note-gray{
+    color: #333;
+    font-weight: 700;
+}
+
 /* Application Timeline Styles */
 .application-timeline {
     position: relative;
@@ -779,12 +1003,22 @@ include 'sidebar.php';
         width: 100% !important;
         height: auto !important;
         margin: 0 !important;
-        padding: 15px !important;
+        padding: 0 !important;
         background: white !important;
         font-size: 12px !important;
-        line-height: 1.4 !important;
+        line-height: 1.35 !important;
         color: black !important;
         page-break-inside: avoid !important;
+    }
+
+    /* Keep our document colors */
+    .docu-header-row,
+    .docu-office,
+    .docu-left,
+    .docu-officials-head,
+    .docu-officials-captain {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     
     /* Typography */
