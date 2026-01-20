@@ -565,7 +565,7 @@ include 'sidebar.php';
                             <div class="docu-officials-head">BRGY. OFFICIALS</div>
 
                             <div class="docu-officials-captain">
-                                <div class="docu-officials-captain-name"><?php echo $captainName; ?></div>
+                                <div class="docu-official">HON. MOHAMAD S. ABDULKASAN</div>
                                 <div class="docu-officials-captain-role">Barangay Captain</div>
                             </div>
 
